@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -54,13 +55,17 @@ private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
  * dependencies and stays trivially previewable and testable.
  *
  * @param scheduleSlotId `null` to add a new slot, or the id of the slot to edit.
+ * @param prefill Fields recognized by the schedule photo scanner to seed
+ * the form with; only meaningful together with `scheduleSlotId = null`
+ * (see `ScheduleScannerRoute` and `AeshNavHost`).
  */
 @Composable
 fun ScheduleFormRoute(
     scheduleSlotId: Long?,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ScheduleFormViewModel = koinViewModel(parameters = { parametersOf(scheduleSlotId) }),
+    prefill: ParsedScheduleSlot? = null,
+    viewModel: ScheduleFormViewModel = koinViewModel(parameters = { parametersOf(scheduleSlotId, prefill) }),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

@@ -1,5 +1,6 @@
 package fr.alaedine.aesh.presentation.schedule
 
+import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -166,5 +167,66 @@ class ScheduleFormViewModelTest {
         // Then
         assertEquals(emptyList(), repository.observeScheduleSlots().first())
         assertFalse(viewModel.uiState.value.isSaved)
+    }
+
+    @Test
+    fun `should apply every recognized scanner field when adding a new schedule slot`() = runTest {
+        // Given
+        val prefill = ParsedScheduleSlot(
+            dayOfWeek = DayOfWeek.TUESDAY,
+            startTime = LocalTime.of(14, 0),
+            endTime = LocalTime.of(15, 0),
+            subject = "Mathématiques",
+            room = "B12",
+        )
+
+        // When
+        val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null, prefill = prefill)
+
+        // Then
+        val state = viewModel.uiState.value
+        assertEquals(DayOfWeek.TUESDAY, state.dayOfWeek)
+        assertEquals(LocalTime.of(14, 0), state.startTime)
+        assertEquals(LocalTime.of(15, 0), state.endTime)
+        assertEquals("Mathématiques", state.subject)
+        assertEquals("B12", state.room)
+    }
+
+    @Test
+    fun `should keep the default fields the scanner didn't recognize`() = runTest {
+        // Given
+        val defaults = ScheduleFormUiState()
+        val prefill = ParsedScheduleSlot(subject = "Mathématiques")
+
+        // When
+        val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null, prefill = prefill)
+
+        // Then
+        val state = viewModel.uiState.value
+        assertEquals(defaults.dayOfWeek, state.dayOfWeek)
+        assertEquals(defaults.startTime, state.startTime)
+        assertEquals(defaults.endTime, state.endTime)
+        assertEquals(defaults.room, state.room)
+        assertEquals("Mathématiques", state.subject)
+    }
+
+    @Test
+    fun `should not let a scanner prefill override the loaded values when editing`() = runTest {
+        // Given
+        val mathSlot = ScheduleSlot(
+            id = 1L,
+            dayOfWeek = DayOfWeek.MONDAY,
+            startTime = LocalTime.of(8, 0),
+            endTime = LocalTime.of(9, 0),
+            subject = "Mathématiques",
+        )
+        val repository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot))
+        val prefill = ParsedScheduleSlot(subject = "Should not appear")
+
+        // When
+        val viewModel = ScheduleFormViewModel(repository, scheduleSlotId = mathSlot.id, prefill = prefill)
+
+        // Then
+        assertEquals(mathSlot.subject, viewModel.uiState.value.subject)
     }
 }

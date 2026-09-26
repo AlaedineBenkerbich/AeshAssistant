@@ -132,6 +132,16 @@ dependencies {
     // service or exact alarms.
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Powers the schedule photo scanner (see `presentation.schedule.scanner`
+    // and `data.scanner`): CameraX drives the viewfinder/capture, ML Kit
+    // runs on-device Text Recognition on the captured photo. No network
+    // calls, no cloud processing — see the project README's privacy section.
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.text.recognition)
+
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     // Lets Room DAO/repository tests run as fast local JVM unit tests (no

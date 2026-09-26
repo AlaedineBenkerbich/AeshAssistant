@@ -2,6 +2,7 @@ package fr.alaedine.aesh.presentation.schedule
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.repository.ScheduleSlotRepository
 import java.time.DayOfWeek
@@ -20,13 +21,21 @@ import kotlinx.coroutines.launch
  * [scheduleSlotRepository] on init and behaves as an "edit slot" form.
  * `presentationModule` supplies [scheduleSlotId] as a Koin injection
  * parameter sourced from the navigation argument, see [ScheduleFormRoute].
+ *
+ * @param prefill Fields recognized by the schedule photo scanner (see
+ * `presentation.schedule.scanner`), applied on top of the default "add
+ * slot" field values. Only meaningful when [scheduleSlotId] is `null`;
+ * ignored otherwise, since an edited slot always loads its own values.
  */
 class ScheduleFormViewModel(
     private val scheduleSlotRepository: ScheduleSlotRepository,
     private val scheduleSlotId: Long?,
+    prefill: ParsedScheduleSlot? = null,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ScheduleFormUiState(scheduleSlotId = scheduleSlotId))
+    private val _uiState = MutableStateFlow(
+        ScheduleFormUiState(scheduleSlotId = scheduleSlotId).withPrefill(prefill),
+    )
     val uiState: StateFlow<ScheduleFormUiState> = _uiState.asStateFlow()
 
     init {
@@ -96,4 +105,16 @@ class ScheduleFormViewModel(
             _uiState.update { it.copy(isSaved = true) }
         }
     }
+}
+
+/** Overlays every recognized (non-null) [prefill] field onto this state, leaving the rest at their defaults. */
+private fun ScheduleFormUiState.withPrefill(prefill: ParsedScheduleSlot?): ScheduleFormUiState {
+    if (prefill == null) return this
+    return copy(
+        dayOfWeek = prefill.dayOfWeek ?: dayOfWeek,
+        startTime = prefill.startTime ?: startTime,
+        endTime = prefill.endTime ?: endTime,
+        subject = prefill.subject ?: subject,
+        room = prefill.room ?: room,
+    )
 }

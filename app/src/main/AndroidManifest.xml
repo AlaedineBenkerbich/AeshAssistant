@@ -7,6 +7,17 @@
          MainActivity. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Required to capture a photo of a physical schedule (see
+         fr.alaedine.aesh.presentation.schedule.scanner); requested at
+         runtime by ScheduleScannerRoute. The photo never leaves the device:
+         it's only used locally for on-device ML Kit text recognition. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- The schedule scanner is an optional AI feature (see README), so the
+         app must remain installable on camera-less devices. -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
     <application
         android:name=".AeshApplication"
         android:allowBackup="true"
