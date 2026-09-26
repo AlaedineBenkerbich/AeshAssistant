@@ -19,4 +19,16 @@ sealed interface AeshDestination {
     /** Placeholder preferences screen; will grow with real settings later. */
     @Serializable
     data object Settings : AeshDestination
+
+    /** Lists every student; entry point into student management (see `StudentListRoute`). */
+    @Serializable
+    data object StudentList : AeshDestination
+
+    /** Form to create a new student (see `StudentFormRoute`). */
+    @Serializable
+    data object AddStudent : AeshDestination
+
+    /** Form to edit the existing student identified by [studentId] (see `StudentFormRoute`). */
+    @Serializable
+    data class EditStudent(val studentId: Long) : AeshDestination
 }
