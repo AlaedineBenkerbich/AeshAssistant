@@ -86,6 +86,16 @@ repo), so newer releases can be installed over older ones without
 uninstalling first. This signing key is meant for sideloaded distribution
 only — a Play Store submission would require its own dedicated upload key.
 
+You can verify a downloaded APK is genuinely signed with that key using
+[`apksigner`](https://developer.android.com/tools/apksigner) (bundled with
+the Android SDK build-tools):
+
+```bash
+apksigner verify --print-certs AeshAssistant-<version>.apk
+# Expect SHA-256 digest:
+# 971e4db2b2444bab573b18d5dd9fe88f22b8481d6e313624eb305769f612939d
+```
+
 ## Privacy
 
 All data stays on-device. No network backend is used; the optional AI
