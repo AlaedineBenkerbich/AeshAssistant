@@ -33,11 +33,13 @@ inward:
 - `data` — repositories and data sources (Room, DataStore, on-device ML)
   implementing domain interfaces.
 
-`domain` and `data` will grow as the corresponding milestones land; today the
-`presentation` layer hosts a `Dashboard` (`HomeScreen` + `HomeViewModel`) and
-a placeholder `Settings` screen, connected through a Jetpack Navigation
-Compose graph (`AeshNavHost`) and resolved via Koin (`presentationModule`),
-bootstrapping the project structure ahead of the domain/data layers.
+`domain` and `data` will grow as the corresponding milestones land; today
+`domain` exposes a `Student` model and `StudentRepository` contract, `data`
+implements it on top of Room (`AeshDatabase`, `StudentDao`,
+`StudentRepositoryImpl`), and `presentation` hosts a `Dashboard`
+(`HomeScreen` + `HomeViewModel`) and a placeholder `Settings` screen,
+connected through a Jetpack Navigation Compose graph (`AeshNavHost`) and
+resolved via Koin (`presentationModule`, `dataModule`).
 
 Koin was chosen over Hilt for dependency injection: it needs no annotation
 processor (no KAPT/KSP), which keeps build times low and setup simple for
