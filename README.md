@@ -15,8 +15,8 @@ assistants) manage their daily work:
 
 ## Tech stack
 
-- Kotlin, Jetpack Compose, Jetpack Navigation
-- Dependency Injection (Hilt or Koin — see #2)
+- Kotlin, Jetpack Compose, Jetpack Navigation (type-safe routes)
+- Dependency Injection ([Koin](https://insert-koin.io/))
 - Room (local persistence)
 - WorkManager (daily reminder notifications)
 - CameraX + ML Kit Text Recognition (on-device schedule scanning)
@@ -34,8 +34,14 @@ inward:
   implementing domain interfaces.
 
 `domain` and `data` will grow as the corresponding milestones land; today the
-`presentation` layer hosts a minimal welcome screen (`HomeScreen` +
-`HomeViewModel`) that bootstraps the project structure.
+`presentation` layer hosts a `Dashboard` (`HomeScreen` + `HomeViewModel`) and
+a placeholder `Settings` screen, connected through a Jetpack Navigation
+Compose graph (`AeshNavHost`) and resolved via Koin (`presentationModule`),
+bootstrapping the project structure ahead of the domain/data layers.
+
+Koin was chosen over Hilt for dependency injection: it needs no annotation
+processor (no KAPT/KSP), which keeps build times low and setup simple for
+this project's scope.
 
 ## Project status
 
