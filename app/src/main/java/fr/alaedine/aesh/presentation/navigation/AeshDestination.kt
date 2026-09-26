@@ -35,4 +35,16 @@ sealed interface AeshDestination {
     /** Daily observation form; the student is picked from within the form (see `DailyReportFormRoute`). */
     @Serializable
     data object DailyReportForm : AeshDestination
+
+    /** Weekly schedule list; entry point into schedule management (see `ScheduleListRoute`). */
+    @Serializable
+    data object ScheduleList : AeshDestination
+
+    /** Form to create a new schedule slot (see `ScheduleFormRoute`). */
+    @Serializable
+    data object AddScheduleSlot : AeshDestination
+
+    /** Form to edit the existing schedule slot identified by [scheduleSlotId] (see `ScheduleFormRoute`). */
+    @Serializable
+    data class EditScheduleSlot(val scheduleSlotId: Long) : AeshDestination
 }

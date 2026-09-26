@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
@@ -47,6 +48,7 @@ import org.koin.androidx.compose.koinViewModel
 fun HomeRoute(
     onNavigateToStudents: () -> Unit,
     onNavigateToDailyReport: () -> Unit,
+    onNavigateToSchedule: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
@@ -56,6 +58,7 @@ fun HomeRoute(
         uiState = uiState,
         onNavigateToStudents = onNavigateToStudents,
         onNavigateToDailyReport = onNavigateToDailyReport,
+        onNavigateToSchedule = onNavigateToSchedule,
         onNavigateToSettings = onNavigateToSettings,
         modifier = modifier,
     )
@@ -73,6 +76,7 @@ fun HomeScreen(
     uiState: HomeUiState,
     onNavigateToStudents: () -> Unit,
     onNavigateToDailyReport: () -> Unit,
+    onNavigateToSchedule: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -84,6 +88,9 @@ fun HomeScreen(
                 actions = {
                     IconButton(onClick = onNavigateToStudents) {
                         Icon(imageVector = Icons.Default.Person, contentDescription = "Students")
+                    }
+                    IconButton(onClick = onNavigateToSchedule) {
+                        Icon(imageVector = Icons.Default.DateRange, contentDescription = "Schedule")
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
@@ -212,6 +219,7 @@ private fun HomeScreenPreview() {
             ),
             onNavigateToStudents = {},
             onNavigateToDailyReport = {},
+            onNavigateToSchedule = {},
             onNavigateToSettings = {},
         )
     }
@@ -233,6 +241,7 @@ private fun HomeScreenAllReportedPreview() {
             ),
             onNavigateToStudents = {},
             onNavigateToDailyReport = {},
+            onNavigateToSchedule = {},
             onNavigateToSettings = {},
         )
     }
@@ -246,6 +255,7 @@ private fun HomeScreenEmptyPreview() {
             uiState = HomeUiState(studentStatuses = emptyList(), isLoading = false),
             onNavigateToStudents = {},
             onNavigateToDailyReport = {},
+            onNavigateToSchedule = {},
             onNavigateToSettings = {},
         )
     }
