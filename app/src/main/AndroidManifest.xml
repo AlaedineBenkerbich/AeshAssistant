@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Required on API 33+ to show the daily report reminder notification
+         (see fr.alaedine.aesh.data.reminder); requested at runtime by
+         MainActivity. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".AeshApplication"
         android:allowBackup="true"
