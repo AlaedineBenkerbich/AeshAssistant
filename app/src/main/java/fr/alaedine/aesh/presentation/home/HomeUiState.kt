@@ -1,14 +1,36 @@
 package fr.alaedine.aesh.presentation.home
 
+import fr.alaedine.aesh.domain.model.Student
+import java.time.LocalDate
+
 /**
  * Immutable UI state rendered by [HomeScreen].
  *
- * Kept intentionally minimal for the project bootstrap: it only exposes the
- * static welcome content. Future milestones (see the project README) will
- * enrich this state with real domain data produced by use cases from the
- * domain layer, consumed by [HomeViewModel].
+ * @property date Today's date, displayed as the dashboard's day summary.
+ * @property studentStatuses One entry per known student, pairing them with
+ * whether they already have a [fr.alaedine.aesh.domain.model.DailyReport]
+ * for [date] (see [StudentReportStatus]), kept in sync with
+ * [fr.alaedine.aesh.domain.repository.StudentRepository.observeStudents] and
+ * [fr.alaedine.aesh.domain.repository.DailyReportRepository.observeReports]
+ * by [HomeViewModel].
+ * @property isLoading Whether students/reports are still being loaded;
+ * avoids briefly flashing the "missing report" warning before the first
+ * emission arrives.
  */
 data class HomeUiState(
-    val appName: String = "AESH Assistant",
-    val tagline: String = "Offline-first companion for AESH daily follow-up.",
+    val date: LocalDate = LocalDate.now(),
+    val studentStatuses: List<StudentReportStatus> = emptyList(),
+    val isLoading: Boolean = true,
+) {
+    /** How many students still don't have a report for [date]. */
+    val missingReportCount: Int get() = studentStatuses.count { !it.hasReportToday }
+
+    /** Whether the dashboard should warn the user: at least one student is missing today's report. */
+    val hasMissingReports: Boolean get() = !isLoading && missingReportCount > 0
+}
+
+/** Pairs a [Student] with whether they already have a daily report for the dashboard's current [HomeUiState.date]. */
+data class StudentReportStatus(
+    val student: Student,
+    val hasReportToday: Boolean,
 )
