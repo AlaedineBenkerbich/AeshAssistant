@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import fr.alaedine.aesh.presentation.home.HomeRoute
+import fr.alaedine.aesh.presentation.report.DailyReportFormRoute
 import fr.alaedine.aesh.presentation.settings.SettingsRoute
 import fr.alaedine.aesh.presentation.student.StudentFormRoute
 import fr.alaedine.aesh.presentation.student.StudentListRoute
@@ -28,6 +29,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         composable<AeshDestination.Dashboard> {
             HomeRoute(
                 onNavigateToStudents = { navController.navigate(AeshDestination.StudentList) },
+                onNavigateToDailyReport = { navController.navigate(AeshDestination.DailyReportForm) },
                 onNavigateToSettings = { navController.navigate(AeshDestination.Settings) },
             )
         }
@@ -53,6 +55,11 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
             val destination = backStackEntry.toRoute<AeshDestination.EditStudent>()
             StudentFormRoute(
                 studentId = destination.studentId,
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<AeshDestination.DailyReportForm> {
+            DailyReportFormRoute(
                 onNavigateBack = { navController.popBackStack() },
             )
         }
