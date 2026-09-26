@@ -20,6 +20,7 @@ robolectric = "4.17"
 work = "2.12.0"
 cameraX = "1.6.2"
 mlkitTextRecognition = "16.0.1"
+mlkitGenai = "1.0.0-beta4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -59,6 +60,8 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "mlkitGenai" }
+mlkit-genai-common = { group = "com.google.mlkit", name = "genai-common", version.ref = "mlkitGenai" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

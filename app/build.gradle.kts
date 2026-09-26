@@ -142,6 +142,14 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.text.recognition)
 
+    // Powers the ESS report screen (see `presentation.report.EssReportViewModel`
+    // and `data.ai`): ML Kit's GenAI Prompt API runs Gemini Nano through
+    // Android's on-device AICore system service to turn a student's daily
+    // notes into a report draft. No network calls, no cloud processing —
+    // see the project README's privacy section.
+    implementation(libs.mlkit.genai.prompt)
+    implementation(libs.mlkit.genai.common)
+
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     // Lets Room DAO/repository tests run as fast local JVM unit tests (no

@@ -36,6 +36,14 @@ sealed interface AeshDestination {
     @Serializable
     data object DailyReportForm : AeshDestination
 
+    /**
+     * ESS (*Équipe de Suivi de Scolarisation*) report generation screen; the
+     * student and date range are picked from within the form (see
+     * `EssReportRoute`).
+     */
+    @Serializable
+    data object EssReportForm : AeshDestination
+
     /** Weekly schedule list; entry point into schedule management (see `ScheduleListRoute`). */
     @Serializable
     data object ScheduleList : AeshDestination

@@ -9,6 +9,7 @@ import androidx.navigation.toRoute
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.home.HomeRoute
 import fr.alaedine.aesh.presentation.report.DailyReportFormRoute
+import fr.alaedine.aesh.presentation.report.EssReportRoute
 import fr.alaedine.aesh.presentation.schedule.ScheduleFormRoute
 import fr.alaedine.aesh.presentation.schedule.ScheduleListRoute
 import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerRoute
@@ -37,6 +38,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                 onNavigateToStudents = { navController.navigate(AeshDestination.StudentList) },
                 onNavigateToDailyReport = { navController.navigate(AeshDestination.DailyReportForm) },
                 onNavigateToSchedule = { navController.navigate(AeshDestination.ScheduleList) },
+                onNavigateToEssReport = { navController.navigate(AeshDestination.EssReportForm) },
                 onNavigateToSettings = { navController.navigate(AeshDestination.Settings) },
             )
         }
@@ -67,6 +69,11 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         }
         composable<AeshDestination.DailyReportForm> {
             DailyReportFormRoute(
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<AeshDestination.EssReportForm> {
+            EssReportRoute(
                 onNavigateBack = { navController.popBackStack() },
             )
         }
