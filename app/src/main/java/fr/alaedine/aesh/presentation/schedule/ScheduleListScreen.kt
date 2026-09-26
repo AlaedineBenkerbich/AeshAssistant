@@ -29,9 +29,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.time.DayOfWeek
@@ -51,6 +53,7 @@ private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
 @Composable
 fun ScheduleListRoute(
     onAddScheduleSlot: () -> Unit,
+    onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -60,6 +63,7 @@ fun ScheduleListRoute(
     ScheduleListScreen(
         uiState = uiState,
         onAddScheduleSlot = onAddScheduleSlot,
+        onScanScheduleSlot = onScanScheduleSlot,
         onEditScheduleSlot = onEditScheduleSlot,
         onNavigateBack = onNavigateBack,
         onDeleteRequested = viewModel::onDeleteRequested,
@@ -74,6 +78,7 @@ fun ScheduleListRoute(
 fun ScheduleListScreen(
     uiState: ScheduleListUiState,
     onAddScheduleSlot: () -> Unit,
+    onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
     onNavigateBack: () -> Unit,
     onDeleteRequested: (ScheduleSlot) -> Unit,
@@ -89,6 +94,14 @@ fun ScheduleListScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onScanScheduleSlot) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_camera),
+                            contentDescription = "Scan a physical schedule",
+                        )
                     }
                 },
             )
@@ -236,6 +249,7 @@ private fun ScheduleListScreenPreview() {
                 isLoading = false,
             ),
             onAddScheduleSlot = {},
+            onScanScheduleSlot = {},
             onEditScheduleSlot = {},
             onNavigateBack = {},
             onDeleteRequested = {},
@@ -252,6 +266,7 @@ private fun ScheduleListScreenEmptyPreview() {
         ScheduleListScreen(
             uiState = ScheduleListUiState(scheduleSlots = emptyList(), isLoading = false),
             onAddScheduleSlot = {},
+            onScanScheduleSlot = {},
             onEditScheduleSlot = {},
             onNavigateBack = {},
             onDeleteRequested = {},
@@ -280,6 +295,7 @@ private fun ScheduleListScreenDeleteConfirmationPreview() {
                 pendingDeletion = mathSlot,
             ),
             onAddScheduleSlot = {},
+            onScanScheduleSlot = {},
             onEditScheduleSlot = {},
             onNavigateBack = {},
             onDeleteRequested = {},

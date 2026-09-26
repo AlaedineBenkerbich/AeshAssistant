@@ -1,9 +1,11 @@
 package fr.alaedine.aesh.presentation.di
 
+import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.home.HomeViewModel
 import fr.alaedine.aesh.presentation.report.DailyReportFormViewModel
 import fr.alaedine.aesh.presentation.schedule.ScheduleFormViewModel
 import fr.alaedine.aesh.presentation.schedule.ScheduleListViewModel
+import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerViewModel
 import fr.alaedine.aesh.presentation.settings.SettingsViewModel
 import fr.alaedine.aesh.presentation.student.StudentFormViewModel
 import fr.alaedine.aesh.presentation.student.StudentListViewModel
@@ -28,6 +30,13 @@ val presentationModule = module {
     viewModel { DailyReportFormViewModel(get(), get()) }
     viewModel { ScheduleListViewModel(get()) }
     // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`
-    // above, sourced from the navigation argument, see `ScheduleFormRoute`.
-    viewModel { params -> ScheduleFormViewModel(get(), params.getOrNull()) }
+    // above, plus an optional scanner pre-fill (both sourced from the
+    // navigation argument, see `ScheduleFormRoute`). Koin's `ParametersHolder`
+    // resolves each `getOrNull<T>()` call by matching type, so the two
+    // parameters can be passed/retrieved in any order.
+    viewModel { params ->
+        ScheduleFormViewModel(get(), params.getOrNull<Long>(), params.getOrNull<ParsedScheduleSlot>())
+    }
+    viewModel { ScheduleScannerViewModel(get()) }
 }
+

@@ -6,13 +6,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.home.HomeRoute
 import fr.alaedine.aesh.presentation.report.DailyReportFormRoute
 import fr.alaedine.aesh.presentation.schedule.ScheduleFormRoute
 import fr.alaedine.aesh.presentation.schedule.ScheduleListRoute
+import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerRoute
 import fr.alaedine.aesh.presentation.settings.SettingsRoute
 import fr.alaedine.aesh.presentation.student.StudentFormRoute
 import fr.alaedine.aesh.presentation.student.StudentListRoute
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 /**
  * Hosts every screen behind a single [androidx.navigation.NavController],
@@ -68,16 +72,19 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         }
         composable<AeshDestination.ScheduleList> {
             ScheduleListRoute(
-                onAddScheduleSlot = { navController.navigate(AeshDestination.AddScheduleSlot) },
+                onAddScheduleSlot = { navController.navigate(AeshDestination.AddScheduleSlot()) },
+                onScanScheduleSlot = { navController.navigate(AeshDestination.ScheduleScanner) },
                 onEditScheduleSlot = { scheduleSlotId ->
                     navController.navigate(AeshDestination.EditScheduleSlot(scheduleSlotId))
                 },
                 onNavigateBack = { navController.popBackStack() },
             )
         }
-        composable<AeshDestination.AddScheduleSlot> {
+        composable<AeshDestination.AddScheduleSlot> { backStackEntry ->
+            val destination = backStackEntry.toRoute<AeshDestination.AddScheduleSlot>()
             ScheduleFormRoute(
                 scheduleSlotId = null,
+                prefill = destination.toParsedScheduleSlot(),
                 onNavigateBack = { navController.popBackStack() },
             )
         }
@@ -88,5 +95,39 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                 onNavigateBack = { navController.popBackStack() },
             )
         }
+        composable<AeshDestination.ScheduleScanner> {
+            ScheduleScannerRoute(
+                onScanned = { parsed ->
+                    navController.navigate(parsed.toAddScheduleSlotDestination()) {
+                        // Scanning replaces the "add slot" step rather than
+                        // stacking on top of it, so back from the pre-filled
+                        // form returns straight to the schedule list.
+                        popUpTo(AeshDestination.ScheduleScanner) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
     }
 }
+
+/** Converts recognized OCR fields into the primitive-typed nav arguments [AeshDestination.AddScheduleSlot] carries. */
+private fun ParsedScheduleSlot.toAddScheduleSlotDestination(): AeshDestination.AddScheduleSlot =
+    AeshDestination.AddScheduleSlot(
+        dayOfWeek = dayOfWeek?.name,
+        startTime = startTime?.toString(),
+        endTime = endTime?.toString(),
+        subject = subject,
+        room = room,
+    )
+
+/** The inverse of [toAddScheduleSlotDestination], tolerating malformed/missing fields by leaving them `null`. */
+private fun AeshDestination.AddScheduleSlot.toParsedScheduleSlot(): ParsedScheduleSlot =
+    ParsedScheduleSlot(
+        dayOfWeek = dayOfWeek?.let { runCatching { DayOfWeek.valueOf(it) }.getOrNull() },
+        startTime = startTime?.let { runCatching { LocalTime.parse(it) }.getOrNull() },
+        endTime = endTime?.let { runCatching { LocalTime.parse(it) }.getOrNull() },
+        subject = subject,
+        room = room,
+    )
+
