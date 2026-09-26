@@ -1,16 +1,19 @@
 package fr.alaedine.aesh.presentation.home
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class HomeViewModelTest {
 
     @Test
-    fun `initial state exposes the default welcome content`() {
+    fun `should expose default welcome content when view model is initialized`() {
+        // Given
         val viewModel = HomeViewModel()
 
+        // When
         val state = viewModel.uiState.value
 
+        // Then
         assertEquals(HomeUiState(), state)
     }
 }
