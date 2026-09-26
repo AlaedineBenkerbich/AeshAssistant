@@ -1,4 +1,4 @@
-package fr.alaedine.aesh.presentation.home
+package fr.alaedine.aesh.presentation.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,24 +19,24 @@ import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 
 /**
- * Stateful entry point wired to [HomeViewModel]. Kept separate from the
- * stateless [HomeScreen] so the latter has no Android/ViewModel dependencies
- * and stays trivially previewable and testable.
+ * Stateful entry point wired to [SettingsViewModel]. Kept separate from the
+ * stateless [SettingsScreen] so the latter has no Android/ViewModel
+ * dependencies and stays trivially previewable and testable.
  */
 @Composable
-fun HomeRoute(
-    onNavigateToSettings: () -> Unit,
+fun SettingsRoute(
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = koinViewModel(),
+    viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    HomeScreen(uiState = uiState, onNavigateToSettings = onNavigateToSettings, modifier = modifier)
+    SettingsScreen(uiState = uiState, onNavigateBack = onNavigateBack, modifier = modifier)
 }
 
 @Composable
-fun HomeScreen(
-    uiState: HomeUiState,
-    onNavigateToSettings: () -> Unit,
+fun SettingsScreen(
+    uiState: SettingsUiState,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { contentPadding ->
@@ -48,10 +48,10 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = uiState.appName, style = MaterialTheme.typography.headlineMedium)
-            Text(text = uiState.tagline, style = MaterialTheme.typography.bodyMedium)
-            Button(onClick = onNavigateToSettings) {
-                Text(text = "Settings")
+            Text(text = uiState.title, style = MaterialTheme.typography.headlineMedium)
+            Text(text = uiState.message, style = MaterialTheme.typography.bodyMedium)
+            Button(onClick = onNavigateBack) {
+                Text(text = "Back")
             }
         }
     }
@@ -59,8 +59,8 @@ fun HomeScreen(
 
 @Preview(showBackground = true)
 @Composable
-private fun HomeScreenPreview() {
+private fun SettingsScreenPreview() {
     AeshAssistantTheme {
-        HomeScreen(uiState = HomeUiState(), onNavigateToSettings = {})
+        SettingsScreen(uiState = SettingsUiState(), onNavigateBack = {})
     }
 }
