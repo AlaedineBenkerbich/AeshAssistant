@@ -20,7 +20,8 @@ assistants) manage their daily work:
 - Room (local persistence)
 - WorkManager (daily reminder notifications)
 - CameraX + ML Kit Text Recognition (on-device schedule scanning)
-- AICore / Gemini Nano (on-device ESS report generation)
+- ML Kit GenAI Prompt API — Gemini Nano via Android's AICore system service
+  (on-device ESS report generation)
 
 ## Architecture
 
