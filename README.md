@@ -22,6 +22,21 @@ assistants) manage their daily work:
 - CameraX + ML Kit Text Recognition (on-device schedule scanning)
 - AICore / Gemini Nano (on-device ESS report generation)
 
+## Architecture
+
+The codebase follows Clean Architecture, with dependencies always pointing
+inward:
+
+- `presentation` — Compose screens, `ViewModel`s and immutable UI state.
+  Contains no business logic, only rendering + user input handling.
+- `domain` — use cases and business models (framework-agnostic Kotlin).
+- `data` — repositories and data sources (Room, DataStore, on-device ML)
+  implementing domain interfaces.
+
+`domain` and `data` will grow as the corresponding milestones land; today the
+`presentation` layer hosts a minimal welcome screen (`HomeScreen` +
+`HomeViewModel`) that bootstraps the project structure.
+
 ## Project status
 
 This project is under active development. See the [issues](../../issues) and
@@ -38,6 +53,38 @@ This project is under active development. See the [issues](../../issues) and
 
 Open the project in Android Studio and run the `app` module on a device or
 emulator running API 26+.
+
+```bash
+./gradlew testDebugUnitTest   # unit tests
+./gradlew lintDebug           # static analysis
+./gradlew assembleDebug       # debug APK
+```
+
+## Continuous integration & releases
+
+- **`.github/workflows/android.yml`** builds, lints and unit-tests every pull
+  request targeting `main` (and pushes to `main`).
+- **`.github/workflows/release.yml`** publishes signed, installable APKs as
+  [GitHub Releases](../../releases). Trigger it either by running the
+  workflow manually from the Actions tab, or by pushing a tag matching
+  `v*.*.*`.
+
+### Versioning
+
+The app uses [Calendar Versioning](https://calver.org) with the
+`YYYY.MM.MICRO` scheme (e.g. `2026.09.0`, `2026.09.1`, ...). The release
+workflow computes the next version automatically from existing tags, so no
+manual bookkeeping is required.
+
+### Installing a release
+
+Download the latest `.apk` from the [Releases page](../../releases),
+transfer it to an Android 8.0+ (API 26+) device, and open it (enabling
+"install from unknown sources" if prompted). Every release is signed with the
+same dedicated key (stored as encrypted GitHub secrets, not committed to the
+repo), so newer releases can be installed over older ones without
+uninstalling first. This signing key is meant for sideloaded distribution
+only — a Play Store submission would require its own dedicated upload key.
 
 ## Privacy
 
