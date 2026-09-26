@@ -16,7 +16,7 @@ sealed interface AeshDestination {
     @Serializable
     data object Dashboard : AeshDestination
 
-    /** Placeholder preferences screen; will grow with real settings later. */
+    /** Preferences screen: local JSON backup export/restore (see `SettingsRoute`). */
     @Serializable
     data object Settings : AeshDestination
 

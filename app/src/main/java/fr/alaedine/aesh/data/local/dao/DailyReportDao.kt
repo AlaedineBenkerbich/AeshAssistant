@@ -36,9 +36,17 @@ interface DailyReportDao {
     @Insert
     suspend fun insert(dailyReport: DailyReportEntity): Long
 
+    /** Inserts every one of [dailyReports], preserving their ids; used when restoring a backup (see `BackupRepositoryImpl`). */
+    @Insert
+    suspend fun insertAll(dailyReports: List<DailyReportEntity>)
+
     @Update
     suspend fun update(dailyReport: DailyReportEntity)
 
     @Delete
     suspend fun delete(dailyReport: DailyReportEntity)
+
+    /** Removes every row; used when restoring a backup (see `BackupRepositoryImpl`). */
+    @Query("DELETE FROM daily_reports")
+    suspend fun deleteAll()
 }

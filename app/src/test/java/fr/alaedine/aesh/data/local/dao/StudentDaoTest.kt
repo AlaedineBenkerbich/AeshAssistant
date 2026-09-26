@@ -104,4 +104,32 @@ class StudentDaoTest {
         // Then
         assertNull(studentDao.getById(id))
     }
+
+    @Test
+    fun `should insert every student preserving their ids when inserting all`() = runTest {
+        // Given
+        val students = listOf(
+            StudentEntity(id = 5L, firstName = "Alice", className = "CE2"),
+            StudentEntity(id = 9L, firstName = "Bob", className = "CM2"),
+        )
+
+        // When
+        studentDao.insertAll(students)
+
+        // Then
+        assertEquals(students, studentDao.observeAll().first().sortedBy { it.id })
+    }
+
+    @Test
+    fun `should remove every student when deleting all`() = runTest {
+        // Given
+        studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+        studentDao.insert(StudentEntity(firstName = "Bob", className = "CM2"))
+
+        // When
+        studentDao.deleteAll()
+
+        // Then
+        assertEquals(emptyList(), studentDao.observeAll().first())
+    }
 }

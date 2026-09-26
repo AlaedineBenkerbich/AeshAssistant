@@ -19,7 +19,7 @@ import org.koin.dsl.module
  */
 val presentationModule = module {
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { SettingsViewModel() }
+    viewModel { SettingsViewModel(get()) }
     viewModel { StudentListViewModel(get()) }
     // The nullable student id (null when adding, an existing id when
     // editing) is supplied at call time via `koinViewModel(parameters = ...)`

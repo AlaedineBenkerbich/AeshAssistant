@@ -229,4 +229,53 @@ class DailyReportDaoTest {
         // Then
         assertNull(dailyReportDao.getById(id))
     }
+
+    @Test
+    fun `should insert every report preserving their ids when inserting all`() = runTest {
+        // Given
+        val reports = listOf(
+            DailyReportEntity(
+                id = 11L,
+                studentId = studentId,
+                date = LocalDate.of(2026, 9, 20),
+                moodLevel = 3,
+                focusLevel = 3,
+                socialInteractions = 3,
+            ),
+            DailyReportEntity(
+                id = 12L,
+                studentId = studentId,
+                date = LocalDate.of(2026, 9, 21),
+                moodLevel = 4,
+                focusLevel = 4,
+                socialInteractions = 4,
+            ),
+        )
+
+        // When
+        dailyReportDao.insertAll(reports)
+
+        // Then
+        assertEquals(reports, dailyReportDao.observeAll().first().sortedBy { it.id })
+    }
+
+    @Test
+    fun `should remove every report when deleting all`() = runTest {
+        // Given
+        dailyReportDao.insert(
+            DailyReportEntity(
+                studentId = studentId,
+                date = LocalDate.of(2026, 9, 26),
+                moodLevel = 3,
+                focusLevel = 3,
+                socialInteractions = 3,
+            ),
+        )
+
+        // When
+        dailyReportDao.deleteAll()
+
+        // Then
+        assertEquals(emptyList(), dailyReportDao.observeAll().first())
+    }
 }

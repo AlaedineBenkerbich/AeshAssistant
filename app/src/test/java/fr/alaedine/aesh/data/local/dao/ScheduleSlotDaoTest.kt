@@ -155,4 +155,50 @@ class ScheduleSlotDaoTest {
         // Then
         assertNull(scheduleSlotDao.getById(id))
     }
+
+    @Test
+    fun `should insert every schedule slot preserving their ids when inserting all`() = runTest {
+        // Given
+        val scheduleSlots = listOf(
+            ScheduleSlotEntity(
+                id = 7L,
+                dayOfWeek = DayOfWeek.MONDAY,
+                startTime = LocalTime.of(8, 0),
+                endTime = LocalTime.of(9, 0),
+                subject = "Mathématiques",
+            ),
+            ScheduleSlotEntity(
+                id = 8L,
+                dayOfWeek = DayOfWeek.TUESDAY,
+                startTime = LocalTime.of(10, 0),
+                endTime = LocalTime.of(11, 0),
+                subject = "Sport",
+            ),
+        )
+
+        // When
+        scheduleSlotDao.insertAll(scheduleSlots)
+
+        // Then
+        assertEquals(scheduleSlots, scheduleSlotDao.observeAll().first().sortedBy { it.id })
+    }
+
+    @Test
+    fun `should remove every schedule slot when deleting all`() = runTest {
+        // Given
+        scheduleSlotDao.insert(
+            ScheduleSlotEntity(
+                dayOfWeek = DayOfWeek.MONDAY,
+                startTime = LocalTime.of(8, 0),
+                endTime = LocalTime.of(9, 0),
+                subject = "Mathématiques",
+            ),
+        )
+
+        // When
+        scheduleSlotDao.deleteAll()
+
+        // Then
+        assertEquals(emptyList(), scheduleSlotDao.observeAll().first())
+    }
 }
