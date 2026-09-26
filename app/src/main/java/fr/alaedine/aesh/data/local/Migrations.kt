@@ -31,3 +31,27 @@ val MIGRATION_1_2: Migration = object : Migration(startVersion = 1, endVersion =
         )
     }
 }
+
+/**
+ * Adds the `schedule_slots` table (see
+ * [fr.alaedine.aesh.data.local.entity.ScheduleSlotEntity]) introduced for
+ * the Manual Schedule Management milestone (#8). Existing `students` and
+ * `daily_reports` tables are left untouched, so upgrading preserves any data
+ * already saved on-device.
+ */
+val MIGRATION_2_3: Migration = object : Migration(startVersion = 2, endVersion = 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `schedule_slots` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            `dayOfWeek` INTEGER NOT NULL,
+            `startTime` TEXT NOT NULL,
+            `endTime` TEXT NOT NULL,
+            `subject` TEXT NOT NULL,
+            `room` TEXT NOT NULL
+            )
+            """.trimIndent(),
+        )
+    }
+}

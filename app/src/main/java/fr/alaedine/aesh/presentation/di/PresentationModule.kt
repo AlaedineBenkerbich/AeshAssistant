@@ -2,6 +2,8 @@ package fr.alaedine.aesh.presentation.di
 
 import fr.alaedine.aesh.presentation.home.HomeViewModel
 import fr.alaedine.aesh.presentation.report.DailyReportFormViewModel
+import fr.alaedine.aesh.presentation.schedule.ScheduleFormViewModel
+import fr.alaedine.aesh.presentation.schedule.ScheduleListViewModel
 import fr.alaedine.aesh.presentation.settings.SettingsViewModel
 import fr.alaedine.aesh.presentation.student.StudentFormViewModel
 import fr.alaedine.aesh.presentation.student.StudentListViewModel
@@ -24,4 +26,8 @@ val presentationModule = module {
     // from the navigation argument, see `StudentFormRoute`.
     viewModel { params -> StudentFormViewModel(get(), params.getOrNull()) }
     viewModel { DailyReportFormViewModel(get(), get()) }
+    viewModel { ScheduleListViewModel(get()) }
+    // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`
+    // above, sourced from the navigation argument, see `ScheduleFormRoute`.
+    viewModel { params -> ScheduleFormViewModel(get(), params.getOrNull()) }
 }

@@ -8,6 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import fr.alaedine.aesh.presentation.home.HomeRoute
 import fr.alaedine.aesh.presentation.report.DailyReportFormRoute
+import fr.alaedine.aesh.presentation.schedule.ScheduleFormRoute
+import fr.alaedine.aesh.presentation.schedule.ScheduleListRoute
 import fr.alaedine.aesh.presentation.settings.SettingsRoute
 import fr.alaedine.aesh.presentation.student.StudentFormRoute
 import fr.alaedine.aesh.presentation.student.StudentListRoute
@@ -30,6 +32,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
             HomeRoute(
                 onNavigateToStudents = { navController.navigate(AeshDestination.StudentList) },
                 onNavigateToDailyReport = { navController.navigate(AeshDestination.DailyReportForm) },
+                onNavigateToSchedule = { navController.navigate(AeshDestination.ScheduleList) },
                 onNavigateToSettings = { navController.navigate(AeshDestination.Settings) },
             )
         }
@@ -60,6 +63,28 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         }
         composable<AeshDestination.DailyReportForm> {
             DailyReportFormRoute(
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<AeshDestination.ScheduleList> {
+            ScheduleListRoute(
+                onAddScheduleSlot = { navController.navigate(AeshDestination.AddScheduleSlot) },
+                onEditScheduleSlot = { scheduleSlotId ->
+                    navController.navigate(AeshDestination.EditScheduleSlot(scheduleSlotId))
+                },
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<AeshDestination.AddScheduleSlot> {
+            ScheduleFormRoute(
+                scheduleSlotId = null,
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<AeshDestination.EditScheduleSlot> { backStackEntry ->
+            val destination = backStackEntry.toRoute<AeshDestination.EditScheduleSlot>()
+            ScheduleFormRoute(
+                scheduleSlotId = destination.scheduleSlotId,
                 onNavigateBack = { navController.popBackStack() },
             )
         }
