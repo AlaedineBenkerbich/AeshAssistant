@@ -25,17 +25,24 @@ import org.koin.androidx.compose.koinViewModel
  */
 @Composable
 fun HomeRoute(
+    onNavigateToStudents: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    HomeScreen(uiState = uiState, onNavigateToSettings = onNavigateToSettings, modifier = modifier)
+    HomeScreen(
+        uiState = uiState,
+        onNavigateToStudents = onNavigateToStudents,
+        onNavigateToSettings = onNavigateToSettings,
+        modifier = modifier,
+    )
 }
 
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
+    onNavigateToStudents: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -50,6 +57,9 @@ fun HomeScreen(
         ) {
             Text(text = uiState.appName, style = MaterialTheme.typography.headlineMedium)
             Text(text = uiState.tagline, style = MaterialTheme.typography.bodyMedium)
+            Button(onClick = onNavigateToStudents) {
+                Text(text = "Students")
+            }
             Button(onClick = onNavigateToSettings) {
                 Text(text = "Settings")
             }
@@ -61,6 +71,6 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     AeshAssistantTheme {
-        HomeScreen(uiState = HomeUiState(), onNavigateToSettings = {})
+        HomeScreen(uiState = HomeUiState(), onNavigateToStudents = {}, onNavigateToSettings = {})
     }
 }
