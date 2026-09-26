@@ -3,9 +3,11 @@ package fr.alaedine.aesh.presentation.report
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
 import fr.alaedine.aesh.domain.repository.PdfExportRepository
 import fr.alaedine.aesh.domain.repository.StudentRepository
 import fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase
+import fr.alaedine.aesh.domain.usecase.NoReportsInRangeException
 import java.io.OutputStream
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
@@ -16,8 +18,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-private const val GENERATION_FAILED_FALLBACK_MESSAGE = "Couldn't generate the report. Please try again."
 
 /**
  * Presentation-layer state holder for the ESS report generation screen:
@@ -66,9 +66,12 @@ class EssReportViewModel(
                 .onSuccess { text -> _uiState.update { it.copy(isGenerating = false, generatedText = text) } }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
-                    _uiState.update {
-                        it.copy(isGenerating = false, statusMessage = error.message ?: GENERATION_FAILED_FALLBACK_MESSAGE)
+                    val message = when (error) {
+                        is NoReportsInRangeException -> EssReportStatusMessage.NoReportsInRange(error.studentFirstName)
+                        is AiFeatureUnavailableException -> EssReportStatusMessage.AiFeatureUnavailable
+                        else -> EssReportStatusMessage.GenerationFailed(error.message)
                     }
+                    _uiState.update { it.copy(isGenerating = false, statusMessage = message) }
                 }
         }
     }
@@ -78,31 +81,36 @@ class EssReportViewModel(
         _uiState.update { it.copy(generatedText = text) }
     }
 
-    /** Renders the current (possibly user-edited) report text as a PDF into [destination] (a SAF-picked file). */
-    fun onExportRequested(destination: OutputStream) {
+    /**
+     * Renders the current (possibly user-edited) report text as a PDF into
+     * [destination] (a SAF-picked file), under [title].
+     *
+     * @param title Precomputed by [EssReportScreen] (e.g. via
+     * `stringResource`) rather than built here, so this class stays free of
+     * Android resources/`Context`.
+     */
+    fun onExportRequested(destination: OutputStream, title: String) {
         val state = _uiState.value
-        val student = state.selectedStudent ?: return
+        if (state.selectedStudent == null) return
         val text = state.generatedText ?: return
 
         viewModelScope.launch {
             runCatching {
-                pdfExportRepository.exportTextAsPdf(
-                    title = "ESS report — ${student.firstName} (${state.startDate} to ${state.endDate})",
-                    body = text,
-                    destination = destination,
-                )
+                pdfExportRepository.exportTextAsPdf(title = title, body = text, destination = destination)
             }
-                .onSuccess { _uiState.update { it.copy(statusMessage = "PDF exported successfully.") } }
+                .onSuccess { _uiState.update { it.copy(statusMessage = EssReportStatusMessage.ExportSuccess) } }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
-                    _uiState.update { it.copy(statusMessage = "Export failed: ${error.message}") }
+                    _uiState.update {
+                        it.copy(statusMessage = EssReportStatusMessage.ExportFailed(error.message.orEmpty()))
+                    }
                 }
         }
     }
 
     /** Reports that the SAF-picked export destination couldn't be opened for writing. */
     fun onExportFailedToOpenFile() {
-        _uiState.update { it.copy(statusMessage = "Export failed: couldn't open the selected file.") }
+        _uiState.update { it.copy(statusMessage = EssReportStatusMessage.ExportFileOpenFailed) }
     }
 
     /** Clears the one-shot [EssReportUiState.statusMessage] once [EssReportScreen] has shown it. */

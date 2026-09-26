@@ -30,9 +30,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.time.LocalDate
@@ -88,26 +91,26 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Dashboard") },
+                title = { Text(text = stringResource(R.string.home_title)) },
                 actions = {
                     IconButton(onClick = onNavigateToStudents) {
-                        Icon(imageVector = Icons.Default.Person, contentDescription = "Students")
+                        Icon(imageVector = Icons.Default.Person, contentDescription = stringResource(R.string.cd_nav_students))
                     }
                     IconButton(onClick = onNavigateToSchedule) {
-                        Icon(imageVector = Icons.Default.DateRange, contentDescription = "Schedule")
+                        Icon(imageVector = Icons.Default.DateRange, contentDescription = stringResource(R.string.cd_nav_schedule))
                     }
                     IconButton(onClick = onNavigateToEssReport) {
-                        Icon(imageVector = Icons.Default.Create, contentDescription = "ESS report")
+                        Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.cd_nav_ess_report))
                     }
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = stringResource(R.string.cd_nav_settings))
                     }
                 },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToDailyReport) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "New daily report")
+                Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_daily_report))
             }
         },
     ) { contentPadding ->
@@ -129,7 +132,7 @@ fun HomeScreen(
             if (uiState.studentStatuses.isEmpty() && !uiState.isLoading) {
                 item {
                     Text(
-                        text = "No students yet. Add one to start tracking daily reports.",
+                        text = stringResource(R.string.home_empty_students),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -161,11 +164,7 @@ private fun MissingReportsWarning(missingCount: Int, modifier: Modifier = Modifi
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onErrorContainer,
             )
-            val label = if (missingCount == 1) {
-                "1 student is still missing today's report."
-            } else {
-                "$missingCount students are still missing today's report."
-            }
+            val label = pluralStringResource(R.plurals.missing_reports_warning, missingCount, missingCount)
             Text(text = label, color = MaterialTheme.colorScheme.onErrorContainer)
         }
     }
@@ -183,19 +182,23 @@ private fun StudentReportStatusRow(status: StudentReportStatus, modifier: Modifi
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "${status.student.firstName} — ${status.student.className}",
+                text = stringResource(
+                    R.string.student_display_name,
+                    status.student.firstName,
+                    status.student.className,
+                ),
                 style = MaterialTheme.typography.titleMedium,
             )
             if (status.hasReportToday) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Report completed",
+                    contentDescription = stringResource(R.string.cd_report_completed),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             } else {
                 Icon(
                     imageVector = Icons.Default.Warning,
-                    contentDescription = "Report missing",
+                    contentDescription = stringResource(R.string.cd_report_missing),
                     tint = MaterialTheme.colorScheme.error,
                 )
             }

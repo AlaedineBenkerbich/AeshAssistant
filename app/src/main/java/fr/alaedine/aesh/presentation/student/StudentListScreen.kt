@@ -29,9 +29,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
@@ -78,17 +80,20 @@ fun StudentListScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Students") },
+                title = { Text(text = stringResource(R.string.student_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddStudent) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add student")
+                Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_student))
             }
         },
     ) { contentPadding ->
@@ -100,7 +105,7 @@ fun StudentListScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "No students yet. Tap + to add one.",
+                    text = stringResource(R.string.student_list_empty),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -150,7 +155,7 @@ private fun StudentRow(student: Student, onClick: () -> Unit, onDeleteClick: () 
             IconButton(onClick = onDeleteClick) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete ${student.firstName}",
+                    contentDescription = stringResource(R.string.cd_delete_student, student.firstName),
                 )
             }
         }
@@ -161,16 +166,16 @@ private fun StudentRow(student: Student, onClick: () -> Unit, onDeleteClick: () 
 private fun DeleteStudentConfirmationDialog(student: Student, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Delete ${student.firstName}?") },
-        text = { Text(text = "This will permanently remove this student and cannot be undone.") },
+        title = { Text(text = stringResource(R.string.confirm_delete_title, student.firstName)) },
+        text = { Text(text = stringResource(R.string.delete_student_confirm_text)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(text = "Delete")
+                Text(text = stringResource(R.string.action_delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.action_cancel))
             }
         },
     )

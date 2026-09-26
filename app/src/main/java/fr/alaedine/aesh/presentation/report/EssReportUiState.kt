@@ -33,7 +33,7 @@ data class EssReportUiState(
     val isGenerating: Boolean = false,
     val generatedText: String? = null,
     val isLoadingStudents: Boolean = true,
-    val statusMessage: String? = null,
+    val statusMessage: EssReportStatusMessage? = null,
 ) {
     /** Whether the start/end range is valid and a student is picked, allowing generation to start. */
     val canGenerate: Boolean
@@ -48,4 +48,29 @@ data class EssReportUiState(
             val studentPart = selectedStudent?.firstName?.lowercase() ?: "student"
             return "ess-report-$studentPart-$startDate-to-$endDate.pdf"
         }
+}
+
+/**
+ * One-shot result of an [EssReportViewModel] generation/export operation.
+ *
+ * Kept as a semantic type rather than a raw `String` so [EssReportViewModel]
+ * stays free of Android resources/`Context`; [EssReportScreen] maps each
+ * variant to localized text via `stringResource`.
+ */
+sealed interface EssReportStatusMessage {
+    /** No daily reports exist for [studentFirstName] within the selected date range. */
+    data class NoReportsInRange(val studentFirstName: String) : EssReportStatusMessage
+
+    /** The on-device generative model isn't supported on this device. */
+    data object AiFeatureUnavailable : EssReportStatusMessage
+
+    /**
+     * Generation failed for an unexpected reason; [reason] is the
+     * underlying (untranslated) error message when available, falling back
+     * to a generic localized message otherwise.
+     */
+    data class GenerationFailed(val reason: String?) : EssReportStatusMessage
+    data object ExportSuccess : EssReportStatusMessage
+    data class ExportFailed(val reason: String) : EssReportStatusMessage
+    data object ExportFileOpenFailed : EssReportStatusMessage
 }

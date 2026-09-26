@@ -21,9 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -74,10 +76,19 @@ fun StudentFormScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = if (uiState.isEditing) "Edit student" else "Add student") },
+                title = {
+                    Text(
+                        text = stringResource(
+                            if (uiState.isEditing) R.string.student_form_title_edit else R.string.student_form_title_add,
+                        ),
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -94,21 +105,21 @@ fun StudentFormScreen(
             OutlinedTextField(
                 value = uiState.firstName,
                 onValueChange = onFirstNameChanged,
-                label = { Text(text = "First name") },
+                label = { Text(text = stringResource(R.string.student_form_first_name)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = uiState.className,
                 onValueChange = onClassNameChanged,
-                label = { Text(text = "Class") },
+                label = { Text(text = stringResource(R.string.student_form_class)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = uiState.ppsGoals,
                 onValueChange = onPpsGoalsChanged,
-                label = { Text(text = "PPS goals") },
+                label = { Text(text = stringResource(R.string.student_form_pps_goals)) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -117,7 +128,7 @@ fun StudentFormScreen(
                 enabled = uiState.canSave,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "Save")
+                Text(text = stringResource(R.string.action_save))
             }
         }
     }

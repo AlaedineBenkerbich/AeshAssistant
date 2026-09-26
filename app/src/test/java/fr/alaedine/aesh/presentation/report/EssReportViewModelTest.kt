@@ -2,6 +2,7 @@ package fr.alaedine.aesh.presentation.report
 
 import fr.alaedine.aesh.domain.model.DailyReport
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
 import fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase
 import fr.alaedine.aesh.presentation.student.FakeStudentRepository
@@ -148,7 +149,29 @@ class EssReportViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isGenerating)
         assertNull(state.generatedText)
-        assertEquals("On-device AI isn't available on this device.", state.statusMessage)
+        assertEquals(
+            EssReportStatusMessage.GenerationFailed("On-device AI isn't available on this device."),
+            state.statusMessage,
+        )
+    }
+
+    @Test
+    fun `should show a dedicated message when the on-device AI feature is unavailable`() = runTest {
+        // Given
+        val viewModel = viewModel(
+            dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(report())),
+            aiTextGenerationRepository = FakeAiTextGenerationRepository(Result.failure(AiFeatureUnavailableException())),
+        )
+        viewModel.onStudentSelected(alice)
+
+        // When
+        viewModel.onGenerateClicked()
+
+        // Then
+        val state = viewModel.uiState.value
+        assertFalse(state.isGenerating)
+        assertNull(state.generatedText)
+        assertEquals(EssReportStatusMessage.AiFeatureUnavailable, state.statusMessage)
     }
 
     @Test
@@ -164,7 +187,7 @@ class EssReportViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isGenerating)
         assertNull(state.generatedText)
-        assertEquals("No daily reports found for Alice in the selected period.", state.statusMessage)
+        assertEquals(EssReportStatusMessage.NoReportsInRange("Alice"), state.statusMessage)
     }
 
     @Test
@@ -216,12 +239,13 @@ class EssReportViewModelTest {
         val destination = ByteArrayOutputStream()
 
         // When
-        viewModel.onExportRequested(destination)
+        viewModel.onExportRequested(destination, "ESS report — Alice")
 
         // Then
+        assertEquals("ESS report — Alice", pdfExportRepository.exportedTitle)
         assertEquals("Report body.", pdfExportRepository.exportedBody)
         assertEquals(destination, pdfExportRepository.exportedTo)
-        assertEquals("PDF exported successfully.", viewModel.uiState.value.statusMessage)
+        assertEquals(EssReportStatusMessage.ExportSuccess, viewModel.uiState.value.statusMessage)
     }
 
     @Test
@@ -232,7 +256,7 @@ class EssReportViewModelTest {
         viewModel.onStudentSelected(alice)
 
         // When
-        viewModel.onExportRequested(ByteArrayOutputStream())
+        viewModel.onExportRequested(ByteArrayOutputStream(), "ESS report — Alice")
 
         // Then
         assertNull(pdfExportRepository.exportedTo)
@@ -250,10 +274,10 @@ class EssReportViewModelTest {
         viewModel.onGenerateClicked()
 
         // When
-        viewModel.onExportRequested(ByteArrayOutputStream())
+        viewModel.onExportRequested(ByteArrayOutputStream(), "ESS report — Alice")
 
         // Then
-        assertEquals("Export failed: disk full", viewModel.uiState.value.statusMessage)
+        assertEquals(EssReportStatusMessage.ExportFailed("disk full"), viewModel.uiState.value.statusMessage)
     }
 
     @Test
@@ -265,7 +289,7 @@ class EssReportViewModelTest {
         viewModel.onExportFailedToOpenFile()
 
         // Then
-        assertEquals("Export failed: couldn't open the selected file.", viewModel.uiState.value.statusMessage)
+        assertEquals(EssReportStatusMessage.ExportFileOpenFailed, viewModel.uiState.value.statusMessage)
     }
 
     @Test

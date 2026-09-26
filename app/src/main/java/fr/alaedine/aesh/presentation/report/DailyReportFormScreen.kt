@@ -33,9 +33,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.time.LocalDate
@@ -102,10 +104,13 @@ fun DailyReportFormScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Daily observation") },
+                title = { Text(text = stringResource(R.string.daily_report_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -151,7 +156,7 @@ private fun DailyReportForm(
 
         if (uiState.students.isEmpty() && !uiState.isLoading) {
             Text(
-                text = "No students yet. Add one before filling out a report.",
+                text = stringResource(R.string.daily_report_empty_students),
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {
@@ -163,17 +168,25 @@ private fun DailyReportForm(
         }
 
         if (uiState.selectedStudent != null) {
-            LevelSlider(label = "Mood", level = uiState.moodLevel, onLevelChanged = onMoodLevelChanged)
-            LevelSlider(label = "Focus", level = uiState.focusLevel, onLevelChanged = onFocusLevelChanged)
             LevelSlider(
-                label = "Social interactions",
+                label = stringResource(R.string.daily_report_mood),
+                level = uiState.moodLevel,
+                onLevelChanged = onMoodLevelChanged,
+            )
+            LevelSlider(
+                label = stringResource(R.string.daily_report_focus),
+                level = uiState.focusLevel,
+                onLevelChanged = onFocusLevelChanged,
+            )
+            LevelSlider(
+                label = stringResource(R.string.daily_report_social_interactions),
                 level = uiState.socialInteractions,
                 onLevelChanged = onSocialInteractionsChanged,
             )
             OutlinedTextField(
                 value = uiState.freeNotes,
                 onValueChange = onFreeNotesChanged,
-                label = { Text(text = "Notes") },
+                label = { Text(text = stringResource(R.string.daily_report_notes)) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -184,7 +197,7 @@ private fun DailyReportForm(
             enabled = uiState.canSave,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = "Save")
+            Text(text = stringResource(R.string.action_save))
         }
     }
 }
@@ -202,11 +215,11 @@ private fun StudentDropdown(
         onExpandedChange = { isExpanded = it },
     ) {
         OutlinedTextField(
-            value = selectedStudent?.let { "${it.firstName} — ${it.className}" } ?: "",
+            value = selectedStudent?.let { stringResource(R.string.student_display_name, it.firstName, it.className) } ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text(text = "Student") },
-            placeholder = { Text(text = "Select a student") },
+            label = { Text(text = stringResource(R.string.label_student)) },
+            placeholder = { Text(text = stringResource(R.string.placeholder_select_student)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -218,7 +231,7 @@ private fun StudentDropdown(
         ) {
             students.forEach { student ->
                 DropdownMenuItem(
-                    text = { Text(text = "${student.firstName} — ${student.className}") },
+                    text = { Text(text = stringResource(R.string.student_display_name, student.firstName, student.className)) },
                     onClick = {
                         onStudentSelected(student)
                         isExpanded = false
@@ -255,7 +268,7 @@ private fun SavedConfirmation(modifier: Modifier = Modifier) {
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(64.dp),
         )
-        Text(text = "Report saved", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(R.string.daily_report_saved), style = MaterialTheme.typography.titleMedium)
     }
 }
 

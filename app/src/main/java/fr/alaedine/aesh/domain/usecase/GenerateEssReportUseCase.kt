@@ -76,5 +76,5 @@ class GenerateEssReportUseCase(
 }
 
 /** Thrown by [GenerateEssReportUseCase] when the student has no daily reports in the selected date range. */
-class NoReportsInRangeException(studentFirstName: String) :
+class NoReportsInRangeException(val studentFirstName: String) :
     Exception("No daily reports found for $studentFirstName in the selected period.")

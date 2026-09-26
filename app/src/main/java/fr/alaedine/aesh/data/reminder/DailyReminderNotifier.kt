@@ -38,8 +38,8 @@ class DailyReminderNotifier(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_reminder)
-            .setContentTitle("Daily reports pending")
-            .setContentText("Some students are still missing today's report.")
+            .setContentTitle(context.getString(R.string.notification_daily_report_title))
+            .setContentText(context.getString(R.string.notification_daily_report_text))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .build()
@@ -50,10 +50,10 @@ class DailyReminderNotifier(private val context: Context) {
     private fun ensureChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Daily report reminders",
+            context.getString(R.string.notification_channel_daily_report_name),
             NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
-            description = "Reminds you to fill out today's student reports."
+            description = context.getString(R.string.notification_channel_daily_report_description)
         }
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }

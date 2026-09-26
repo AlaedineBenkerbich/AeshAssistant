@@ -48,12 +48,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.io.File
@@ -134,10 +136,13 @@ fun ScheduleScannerScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Scan schedule") },
+                title = { Text(text = stringResource(R.string.schedule_scanner_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -182,9 +187,9 @@ fun ScheduleScannerScreen(
                             CircularProgressIndicator()
                         }
                     }
-                    uiState.errorMessage?.let { message ->
+                    uiState.error?.let { error ->
                         ErrorBanner(
-                            message = message,
+                            message = resolvedErrorMessage(error),
                             onDismiss = onErrorDismissed,
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
@@ -195,6 +200,13 @@ fun ScheduleScannerScreen(
             }
         }
     }
+}
+
+/** Resolves a [ScheduleScannerError] to its localized banner text. */
+@Composable
+private fun resolvedErrorMessage(error: ScheduleScannerError): String = when (error) {
+    ScheduleScannerError.NoTextRecognized -> stringResource(R.string.schedule_scanner_no_text_recognized)
+    ScheduleScannerError.RecognitionFailed -> stringResource(R.string.schedule_scanner_read_failed)
 }
 
 /**
@@ -285,11 +297,11 @@ private fun CameraPermissionRationale(onRequestPermission: () -> Unit, modifier:
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Camera access is needed to scan a physical schedule.",
+            text = stringResource(R.string.schedule_scanner_camera_rationale),
             style = MaterialTheme.typography.bodyLarge,
         )
         Button(onClick = onRequestPermission) {
-            Text(text = "Grant camera access")
+            Text(text = stringResource(R.string.schedule_scanner_grant_access))
         }
     }
 }
@@ -300,7 +312,7 @@ private fun ErrorBanner(message: String, onDismiss: () -> Unit, modifier: Modifi
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = message, style = MaterialTheme.typography.bodyMedium)
             TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                Text(text = "OK")
+                Text(text = stringResource(R.string.action_ok))
             }
         }
     }
@@ -319,9 +331,9 @@ private fun ScheduleScanReview(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(text = "Review the recognized details", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(R.string.schedule_scanner_review_title), style = MaterialTheme.typography.titleMedium)
         Text(
-            text = "Check every field below before adding it to your schedule — text recognition isn't always perfect.",
+            text = stringResource(R.string.schedule_scanner_review_subtitle),
             style = MaterialTheme.typography.bodyMedium,
         )
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -329,18 +341,24 @@ private fun ScheduleScanReview(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ScanResultRow(label = "Day", value = parsed.dayOfWeek?.displayName())
-                ScanResultRow(label = "Start time", value = parsed.startTime?.format(TIME_FORMATTER))
-                ScanResultRow(label = "End time", value = parsed.endTime?.format(TIME_FORMATTER))
-                ScanResultRow(label = "Subject", value = parsed.subject)
-                ScanResultRow(label = "Room", value = parsed.room)
+                ScanResultRow(label = stringResource(R.string.schedule_field_day), value = parsed.dayOfWeek?.displayName())
+                ScanResultRow(
+                    label = stringResource(R.string.schedule_field_start_time),
+                    value = parsed.startTime?.format(TIME_FORMATTER),
+                )
+                ScanResultRow(
+                    label = stringResource(R.string.schedule_field_end_time),
+                    value = parsed.endTime?.format(TIME_FORMATTER),
+                )
+                ScanResultRow(label = stringResource(R.string.schedule_field_subject), value = parsed.subject)
+                ScanResultRow(label = stringResource(R.string.schedule_field_room), value = parsed.room)
             }
         }
         Button(onClick = onConfirm, modifier = Modifier.fillMaxWidth()) {
-            Text(text = "Use these details")
+            Text(text = stringResource(R.string.schedule_scanner_use_details))
         }
         OutlinedButton(onClick = onRetake, modifier = Modifier.fillMaxWidth()) {
-            Text(text = "Retake photo")
+            Text(text = stringResource(R.string.schedule_scanner_retake_photo))
         }
     }
 }
@@ -353,7 +371,7 @@ private fun ScanResultRow(label: String, value: String?) {
     ) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
         Text(
-            text = value ?: "Not recognized",
+            text = value ?: stringResource(R.string.schedule_scanner_not_recognized),
             style = MaterialTheme.typography.bodyLarge,
             color = if (value == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
         )

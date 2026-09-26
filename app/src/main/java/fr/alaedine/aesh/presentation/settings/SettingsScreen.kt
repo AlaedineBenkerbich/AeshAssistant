@@ -29,9 +29,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.time.LocalDate
 import org.koin.androidx.compose.koinViewModel
@@ -112,10 +114,11 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val statusMessageText = uiState.statusMessage?.let { resolvedStatusMessage(it) }
 
     LaunchedEffect(uiState.statusMessage) {
-        val statusMessage = uiState.statusMessage ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(statusMessage)
+        val message = statusMessageText ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
         onStatusMessageShown()
     }
 
@@ -123,10 +126,13 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = uiState.title) },
+                title = { Text(text = stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -140,15 +146,15 @@ fun SettingsScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(text = "Data backup", style = MaterialTheme.typography.titleMedium)
-            Text(text = uiState.message, style = MaterialTheme.typography.bodyMedium)
+            Text(text = stringResource(R.string.settings_section_data_backup), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.settings_message), style = MaterialTheme.typography.bodyMedium)
 
             Button(
                 onClick = onExportClicked,
                 enabled = !uiState.isProcessing,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "Export backup")
+                Text(text = stringResource(R.string.settings_export_backup))
             }
 
             OutlinedButton(
@@ -156,7 +162,7 @@ fun SettingsScreen(
                 enabled = !uiState.isProcessing,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "Restore backup")
+                Text(text = stringResource(R.string.settings_restore_backup))
             }
 
             if (uiState.isProcessing) {
@@ -170,25 +176,33 @@ fun SettingsScreen(
     }
 }
 
+/** Resolves a one-shot [SettingsStatusMessage] to its localized Snackbar text. */
+@Composable
+private fun resolvedStatusMessage(message: SettingsStatusMessage): String = when (message) {
+    is SettingsStatusMessage.ExportSuccess -> stringResource(R.string.settings_export_success)
+    is SettingsStatusMessage.ExportFailed -> stringResource(R.string.settings_export_failed, message.reason)
+    is SettingsStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
+    is SettingsStatusMessage.RestoreSuccess -> stringResource(R.string.settings_restore_success)
+    is SettingsStatusMessage.RestoreFailed -> stringResource(R.string.settings_restore_failed, message.reason)
+    is SettingsStatusMessage.RestoreFileOpenFailed -> stringResource(R.string.settings_restore_file_open_failed)
+}
+
 @Composable
 private fun RestoreConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Restore backup?") },
+        title = { Text(text = stringResource(R.string.settings_restore_confirm_title)) },
         text = {
-            Text(
-                text = "This will replace all current students, daily reports and schedule slots with " +
-                    "the content of the selected file. This cannot be undone.",
-            )
+            Text(text = stringResource(R.string.settings_restore_confirm_text))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(text = "Choose file…")
+                Text(text = stringResource(R.string.settings_choose_file))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.action_cancel))
             }
         },
     )

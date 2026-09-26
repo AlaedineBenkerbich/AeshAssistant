@@ -60,7 +60,7 @@ class SettingsViewModelTest {
         // Then
         val state = viewModel.uiState.value
         assertFalse(state.isProcessing)
-        assertEquals("Backup exported successfully.", state.statusMessage)
+        assertEquals(SettingsStatusMessage.ExportSuccess, state.statusMessage)
         assertSame(destination, repository.exportedTo)
     }
 
@@ -76,7 +76,7 @@ class SettingsViewModelTest {
         // Then
         val state = viewModel.uiState.value
         assertFalse(state.isProcessing)
-        assertEquals("Export failed: disk full", state.statusMessage)
+        assertEquals(SettingsStatusMessage.ExportFailed("disk full"), state.statusMessage)
     }
 
     @Test
@@ -88,7 +88,7 @@ class SettingsViewModelTest {
         viewModel.onExportFailedToOpenFile()
 
         // Then
-        assertEquals("Export failed: couldn't open the selected file.", viewModel.uiState.value.statusMessage)
+        assertEquals(SettingsStatusMessage.ExportFileOpenFailed, viewModel.uiState.value.statusMessage)
     }
 
     @Test
@@ -142,7 +142,7 @@ class SettingsViewModelTest {
         // Then
         val state = viewModel.uiState.value
         assertFalse(state.isProcessing)
-        assertEquals("Backup restored successfully.", state.statusMessage)
+        assertEquals(SettingsStatusMessage.RestoreSuccess, state.statusMessage)
         assertSame(source, repository.importedFrom)
     }
 
@@ -158,7 +158,7 @@ class SettingsViewModelTest {
         // Then
         val state = viewModel.uiState.value
         assertFalse(state.isProcessing)
-        assertEquals("Restore failed: malformed JSON", state.statusMessage)
+        assertEquals(SettingsStatusMessage.RestoreFailed("malformed JSON"), state.statusMessage)
     }
 
     @Test
@@ -170,7 +170,7 @@ class SettingsViewModelTest {
         viewModel.onRestoreFailedToOpenFile()
 
         // Then
-        assertEquals("Restore failed: couldn't open the selected file.", viewModel.uiState.value.statusMessage)
+        assertEquals(SettingsStatusMessage.RestoreFileOpenFailed, viewModel.uiState.value.statusMessage)
     }
 
     @Test

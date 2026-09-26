@@ -36,16 +36,16 @@ class SettingsViewModel(
             runCatching { backupRepository.exportBackup(destination) }
                 .onSuccess {
                     _uiState.update {
-                        it.copy(isProcessing = false, statusMessage = "Backup exported successfully.")
+                        it.copy(isProcessing = false, statusMessage = SettingsStatusMessage.ExportSuccess)
                     }
                 }
-                .onFailure { error -> handleFailure(error, operation = "Export") }
+                .onFailure { error -> handleFailure(error) { reason -> SettingsStatusMessage.ExportFailed(reason) } }
         }
     }
 
     /** Reports that the SAF-picked export destination couldn't be opened for writing. */
     fun onExportFailedToOpenFile() {
-        _uiState.update { it.copy(statusMessage = "Export failed: couldn't open the selected file.") }
+        _uiState.update { it.copy(statusMessage = SettingsStatusMessage.ExportFileOpenFailed) }
     }
 
     /** Shows the "this replaces all local data" warning before restoring. */
@@ -64,7 +64,7 @@ class SettingsViewModel(
 
     /** Reports that the SAF-picked restore source couldn't be opened for reading. */
     fun onRestoreFailedToOpenFile() {
-        _uiState.update { it.copy(statusMessage = "Restore failed: couldn't open the selected file.") }
+        _uiState.update { it.copy(statusMessage = SettingsStatusMessage.RestoreFileOpenFailed) }
     }
 
     /** Replaces the full local database with the JSON content read from [source] (a SAF-picked file). */
@@ -74,10 +74,10 @@ class SettingsViewModel(
             runCatching { backupRepository.importBackup(source) }
                 .onSuccess {
                     _uiState.update {
-                        it.copy(isProcessing = false, statusMessage = "Backup restored successfully.")
+                        it.copy(isProcessing = false, statusMessage = SettingsStatusMessage.RestoreSuccess)
                     }
                 }
-                .onFailure { error -> handleFailure(error, operation = "Restore") }
+                .onFailure { error -> handleFailure(error) { reason -> SettingsStatusMessage.RestoreFailed(reason) } }
         }
     }
 
@@ -86,9 +86,9 @@ class SettingsViewModel(
         _uiState.update { it.copy(statusMessage = null) }
     }
 
-    private fun handleFailure(error: Throwable, operation: String) {
+    private fun handleFailure(error: Throwable, toMessage: (String) -> SettingsStatusMessage) {
         // Coroutine cancellation must always propagate, never be swallowed as a "failure".
         if (error is CancellationException) throw error
-        _uiState.update { it.copy(isProcessing = false, statusMessage = "$operation failed: ${error.message}") }
+        _uiState.update { it.copy(isProcessing = false, statusMessage = toMessage(error.message.orEmpty())) }
     }
 }

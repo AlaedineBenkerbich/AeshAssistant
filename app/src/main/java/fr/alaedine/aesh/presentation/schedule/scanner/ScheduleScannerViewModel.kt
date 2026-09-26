@@ -31,17 +31,14 @@ class ScheduleScannerViewModel(
      * and is deleted once recognition completes, regardless of outcome.
      */
     fun onPhotoCaptured(imageFile: File) {
-        _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
+        _uiState.update { it.copy(isProcessing = true, error = null) }
         viewModelScope.launch {
             scheduleScannerRepository.recognizeText(imageFile)
                 .onSuccess { text ->
                     val parsed = ScheduleTextParser.parse(text)
                     _uiState.update {
                         if (parsed.isEmpty) {
-                            it.copy(
-                                isProcessing = false,
-                                errorMessage = "No text recognized. Try retaking the photo with better lighting or focus.",
-                            )
+                            it.copy(isProcessing = false, error = ScheduleScannerError.NoTextRecognized)
                         } else {
                             it.copy(isProcessing = false, parsedScheduleSlot = parsed)
                         }
@@ -49,10 +46,7 @@ class ScheduleScannerViewModel(
                 }
                 .onFailure {
                     _uiState.update {
-                        it.copy(
-                            isProcessing = false,
-                            errorMessage = "Couldn't read the photo. Please try again.",
-                        )
+                        it.copy(isProcessing = false, error = ScheduleScannerError.RecognitionFailed)
                     }
                 }
             imageFile.delete()
@@ -61,11 +55,11 @@ class ScheduleScannerViewModel(
 
     /** Discards the current result so the user can retake the photo. */
     fun onRetake() {
-        _uiState.update { it.copy(parsedScheduleSlot = null, errorMessage = null) }
+        _uiState.update { it.copy(parsedScheduleSlot = null, error = null) }
     }
 
     /** Dismisses the current error message, returning to the live viewfinder. */
     fun onErrorDismissed() {
-        _uiState.update { it.copy(errorMessage = null) }
+        _uiState.update { it.copy(error = null) }
     }
 }

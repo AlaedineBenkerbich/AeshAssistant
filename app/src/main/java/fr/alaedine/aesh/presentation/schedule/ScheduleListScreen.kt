@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -90,17 +91,20 @@ fun ScheduleListScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Weekly schedule") },
+                title = { Text(text = stringResource(R.string.schedule_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = onScanScheduleSlot) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_camera),
-                            contentDescription = "Scan a physical schedule",
+                            contentDescription = stringResource(R.string.cd_scan_schedule),
                         )
                     }
                 },
@@ -108,7 +112,7 @@ fun ScheduleListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddScheduleSlot) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add class slot")
+                Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_schedule_slot))
             }
         },
     ) { contentPadding ->
@@ -120,7 +124,7 @@ fun ScheduleListScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "No classes yet. Tap + to add one.",
+                    text = stringResource(R.string.schedule_list_empty),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -181,7 +185,7 @@ private fun ScheduleSlotRow(scheduleSlot: ScheduleSlot, onClick: () -> Unit, onD
             IconButton(onClick = onDeleteClick) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete ${scheduleSlot.subject}",
+                    contentDescription = stringResource(R.string.cd_delete_schedule_slot, scheduleSlot.subject),
                 )
             }
         }
@@ -192,16 +196,16 @@ private fun ScheduleSlotRow(scheduleSlot: ScheduleSlot, onClick: () -> Unit, onD
 private fun DeleteScheduleSlotConfirmationDialog(scheduleSlot: ScheduleSlot, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Delete ${scheduleSlot.subject}?") },
-        text = { Text(text = "This will permanently remove this class slot and cannot be undone.") },
+        title = { Text(text = stringResource(R.string.confirm_delete_title, scheduleSlot.subject)) },
+        text = { Text(text = stringResource(R.string.delete_schedule_slot_confirm_text)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(text = "Delete")
+                Text(text = stringResource(R.string.action_delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.action_cancel))
             }
         },
     )
