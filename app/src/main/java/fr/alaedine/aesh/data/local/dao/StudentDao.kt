@@ -22,9 +22,17 @@ interface StudentDao {
     @Insert
     suspend fun insert(student: StudentEntity): Long
 
+    /** Inserts every one of [students], preserving their ids; used when restoring a backup (see `BackupRepositoryImpl`). */
+    @Insert
+    suspend fun insertAll(students: List<StudentEntity>)
+
     @Update
     suspend fun update(student: StudentEntity)
 
     @Delete
     suspend fun delete(student: StudentEntity)
+
+    /** Removes every row; used when restoring a backup (see `BackupRepositoryImpl`). */
+    @Query("DELETE FROM students")
+    suspend fun deleteAll()
 }

@@ -23,9 +23,17 @@ interface ScheduleSlotDao {
     @Insert
     suspend fun insert(scheduleSlot: ScheduleSlotEntity): Long
 
+    /** Inserts every one of [scheduleSlots], preserving their ids; used when restoring a backup (see `BackupRepositoryImpl`). */
+    @Insert
+    suspend fun insertAll(scheduleSlots: List<ScheduleSlotEntity>)
+
     @Update
     suspend fun update(scheduleSlot: ScheduleSlotEntity)
 
     @Delete
     suspend fun delete(scheduleSlot: ScheduleSlotEntity)
+
+    /** Removes every row; used when restoring a backup (see `BackupRepositoryImpl`). */
+    @Query("DELETE FROM schedule_slots")
+    suspend fun deleteAll()
 }
