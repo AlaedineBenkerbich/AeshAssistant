@@ -127,12 +127,20 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // Schedules the daily report reminder (see `data.reminder`) so it keeps
+    // firing across app restarts and device reboots without a foreground
+    // service or exact alarms.
+    implementation(libs.androidx.work.runtime.ktx)
+
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     // Lets Room DAO/repository tests run as fast local JVM unit tests (no
     // emulator needed): Robolectric shadows the Android framework (incl.
     // SQLite) so Room behaves the same as it would on a real device.
     testImplementation(libs.robolectric)
+    // Builds/runs `CoroutineWorker`s synchronously in local JVM unit tests
+    // (see `DailyReportReminderWorkerTest`).
+    testImplementation(libs.androidx.work.testing)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.junit)

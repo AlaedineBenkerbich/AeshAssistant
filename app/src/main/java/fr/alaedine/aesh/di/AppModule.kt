@@ -1,6 +1,7 @@
 package fr.alaedine.aesh.di
 
 import fr.alaedine.aesh.data.di.dataModule
+import fr.alaedine.aesh.data.di.reminderModule
 import fr.alaedine.aesh.presentation.di.presentationModule
 
 /**
@@ -11,4 +12,4 @@ import fr.alaedine.aesh.presentation.di.presentationModule
  * ViewModels receive domain use cases/repositories through constructor
  * injection rather than reaching into data sources directly.
  */
-val appModules = listOf(presentationModule, dataModule)
+val appModules = listOf(presentationModule, dataModule, reminderModule)
