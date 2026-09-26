@@ -1,6 +1,7 @@
 package fr.alaedine.aesh.presentation.di
 
 import fr.alaedine.aesh.presentation.home.HomeViewModel
+import fr.alaedine.aesh.presentation.report.DailyReportFormViewModel
 import fr.alaedine.aesh.presentation.settings.SettingsViewModel
 import fr.alaedine.aesh.presentation.student.StudentFormViewModel
 import fr.alaedine.aesh.presentation.student.StudentListViewModel
@@ -22,4 +23,5 @@ val presentationModule = module {
     // editing) is supplied at call time via `koinViewModel(parameters = ...)`
     // from the navigation argument, see `StudentFormRoute`.
     viewModel { params -> StudentFormViewModel(get(), params.getOrNull()) }
+    viewModel { DailyReportFormViewModel(get(), get()) }
 }

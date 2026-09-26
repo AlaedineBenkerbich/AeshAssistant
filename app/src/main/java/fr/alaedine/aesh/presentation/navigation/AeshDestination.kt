@@ -31,4 +31,8 @@ sealed interface AeshDestination {
     /** Form to edit the existing student identified by [studentId] (see `StudentFormRoute`). */
     @Serializable
     data class EditStudent(val studentId: Long) : AeshDestination
+
+    /** Daily observation form; the student is picked from within the form (see `DailyReportFormRoute`). */
+    @Serializable
+    data object DailyReportForm : AeshDestination
 }
