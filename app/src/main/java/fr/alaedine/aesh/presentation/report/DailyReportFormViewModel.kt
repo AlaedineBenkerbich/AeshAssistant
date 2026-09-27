@@ -13,16 +13,19 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /**
  * Presentation-layer state holder for the daily observation form.
  *
  * Keeps the student picker in sync with [studentRepository]. Once a student
- * is picked, [onStudentSelected] looks up that student's report for today
- * via [DailyReportRepository.getReportByDateAndStudent]: the
- * `(studentId, date)` unique index allows at most one, so re-opening the
- * form for the same student later the same day edits that existing report
- * instead of violating the constraint with a duplicate insert.
+ * is picked and/or a date is chosen via [onDateSelected] (defaults to
+ * today, letting a missed observation be backfilled for a previous day),
+ * that `(date, studentId)` pair's report is looked up via
+ * [DailyReportRepository.getReportByDateAndStudent]: the pair is a unique
+ * index allowing at most one report, so re-opening the form for the same
+ * student/day edits that existing report instead of violating the
+ * constraint with a duplicate insert.
  */
 class DailyReportFormViewModel(
     private val dailyReportRepository: DailyReportRepository,
@@ -38,7 +41,7 @@ class DailyReportFormViewModel(
             .launchIn(viewModelScope)
     }
 
-    /** Picks [student] as the subject of this report, loading today's existing report for them, if any. */
+    /** Picks [student] as the subject of this report, loading the currently selected date's existing report for them, if any. */
     fun onStudentSelected(student: Student) {
         _uiState.update {
             it.copy(
@@ -50,15 +53,45 @@ class DailyReportFormViewModel(
                 freeNotes = "",
             )
         }
-        loadTodaysReportFor(student)
+        loadReportFor(date = _uiState.value.date, student = student)
     }
 
-    private fun loadTodaysReportFor(student: Student) {
+    /**
+     * Switches the report to cover [date] instead of the previously
+     * selected one, letting a missed observation be backfilled for a
+     * previous day. Dates after today are rejected — an observation can't
+     * be logged for a day that hasn't happened yet — as a defensive
+     * fallback; [DailyReportFormScreen]'s date picker already prevents
+     * picking one.
+     */
+    fun onDateSelected(date: LocalDate) {
+        if (date.isAfter(LocalDate.now())) return
+        _uiState.update {
+            it.copy(
+                date = date,
+                reportId = null,
+                moodLevel = NEUTRAL_LEVEL,
+                focusLevel = NEUTRAL_LEVEL,
+                socialInteractions = NEUTRAL_LEVEL,
+                freeNotes = "",
+            )
+        }
+        val student = _uiState.value.selectedStudent ?: return
+        loadReportFor(date = date, student = student)
+    }
+
+    /** Loads [student]'s existing report for [date], if any, into the current form fields. */
+    private fun loadReportFor(
+        date: LocalDate,
+        student: Student,
+    ) {
         viewModelScope.launch {
-            val date = _uiState.value.date
             val existingReport = dailyReportRepository.getReportByDateAndStudent(date, student.id)
-            // Ignore a stale lookup if the user already switched to another student meanwhile.
-            if (existingReport == null || _uiState.value.selectedStudent?.id != student.id) return@launch
+            // Ignore a stale lookup if the user already switched to another student/date meanwhile.
+            val currentState = _uiState.value
+            if (existingReport == null || currentState.selectedStudent?.id != student.id || currentState.date != date) {
+                return@launch
+            }
             _uiState.update {
                 it.copy(
                     reportId = existingReport.id,
@@ -87,7 +120,7 @@ class DailyReportFormViewModel(
         _uiState.update { it.copy(freeNotes = freeNotes) }
     }
 
-    /** Persists the current field values, adding a new report or updating today's existing one. */
+    /** Persists the current field values, adding a new report or updating the selected date's existing one. */
     fun onSaveClicked() {
         val state = _uiState.value
         val student = state.selectedStudent ?: return

@@ -226,4 +226,149 @@ class DailyReportFormViewModelTest {
             assertEquals(emptyList(), dailyReportRepository.observeReports().first())
             assertFalse(viewModel.uiState.value.isSaved)
         }
+
+    @Test
+    fun `should default the report date to today`() =
+        runTest {
+            // Given / When
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+
+            // Then
+            assertEquals(today, viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should update the date when a previous day is selected`() =
+        runTest {
+            // Given
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+            val previousDay = today.minusDays(1)
+
+            // When
+            viewModel.onDateSelected(previousDay)
+
+            // Then
+            assertEquals(previousDay, viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should ignore selecting a date after today`() =
+        runTest {
+            // Given
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+
+            // When
+            viewModel.onDateSelected(today.plusDays(1))
+
+            // Then
+            assertEquals(today, viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should load a previous days existing report when backfilling for the selected student`() =
+        runTest {
+            // Given
+            val previousDay = today.minusDays(3)
+            val existingReport =
+                DailyReport(
+                    id = 7L,
+                    date = previousDay,
+                    studentId = alice.id,
+                    moodLevel = 2,
+                    focusLevel = 4,
+                    socialInteractions = 1,
+                    freeNotes = "Backfilled after forgetting to log it on the day",
+                )
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(existingReport)),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onDateSelected(previousDay)
+
+            // Then
+            val state = viewModel.uiState.value
+            assertTrue(state.isEditing)
+            assertEquals(existingReport.id, state.reportId)
+            assertEquals(existingReport.moodLevel, state.moodLevel)
+            assertEquals(existingReport.focusLevel, state.focusLevel)
+            assertEquals(existingReport.socialInteractions, state.socialInteractions)
+            assertEquals(existingReport.freeNotes, state.freeNotes)
+        }
+
+    @Test
+    fun `should reset fields to neutral defaults when switching to a date without an existing report`() =
+        runTest {
+            // Given
+            val existingReport =
+                DailyReport(
+                    id = 5L,
+                    date = today,
+                    studentId = alice.id,
+                    moodLevel = 5,
+                    focusLevel = 1,
+                    socialInteractions = 4,
+                    freeNotes = "Rough morning",
+                )
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(existingReport)),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onDateSelected(today.minusDays(1))
+
+            // Then
+            val state = viewModel.uiState.value
+            assertFalse(state.isEditing)
+            assertNull(state.reportId)
+            assertEquals(NEUTRAL_LEVEL, state.moodLevel)
+            assertEquals(NEUTRAL_LEVEL, state.focusLevel)
+            assertEquals(NEUTRAL_LEVEL, state.socialInteractions)
+            assertEquals("", state.freeNotes)
+        }
+
+    @Test
+    fun `should save a new report under the selected previous date when backfilling`() =
+        runTest {
+            // Given
+            val dailyReportRepository = FakeDailyReportRepository()
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = dailyReportRepository,
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+            val previousDay = today.minusDays(2)
+            viewModel.onStudentSelected(alice)
+            viewModel.onDateSelected(previousDay)
+            viewModel.onMoodLevelChanged(4)
+
+            // When
+            viewModel.onSaveClicked()
+
+            // Then
+            val savedReports = dailyReportRepository.observeReports().first()
+            assertEquals(1, savedReports.size)
+            assertEquals(previousDay, savedReports.first().date)
+            assertEquals(alice.id, savedReports.first().studentId)
+            assertEquals(4, savedReports.first().moodLevel)
+            assertTrue(viewModel.uiState.value.isSaved)
+        }
 }
