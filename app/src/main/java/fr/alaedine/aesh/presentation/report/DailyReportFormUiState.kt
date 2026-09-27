@@ -15,8 +15,10 @@ const val NEUTRAL_LEVEL = 3
  * day (see [fr.alaedine.aesh.domain.repository.DailyReportRepository.getReportByDateAndStudent]),
  * so re-opening the form the same day edits that report instead of
  * attempting a duplicate insert.
- * @property date The day this report covers; always today, this form
- * doesn't support backfilling past days.
+ * @property date The day this report covers. Defaults to today but can be
+ * changed to any day up to and including today (see
+ * [DailyReportFormViewModel.onDateSelected]), so a missed observation can
+ * be backfilled for a previous day.
  * @property students Students to pick from, kept in sync with
  * [fr.alaedine.aesh.domain.repository.StudentRepository.observeStudents].
  * @property selectedStudent The student this report is being filled out for,
@@ -47,7 +49,7 @@ data class DailyReportFormUiState(
     val isLoading: Boolean = true,
     val isSaved: Boolean = false,
 ) {
-    /** Whether this state represents editing today's existing report rather than adding a new one. */
+    /** Whether this state represents editing an existing report for [date] rather than adding a new one. */
     val isEditing: Boolean get() = reportId != null
 
     /** Whether a student has been picked and the form can be submitted. */

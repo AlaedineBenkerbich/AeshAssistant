@@ -1,5 +1,7 @@
 package fr.alaedine.aesh.presentation.report
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +13,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -22,9 +27,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,7 +50,9 @@ import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -76,6 +86,7 @@ fun DailyReportFormRoute(
 
     DailyReportFormScreen(
         uiState = uiState,
+        onDateSelected = viewModel::onDateSelected,
         onStudentSelected = viewModel::onStudentSelected,
         onMoodLevelChanged = viewModel::onMoodLevelChanged,
         onFocusLevelChanged = viewModel::onFocusLevelChanged,
@@ -91,6 +102,7 @@ fun DailyReportFormRoute(
 @Composable
 fun DailyReportFormScreen(
     uiState: DailyReportFormUiState,
+    onDateSelected: (LocalDate) -> Unit,
     onStudentSelected: (Student) -> Unit,
     onMoodLevelChanged: (Int) -> Unit,
     onFocusLevelChanged: (Int) -> Unit,
@@ -121,6 +133,7 @@ fun DailyReportFormScreen(
         } else {
             DailyReportForm(
                 uiState = uiState,
+                onDateSelected = onDateSelected,
                 onStudentSelected = onStudentSelected,
                 onMoodLevelChanged = onMoodLevelChanged,
                 onFocusLevelChanged = onFocusLevelChanged,
@@ -137,6 +150,7 @@ fun DailyReportFormScreen(
 @Composable
 private fun DailyReportForm(
     uiState: DailyReportFormUiState,
+    onDateSelected: (LocalDate) -> Unit,
     onStudentSelected: (Student) -> Unit,
     onMoodLevelChanged: (Int) -> Unit,
     onFocusLevelChanged: (Int) -> Unit,
@@ -153,7 +167,7 @@ private fun DailyReportForm(
                 .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(text = formattedDate(uiState.date), style = MaterialTheme.typography.bodyMedium)
+        DateField(date = uiState.date, onDateSelected = onDateSelected)
 
         if (uiState.students.isEmpty() && !uiState.isLoading) {
             Text(
@@ -202,6 +216,75 @@ private fun DailyReportForm(
         }
     }
 }
+
+/**
+ * A read-only field that opens a [DatePickerDialog] on tap, since a plain
+ * `OutlinedTextField` has no `onClick`. Restricted via
+ * [notAfterTodaySelectableDates] to today or earlier: an observation can't
+ * be logged for a day that hasn't happened yet, so this is how the form
+ * lets a missed observation be backfilled for a previous day.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateField(
+    date: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var isPickerVisible by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    LaunchedEffect(isPressed) {
+        if (isPressed) isPickerVisible = true
+    }
+
+    OutlinedTextField(
+        value = formattedDate(date),
+        onValueChange = {},
+        readOnly = true,
+        label = { Text(text = stringResource(R.string.daily_report_date)) },
+        trailingIcon = { Icon(imageVector = Icons.Default.DateRange, contentDescription = null) },
+        interactionSource = interactionSource,
+        modifier = modifier.fillMaxWidth(),
+    )
+
+    if (isPickerVisible) {
+        val pickerState =
+            rememberDatePickerState(
+                initialSelectedDateMillis = date.toUtcEpochMillis(),
+                selectableDates = notAfterTodaySelectableDates,
+            )
+        DatePickerDialog(
+            onDismissRequest = { isPickerVisible = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { onDateSelected(it.toUtcLocalDate()) }
+                    isPickerVisible = false
+                }) {
+                    Text(text = stringResource(R.string.action_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isPickerVisible = false }) {
+                    Text(text = stringResource(R.string.action_cancel))
+                }
+            },
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
+}
+
+/** Restricts [DateField]'s picker so no day after today can be selected. */
+private val notAfterTodaySelectableDates =
+    object : SelectableDates {
+        override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis.toUtcLocalDate() <= LocalDate.now()
+    }
+
+/** Material3's [rememberDatePickerState] operates in UTC epoch millis regardless of the device's time zone. */
+private fun LocalDate.toUtcEpochMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+private fun Long.toUtcLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -304,6 +387,7 @@ private fun DailyReportFormScreenPreview() {
                         ),
                     isLoading = false,
                 ),
+            onDateSelected = {},
             onStudentSelected = {},
             onMoodLevelChanged = {},
             onFocusLevelChanged = {},
@@ -331,6 +415,7 @@ private fun DailyReportFormScreenFilledPreview() {
                     freeNotes = "Great focus after the morning break.",
                     isLoading = false,
                 ),
+            onDateSelected = {},
             onStudentSelected = {},
             onMoodLevelChanged = {},
             onFocusLevelChanged = {},
@@ -348,6 +433,7 @@ private fun DailyReportFormScreenNoStudentsPreview() {
     AeshAssistantTheme {
         DailyReportFormScreen(
             uiState = DailyReportFormUiState(students = emptyList(), isLoading = false),
+            onDateSelected = {},
             onStudentSelected = {},
             onMoodLevelChanged = {},
             onFocusLevelChanged = {},
@@ -365,6 +451,7 @@ private fun DailyReportFormScreenSavedPreview() {
     AeshAssistantTheme {
         DailyReportFormScreen(
             uiState = DailyReportFormUiState(isLoading = false, isSaved = true),
+            onDateSelected = {},
             onStudentSelected = {},
             onMoodLevelChanged = {},
             onFocusLevelChanged = {},

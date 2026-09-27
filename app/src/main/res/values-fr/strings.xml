@@ -96,6 +96,7 @@
 
     <!-- Daily observation report form -->
     <string name="daily_report_title">Observation quotidienne</string>
+    <string name="daily_report_date">Date</string>
     <string name="daily_report_empty_students">Aucun élève pour le moment. Ajoutez-en un avant de remplir un rapport.</string>
     <string name="daily_report_mood">Humeur</string>
     <string name="daily_report_focus">Concentration</string>
