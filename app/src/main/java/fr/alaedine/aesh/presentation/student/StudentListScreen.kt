@@ -99,9 +99,10 @@ fun StudentListScreen(
     ) { contentPadding ->
         if (uiState.students.isEmpty() && !uiState.isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -111,9 +112,10 @@ fun StudentListScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -139,12 +141,17 @@ fun StudentListScreen(
 }
 
 @Composable
-private fun StudentRow(student: Student, onClick: () -> Unit, onDeleteClick: () -> Unit) {
+private fun StudentRow(
+    student: Student,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -163,7 +170,11 @@ private fun StudentRow(student: Student, onClick: () -> Unit, onDeleteClick: () 
 }
 
 @Composable
-private fun DeleteStudentConfirmationDialog(student: Student, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun DeleteStudentConfirmationDialog(
+    student: Student,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(R.string.confirm_delete_title, student.firstName)) },
@@ -186,13 +197,15 @@ private fun DeleteStudentConfirmationDialog(student: Student, onConfirm: () -> U
 private fun StudentListScreenPreview() {
     AeshAssistantTheme {
         StudentListScreen(
-            uiState = StudentListUiState(
-                students = listOf(
-                    Student(id = 1L, firstName = "Alice", className = "CE2"),
-                    Student(id = 2L, firstName = "Amir", className = "CM2"),
+            uiState =
+                StudentListUiState(
+                    students =
+                        listOf(
+                            Student(id = 1L, firstName = "Alice", className = "CE2"),
+                            Student(id = 2L, firstName = "Amir", className = "CM2"),
+                        ),
+                    isLoading = false,
                 ),
-                isLoading = false,
-            ),
             onAddStudent = {},
             onEditStudent = {},
             onNavigateBack = {},
@@ -224,11 +237,12 @@ private fun StudentListScreenEmptyPreview() {
 private fun StudentListScreenDeleteConfirmationPreview() {
     AeshAssistantTheme {
         StudentListScreen(
-            uiState = StudentListUiState(
-                students = listOf(Student(id = 1L, firstName = "Alice", className = "CE2")),
-                isLoading = false,
-                pendingDeletion = Student(id = 1L, firstName = "Alice", className = "CE2"),
-            ),
+            uiState =
+                StudentListUiState(
+                    students = listOf(Student(id = 1L, firstName = "Alice", className = "CE2")),
+                    isLoading = false,
+                    pendingDeletion = Student(id = 1L, firstName = "Alice", className = "CE2"),
+                ),
             onAddStudent = {},
             onEditStudent = {},
             onNavigateBack = {},

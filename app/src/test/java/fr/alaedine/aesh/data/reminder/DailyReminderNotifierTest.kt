@@ -20,7 +20,6 @@ import kotlin.test.assertTrue
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
 class DailyReminderNotifierTest {
-
     @Test
     fun `should post a reminder notification on its own channel when permission is granted`() {
         // Given
@@ -55,4 +54,3 @@ class DailyReminderNotifierTest {
         assertTrue(notificationManager.allNotifications.isEmpty())
     }
 }
-

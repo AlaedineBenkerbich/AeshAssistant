@@ -20,9 +20,10 @@ import org.koin.dsl.module
  * [HasIncompleteDailyReportsUseCase]/[DailyReminderNotifier] through Koin's
  * global context (see that class for why it needs that indirection).
  */
-val reminderModule = module {
-    single { WorkManager.getInstance(androidContext()) }
-    single { HasIncompleteDailyReportsUseCase(get(), get()) }
-    single { DailyReminderNotifier(androidContext()) }
-    single<ReminderScheduler> { WorkManagerReminderScheduler(get()) }
-}
+val reminderModule =
+    module {
+        single { WorkManager.getInstance(androidContext()) }
+        single { HasIncompleteDailyReportsUseCase(get(), get()) }
+        single { DailyReminderNotifier(androidContext()) }
+        single<ReminderScheduler> { WorkManagerReminderScheduler(get()) }
+    }

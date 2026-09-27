@@ -18,7 +18,10 @@ import java.io.OutputStream
  * user-picked file into a stream via `ContentResolver` and hands it here).
  */
 interface PdfExportRepository {
-
     /** Renders [title] followed by [body] as a paginated PDF, writing the result into [destination]. */
-    suspend fun exportTextAsPdf(title: String, body: String, destination: OutputStream)
+    suspend fun exportTextAsPdf(
+        title: String,
+        body: String,
+        destination: OutputStream,
+    )
 }

@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 /** Data Access Object for CRUD operations on [StudentEntity] rows. */
 @Dao
 interface StudentDao {
-
     @Query("SELECT * FROM students ORDER BY firstName ASC")
     fun observeAll(): Flow<List<StudentEntity>>
 

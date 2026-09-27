@@ -23,12 +23,12 @@ import kotlinx.coroutines.launch
 class ScheduleListViewModel(
     private val scheduleSlotRepository: ScheduleSlotRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(ScheduleListUiState())
     val uiState: StateFlow<ScheduleListUiState> = _uiState.asStateFlow()
 
     init {
-        scheduleSlotRepository.observeScheduleSlots()
+        scheduleSlotRepository
+            .observeScheduleSlots()
             .onEach { scheduleSlots -> _uiState.update { it.copy(scheduleSlots = scheduleSlots, isLoading = false) } }
             .launchIn(viewModelScope)
     }

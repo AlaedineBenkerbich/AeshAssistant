@@ -8,13 +8,12 @@ import androidx.room.Transaction
 import androidx.room.Update
 import fr.alaedine.aesh.data.local.entity.DailyReportEntity
 import fr.alaedine.aesh.data.local.entity.DailyReportWithStudent
-import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 /** Data Access Object for CRUD operations on [DailyReportEntity] rows. */
 @Dao
 interface DailyReportDao {
-
     @Query("SELECT * FROM daily_reports ORDER BY date DESC")
     fun observeAll(): Flow<List<DailyReportEntity>>
 
@@ -30,7 +29,10 @@ interface DailyReportDao {
     suspend fun getById(id: Long): DailyReportEntity?
 
     @Query("SELECT * FROM daily_reports WHERE date = :date AND studentId = :studentId")
-    suspend fun getByDateAndStudent(date: LocalDate, studentId: Long): DailyReportEntity?
+    suspend fun getByDateAndStudent(
+        date: LocalDate,
+        studentId: Long,
+    ): DailyReportEntity?
 
     /** Inserts [dailyReport] and returns its generated row id. */
     @Insert

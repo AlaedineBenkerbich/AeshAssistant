@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
  * intact.
  */
 interface ScheduleSlotRepository {
-
     /** Emits the current weekly schedule every time the underlying data changes. */
     fun observeScheduleSlots(): Flow<List<ScheduleSlot>>
 

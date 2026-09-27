@@ -16,7 +16,6 @@ package fr.alaedine.aesh.domain.repository
  * [fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase].
  */
 interface AiTextGenerationRepository {
-
     /**
      * Runs [prompt] through the on-device generative model, transparently
      * downloading it first if it isn't already present on this device (only

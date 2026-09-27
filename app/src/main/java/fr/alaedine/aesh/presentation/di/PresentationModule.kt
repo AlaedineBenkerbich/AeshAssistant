@@ -20,25 +20,25 @@ import org.koin.dsl.module
  * default factory, so this module is the single place that wires each
  * screen to its dependencies as the app grows.
  */
-val presentationModule = module {
-    viewModel { HomeViewModel(get(), get(), get()) }
-    viewModel { SettingsViewModel(get()) }
-    viewModel { StudentListViewModel(get()) }
-    // The nullable student id (null when adding, an existing id when
-    // editing) is supplied at call time via `koinViewModel(parameters = ...)`
-    // from the navigation argument, see `StudentFormRoute`.
-    viewModel { params -> StudentFormViewModel(get(), params.getOrNull()) }
-    viewModel { DailyReportFormViewModel(get(), get()) }
-    viewModel { EssReportViewModel(get(), get(), get()) }
-    viewModel { ScheduleListViewModel(get()) }
-    // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`
-    // above, plus an optional scanner pre-fill (both sourced from the
-    // navigation argument, see `ScheduleFormRoute`). Koin's `ParametersHolder`
-    // resolves each `getOrNull<T>()` call by matching type, so the two
-    // parameters can be passed/retrieved in any order.
-    viewModel { params ->
-        ScheduleFormViewModel(get(), params.getOrNull<Long>(), params.getOrNull<ParsedScheduleSlot>())
+val presentationModule =
+    module {
+        viewModel { HomeViewModel(get(), get(), get()) }
+        viewModel { SettingsViewModel(get()) }
+        viewModel { StudentListViewModel(get()) }
+        // The nullable student id (null when adding, an existing id when
+        // editing) is supplied at call time via `koinViewModel(parameters = ...)`
+        // from the navigation argument, see `StudentFormRoute`.
+        viewModel { params -> StudentFormViewModel(get(), params.getOrNull()) }
+        viewModel { DailyReportFormViewModel(get(), get()) }
+        viewModel { EssReportViewModel(get(), get(), get()) }
+        viewModel { ScheduleListViewModel(get()) }
+        // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`
+        // above, plus an optional scanner pre-fill (both sourced from the
+        // navigation argument, see `ScheduleFormRoute`). Koin's `ParametersHolder`
+        // resolves each `getOrNull<T>()` call by matching type, so the two
+        // parameters can be passed/retrieved in any order.
+        viewModel { params ->
+            ScheduleFormViewModel(get(), params.getOrNull<Long>(), params.getOrNull<ParsedScheduleSlot>())
+        }
+        viewModel { ScheduleScannerViewModel(get()) }
     }
-    viewModel { ScheduleScannerViewModel(get()) }
-}
-

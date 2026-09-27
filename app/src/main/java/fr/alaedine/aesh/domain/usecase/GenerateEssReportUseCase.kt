@@ -4,9 +4,9 @@ import fr.alaedine.aesh.domain.model.DailyReport
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.flow.first
 
 /**
  * Turns a student's daily observation notes over a date range into a
@@ -20,17 +20,23 @@ class GenerateEssReportUseCase(
     private val dailyReportRepository: DailyReportRepository,
     private val aiTextGenerationRepository: AiTextGenerationRepository,
 ) {
-
     /**
      * @return the generated report text, or a failed [Result] with
      * [NoReportsInRangeException] when [student] has no daily reports
      * between [startDate] and [endDate] (inclusive), or whatever
      * [AiTextGenerationRepository.generate] failed with otherwise.
      */
-    suspend operator fun invoke(student: Student, startDate: LocalDate, endDate: LocalDate): Result<String> {
-        val reports = dailyReportRepository.observeReportsForStudent(student.id).first()
-            .filter { it.date in startDate..endDate }
-            .sortedBy { it.date }
+    suspend operator fun invoke(
+        student: Student,
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): Result<String> {
+        val reports =
+            dailyReportRepository
+                .observeReportsForStudent(student.id)
+                .first()
+                .filter { it.date in startDate..endDate }
+                .sortedBy { it.date }
 
         if (reports.isEmpty()) {
             return Result.failure(NoReportsInRangeException(student.firstName))
@@ -45,7 +51,10 @@ class GenerateEssReportUseCase(
      * the model useful signal (e.g. a trend) even on days where free-text
      * notes are sparse or empty.
      */
-    private fun buildPrompt(student: Student, reports: List<DailyReport>): String {
+    private fun buildPrompt(
+        student: Student,
+        reports: List<DailyReport>,
+    ): String {
         val notes = reports.joinToString(separator = "\n\n") { it.toPromptSection() }
         return """
             You are helping a special needs teaching assistant (AESH) write a professional,
@@ -62,7 +71,7 @@ class GenerateEssReportUseCase(
 
             Daily observation notes (chronological):
             $notes
-        """.trimIndent()
+            """.trimIndent()
     }
 
     private fun DailyReport.toPromptSection(): String =
@@ -76,5 +85,6 @@ class GenerateEssReportUseCase(
 }
 
 /** Thrown by [GenerateEssReportUseCase] when the student has no daily reports in the selected date range. */
-class NoReportsInRangeException(val studentFirstName: String) :
-    Exception("No daily reports found for $studentFirstName in the selected period.")
+class NoReportsInRangeException(
+    val studentFirstName: String,
+) : Exception("No daily reports found for $studentFirstName in the selected period.")

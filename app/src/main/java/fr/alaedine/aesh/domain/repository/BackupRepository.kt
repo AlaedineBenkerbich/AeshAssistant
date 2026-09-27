@@ -20,7 +20,6 @@ import java.io.OutputStream
  * top of Room.
  */
 interface BackupRepository {
-
     /** Serializes every student, daily report and schedule slot as JSON into [destination]. */
     suspend fun exportBackup(destination: OutputStream)
 

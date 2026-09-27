@@ -29,9 +29,18 @@ data class SettingsUiState(
  */
 sealed interface SettingsStatusMessage {
     data object ExportSuccess : SettingsStatusMessage
-    data class ExportFailed(val reason: String) : SettingsStatusMessage
+
+    data class ExportFailed(
+        val reason: String,
+    ) : SettingsStatusMessage
+
     data object ExportFileOpenFailed : SettingsStatusMessage
+
     data object RestoreSuccess : SettingsStatusMessage
-    data class RestoreFailed(val reason: String) : SettingsStatusMessage
+
+    data class RestoreFailed(
+        val reason: String,
+    ) : SettingsStatusMessage
+
     data object RestoreFileOpenFailed : SettingsStatusMessage
 }

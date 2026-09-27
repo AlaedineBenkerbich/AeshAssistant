@@ -29,14 +29,15 @@ import kotlin.test.assertNull
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
 class StudentDaoTest {
-
     private lateinit var database: AeshDatabase
     private lateinit var studentDao: StudentDao
 
     @BeforeTest
     fun createDatabase() {
-        database = Room.inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), AeshDatabase::class.java)
-            .build()
+        database =
+            Room
+                .inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), AeshDatabase::class.java)
+                .build()
         studentDao = database.studentDao()
     }
 
@@ -46,90 +47,98 @@ class StudentDaoTest {
     }
 
     @Test
-    fun `should return the generated id when a student is inserted`() = runTest {
-        // Given
-        val student = StudentEntity(firstName = "Alice", className = "CE2", ppsGoals = "Read aloud daily")
+    fun `should return the generated id when a student is inserted`() =
+        runTest {
+            // Given
+            val student = StudentEntity(firstName = "Alice", className = "CE2", ppsGoals = "Read aloud daily")
 
-        // When
-        val id = studentDao.insert(student)
+            // When
+            val id = studentDao.insert(student)
 
-        // Then
-        assertEquals(student.copy(id = id), studentDao.getById(id))
-    }
-
-    @Test
-    fun `should return null when no student exists for the given id`() = runTest {
-        // Given / When
-        val result = studentDao.getById(id = 42L)
-
-        // Then
-        assertNull(result)
-    }
+            // Then
+            assertEquals(student.copy(id = id), studentDao.getById(id))
+        }
 
     @Test
-    fun `should emit students ordered by first name when observing all`() = runTest {
-        // Given
-        studentDao.insert(StudentEntity(firstName = "Zoe", className = "CM1"))
-        studentDao.insert(StudentEntity(firstName = "Amir", className = "CM2"))
+    fun `should return null when no student exists for the given id`() =
+        runTest {
+            // Given / When
+            val result = studentDao.getById(id = 42L)
 
-        // When
-        val students = studentDao.observeAll().first()
-
-        // Then
-        assertEquals(listOf("Amir", "Zoe"), students.map { it.firstName })
-    }
+            // Then
+            assertNull(result)
+        }
 
     @Test
-    fun `should persist changes when an existing student is updated`() = runTest {
-        // Given
-        val id = studentDao.insert(StudentEntity(firstName = "Lea", className = "CP", ppsGoals = "Initial goal"))
-        val updated = StudentEntity(id = id, firstName = "Lea", className = "CP", ppsGoals = "Updated goal")
+    fun `should emit students ordered by first name when observing all`() =
+        runTest {
+            // Given
+            studentDao.insert(StudentEntity(firstName = "Zoe", className = "CM1"))
+            studentDao.insert(StudentEntity(firstName = "Amir", className = "CM2"))
 
-        // When
-        studentDao.update(updated)
+            // When
+            val students = studentDao.observeAll().first()
 
-        // Then
-        assertEquals(updated, studentDao.getById(id))
-    }
-
-    @Test
-    fun `should remove the student when deleted`() = runTest {
-        // Given
-        val id = studentDao.insert(StudentEntity(firstName = "Nino", className = "CE1"))
-        val inserted = studentDao.getById(id)!!
-
-        // When
-        studentDao.delete(inserted)
-
-        // Then
-        assertNull(studentDao.getById(id))
-    }
+            // Then
+            assertEquals(listOf("Amir", "Zoe"), students.map { it.firstName })
+        }
 
     @Test
-    fun `should insert every student preserving their ids when inserting all`() = runTest {
-        // Given
-        val students = listOf(
-            StudentEntity(id = 5L, firstName = "Alice", className = "CE2"),
-            StudentEntity(id = 9L, firstName = "Bob", className = "CM2"),
-        )
+    fun `should persist changes when an existing student is updated`() =
+        runTest {
+            // Given
+            val id = studentDao.insert(StudentEntity(firstName = "Lea", className = "CP", ppsGoals = "Initial goal"))
+            val updated = StudentEntity(id = id, firstName = "Lea", className = "CP", ppsGoals = "Updated goal")
 
-        // When
-        studentDao.insertAll(students)
+            // When
+            studentDao.update(updated)
 
-        // Then
-        assertEquals(students, studentDao.observeAll().first().sortedBy { it.id })
-    }
+            // Then
+            assertEquals(updated, studentDao.getById(id))
+        }
 
     @Test
-    fun `should remove every student when deleting all`() = runTest {
-        // Given
-        studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
-        studentDao.insert(StudentEntity(firstName = "Bob", className = "CM2"))
+    fun `should remove the student when deleted`() =
+        runTest {
+            // Given
+            val id = studentDao.insert(StudentEntity(firstName = "Nino", className = "CE1"))
+            val inserted = studentDao.getById(id)!!
 
-        // When
-        studentDao.deleteAll()
+            // When
+            studentDao.delete(inserted)
 
-        // Then
-        assertEquals(emptyList(), studentDao.observeAll().first())
-    }
+            // Then
+            assertNull(studentDao.getById(id))
+        }
+
+    @Test
+    fun `should insert every student preserving their ids when inserting all`() =
+        runTest {
+            // Given
+            val students =
+                listOf(
+                    StudentEntity(id = 5L, firstName = "Alice", className = "CE2"),
+                    StudentEntity(id = 9L, firstName = "Bob", className = "CM2"),
+                )
+
+            // When
+            studentDao.insertAll(students)
+
+            // Then
+            assertEquals(students, studentDao.observeAll().first().sortedBy { it.id })
+        }
+
+    @Test
+    fun `should remove every student when deleting all`() =
+        runTest {
+            // Given
+            studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            studentDao.insert(StudentEntity(firstName = "Bob", className = "CM2"))
+
+            // When
+            studentDao.deleteAll()
+
+            // Then
+            assertEquals(emptyList(), studentDao.observeAll().first())
+        }
 }

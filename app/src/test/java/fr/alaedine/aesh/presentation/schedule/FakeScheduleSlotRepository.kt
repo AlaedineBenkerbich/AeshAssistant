@@ -14,14 +14,12 @@ import kotlinx.coroutines.flow.update
 class FakeScheduleSlotRepository(
     initialScheduleSlots: List<ScheduleSlot> = emptyList(),
 ) : ScheduleSlotRepository {
-
     private val scheduleSlots = MutableStateFlow(initialScheduleSlots)
     private var nextId = (initialScheduleSlots.maxOfOrNull { it.id } ?: 0L) + 1
 
     override fun observeScheduleSlots(): Flow<List<ScheduleSlot>> = scheduleSlots
 
-    override suspend fun getScheduleSlotById(id: Long): ScheduleSlot? =
-        scheduleSlots.value.find { it.id == id }
+    override suspend fun getScheduleSlotById(id: Long): ScheduleSlot? = scheduleSlots.value.find { it.id == id }
 
     override suspend fun addScheduleSlot(scheduleSlot: ScheduleSlot): Long {
         val id = nextId++

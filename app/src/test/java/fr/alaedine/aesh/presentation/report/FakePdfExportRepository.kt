@@ -13,7 +13,6 @@ import java.io.OutputStream
 class FakePdfExportRepository(
     private val exportError: Throwable? = null,
 ) : PdfExportRepository {
-
     var exportedTitle: String? = null
         private set
     var exportedBody: String? = null
@@ -21,7 +20,11 @@ class FakePdfExportRepository(
     var exportedTo: OutputStream? = null
         private set
 
-    override suspend fun exportTextAsPdf(title: String, body: String, destination: OutputStream) {
+    override suspend fun exportTextAsPdf(
+        title: String,
+        body: String,
+        destination: OutputStream,
+    ) {
         exportError?.let { throw it }
         exportedTitle = title
         exportedBody = body

@@ -41,13 +41,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parametersOf
 
 private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -107,9 +107,10 @@ fun ScheduleFormScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(
-                            if (uiState.isEditing) R.string.schedule_form_title_edit else R.string.schedule_form_title_add,
-                        ),
+                        text =
+                            stringResource(
+                                if (uiState.isEditing) R.string.schedule_form_title_edit else R.string.schedule_form_title_add,
+                            ),
                     )
                 },
                 navigationIcon = {
@@ -124,11 +125,12 @@ fun ScheduleFormScreen(
         },
     ) { contentPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             DayOfWeekDropdown(
@@ -187,9 +189,10 @@ private fun DayOfWeekDropdown(
             readOnly = true,
             label = { Text(text = stringResource(R.string.schedule_field_day)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(
             expanded = isExpanded,
@@ -217,7 +220,11 @@ private fun DayOfWeekDropdown(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimeField(label: String, time: LocalTime, onTimeSelected: (LocalTime) -> Unit) {
+private fun TimeField(
+    label: String,
+    time: LocalTime,
+    onTimeSelected: (LocalTime) -> Unit,
+) {
     var isDialogVisible by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
@@ -228,17 +235,19 @@ private fun TimeField(label: String, time: LocalTime, onTimeSelected: (LocalTime
             modifier = Modifier.fillMaxWidth(),
         )
         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { isDialogVisible = true },
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .clickable { isDialogVisible = true },
         )
     }
     if (isDialogVisible) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = time.hour,
-            initialMinute = time.minute,
-            is24Hour = true,
-        )
+        val timePickerState =
+            rememberTimePickerState(
+                initialHour = time.hour,
+                initialMinute = time.minute,
+                is24Hour = true,
+            )
         TimePickerDialog(
             onDismissRequest = { isDialogVisible = false },
             confirmButton = {
@@ -287,14 +296,15 @@ private fun ScheduleFormScreenAddPreview() {
 private fun ScheduleFormScreenEditPreview() {
     AeshAssistantTheme {
         ScheduleFormScreen(
-            uiState = ScheduleFormUiState(
-                scheduleSlotId = 1L,
-                dayOfWeek = DayOfWeek.TUESDAY,
-                startTime = LocalTime.of(10, 0),
-                endTime = LocalTime.of(11, 0),
-                subject = "Mathématiques",
-                room = "B12",
-            ),
+            uiState =
+                ScheduleFormUiState(
+                    scheduleSlotId = 1L,
+                    dayOfWeek = DayOfWeek.TUESDAY,
+                    startTime = LocalTime.of(10, 0),
+                    endTime = LocalTime.of(11, 0),
+                    subject = "Mathématiques",
+                    room = "B12",
+                ),
             onDayOfWeekChanged = {},
             onStartTimeChanged = {},
             onEndTimeChanged = {},

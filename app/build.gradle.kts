@@ -56,11 +56,12 @@ android {
             // Falls back to the auto-generated debug key when the dedicated
             // release secrets aren't available (e.g. local builds by
             // contributors), so `assembleRelease` always works out of the box.
-            signingConfig = if (hasDedicatedReleaseSigning) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig =
+                if (hasDedicatedReleaseSigning) {
+                    signingConfigs.getByName("release")
+                } else {
+                    signingConfigs.getByName("debug")
+                }
         }
     }
     compileOptions {

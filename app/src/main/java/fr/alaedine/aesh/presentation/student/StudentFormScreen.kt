@@ -78,9 +78,10 @@ fun StudentFormScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(
-                            if (uiState.isEditing) R.string.student_form_title_edit else R.string.student_form_title_add,
-                        ),
+                        text =
+                            stringResource(
+                                if (uiState.isEditing) R.string.student_form_title_edit else R.string.student_form_title_add,
+                            ),
                     )
                 },
                 navigationIcon = {
@@ -95,11 +96,12 @@ fun StudentFormScreen(
         },
     ) { contentPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedTextField(
@@ -154,12 +156,13 @@ private fun StudentFormScreenAddPreview() {
 private fun StudentFormScreenEditPreview() {
     AeshAssistantTheme {
         StudentFormScreen(
-            uiState = StudentFormUiState(
-                studentId = 1L,
-                firstName = "Alice",
-                className = "CE2",
-                ppsGoals = "Read aloud daily",
-            ),
+            uiState =
+                StudentFormUiState(
+                    studentId = 1L,
+                    firstName = "Alice",
+                    className = "CE2",
+                    ppsGoals = "Read aloud daily",
+                ),
             onFirstNameChanged = {},
             onClassNameChanged = {},
             onPpsGoalsChanged = {},

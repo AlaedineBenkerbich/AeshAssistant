@@ -3,14 +3,14 @@ package fr.alaedine.aesh.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.repository.BackupRepository
-import java.io.InputStream
-import java.io.OutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.InputStream
+import java.io.OutputStream
 
 /**
  * Presentation-layer state holder for the settings screen: local JSON
@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(
     private val backupRepository: BackupRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -38,8 +37,7 @@ class SettingsViewModel(
                     _uiState.update {
                         it.copy(isProcessing = false, statusMessage = SettingsStatusMessage.ExportSuccess)
                     }
-                }
-                .onFailure { error -> handleFailure(error) { reason -> SettingsStatusMessage.ExportFailed(reason) } }
+                }.onFailure { error -> handleFailure(error) { reason -> SettingsStatusMessage.ExportFailed(reason) } }
         }
     }
 
@@ -76,8 +74,7 @@ class SettingsViewModel(
                     _uiState.update {
                         it.copy(isProcessing = false, statusMessage = SettingsStatusMessage.RestoreSuccess)
                     }
-                }
-                .onFailure { error -> handleFailure(error) { reason -> SettingsStatusMessage.RestoreFailed(reason) } }
+                }.onFailure { error -> handleFailure(error) { reason -> SettingsStatusMessage.RestoreFailed(reason) } }
         }
     }
 
@@ -86,7 +83,10 @@ class SettingsViewModel(
         _uiState.update { it.copy(statusMessage = null) }
     }
 
-    private fun handleFailure(error: Throwable, toMessage: (String) -> SettingsStatusMessage) {
+    private fun handleFailure(
+        error: Throwable,
+        toMessage: (String) -> SettingsStatusMessage,
+    ) {
         // Coroutine cancellation must always propagate, never be swallowed as a "failure".
         if (error is CancellationException) throw error
         _uiState.update { it.copy(isProcessing = false, statusMessage = toMessage(error.message.orEmpty())) }

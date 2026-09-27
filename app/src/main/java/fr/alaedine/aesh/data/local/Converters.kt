@@ -17,7 +17,6 @@ import java.time.LocalTime
  * Sunday) so ordering by it lists a week Monday-first.
  */
 class Converters {
-
     @TypeConverter
     fun fromLocalDate(date: LocalDate?): String? = date?.toString()
 

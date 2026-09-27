@@ -3,9 +3,9 @@ package fr.alaedine.aesh.data.pdf
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import fr.alaedine.aesh.domain.repository.PdfExportRepository
-import java.io.OutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.OutputStream
 
 /**
  * [PdfExportRepository] backed by Android's built-in
@@ -14,8 +14,11 @@ import kotlinx.coroutines.withContext
  * a new page once the current one fills up.
  */
 class AndroidPdfExportRepository : PdfExportRepository {
-
-    override suspend fun exportTextAsPdf(title: String, body: String, destination: OutputStream) {
+    override suspend fun exportTextAsPdf(
+        title: String,
+        body: String,
+        destination: OutputStream,
+    ) {
         withContext(Dispatchers.IO) {
             val document = PdfDocument()
             try {
@@ -27,7 +30,11 @@ class AndroidPdfExportRepository : PdfExportRepository {
         }
     }
 
-    private fun renderPages(document: PdfDocument, title: String, body: String) {
+    private fun renderPages(
+        document: PdfDocument,
+        title: String,
+        body: String,
+    ) {
         val lines = layOutLines(title, body)
 
         var lineIndex = 0
@@ -58,26 +65,39 @@ class AndroidPdfExportRepository : PdfExportRepository {
      * pagination loop above stay a single, uniform pass: it never needs to
      * special-case a title so long it doesn't fit on page 1 either.
      */
-    private fun layOutLines(title: String, body: String): List<RenderLine> {
-        val titlePaint = Paint().apply {
-            textSize = TITLE_TEXT_SIZE
-            isFakeBoldText = true
-        }
+    private fun layOutLines(
+        title: String,
+        body: String,
+    ): List<RenderLine> {
+        val titlePaint =
+            Paint().apply {
+                textSize = TITLE_TEXT_SIZE
+                isFakeBoldText = true
+            }
         val bodyPaint = Paint().apply { textSize = BODY_TEXT_SIZE }
         val maxLineWidth = PAGE_WIDTH_POINTS - 2 * MARGIN_POINTS
 
-        val titleLines = wrapToLines(title, titlePaint, maxLineWidth)
-            .map { RenderLine(it, titlePaint, TITLE_LINE_HEIGHT) }
-        val bodyLines = wrapToLines(body, bodyPaint, maxLineWidth)
-            .map { RenderLine(it, bodyPaint, BODY_LINE_HEIGHT) }
+        val titleLines =
+            wrapToLines(title, titlePaint, maxLineWidth)
+                .map { RenderLine(it, titlePaint, TITLE_LINE_HEIGHT) }
+        val bodyLines =
+            wrapToLines(body, bodyPaint, maxLineWidth)
+                .map { RenderLine(it, bodyPaint, BODY_LINE_HEIGHT) }
         return titleLines + RenderLine("", bodyPaint, SPACER_HEIGHT) + bodyLines
     }
 
     /** Greedily word-wraps [text] (existing line breaks become paragraph boundaries) so every line fits [maxWidth] under [paint]'s font metrics. */
-    private fun wrapToLines(text: String, paint: Paint, maxWidth: Float): List<String> =
-        text.split("\n").flatMap { paragraph -> wrapParagraph(paragraph, paint, maxWidth) }
+    private fun wrapToLines(
+        text: String,
+        paint: Paint,
+        maxWidth: Float,
+    ): List<String> = text.split("\n").flatMap { paragraph -> wrapParagraph(paragraph, paint, maxWidth) }
 
-    private fun wrapParagraph(paragraph: String, paint: Paint, maxWidth: Float): List<String> {
+    private fun wrapParagraph(
+        paragraph: String,
+        paint: Paint,
+        maxWidth: Float,
+    ): List<String> {
         if (paragraph.isBlank()) return listOf("")
 
         val lines = mutableListOf<String>()
@@ -96,7 +116,11 @@ class AndroidPdfExportRepository : PdfExportRepository {
     }
 
     /** One line of text to draw, in the [paint] style it belongs to, advancing the cursor by [lineHeight] first. */
-    private data class RenderLine(val text: String, val paint: Paint, val lineHeight: Float)
+    private data class RenderLine(
+        val text: String,
+        val paint: Paint,
+        val lineHeight: Float,
+    )
 
     private companion object {
         // A4 in points (72 points/inch), the coordinate system `PdfDocument` draws in.

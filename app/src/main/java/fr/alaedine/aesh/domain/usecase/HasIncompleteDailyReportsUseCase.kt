@@ -2,8 +2,8 @@ package fr.alaedine.aesh.domain.usecase
 
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
 import fr.alaedine.aesh.domain.repository.StudentRepository
-import java.time.LocalDate
 import kotlinx.coroutines.flow.first
+import java.time.LocalDate
 
 /**
  * Business rule of whether at least one known student is still missing a
@@ -20,15 +20,17 @@ class HasIncompleteDailyReportsUseCase(
     private val studentRepository: StudentRepository,
     private val dailyReportRepository: DailyReportRepository,
 ) {
-
     /** Returns `false` when there are no students to report on. */
     suspend operator fun invoke(date: LocalDate): Boolean {
         val students = studentRepository.observeStudents().first()
         if (students.isEmpty()) return false
 
-        val studentIdsWithReport = dailyReportRepository.observeReports().first()
-            .filter { it.date == date }
-            .mapTo(mutableSetOf()) { it.studentId }
+        val studentIdsWithReport =
+            dailyReportRepository
+                .observeReports()
+                .first()
+                .filter { it.date == date }
+                .mapTo(mutableSetOf()) { it.studentId }
 
         return students.any { it.id !in studentIdsWithReport }
     }

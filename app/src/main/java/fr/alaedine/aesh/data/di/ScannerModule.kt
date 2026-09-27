@@ -12,6 +12,7 @@ import org.koin.dsl.module
  * persistence — pure on-device ML, backed by ML Kit rather than the app's
  * own database.
  */
-val scannerModule = module {
-    single<ScheduleScannerRepository> { MlKitScheduleScannerRepository(androidContext()) }
-}
+val scannerModule =
+    module {
+        single<ScheduleScannerRepository> { MlKitScheduleScannerRepository(androidContext()) }
+    }

@@ -20,49 +20,52 @@ import java.time.LocalTime
  * left `null`.
  */
 object ScheduleTextParser {
-
-    private val DAY_KEYWORDS: Map<String, DayOfWeek> = mapOf(
-        "lundi" to DayOfWeek.MONDAY,
-        "monday" to DayOfWeek.MONDAY,
-        "mardi" to DayOfWeek.TUESDAY,
-        "tuesday" to DayOfWeek.TUESDAY,
-        "mercredi" to DayOfWeek.WEDNESDAY,
-        "wednesday" to DayOfWeek.WEDNESDAY,
-        "jeudi" to DayOfWeek.THURSDAY,
-        "thursday" to DayOfWeek.THURSDAY,
-        "vendredi" to DayOfWeek.FRIDAY,
-        "friday" to DayOfWeek.FRIDAY,
-        "samedi" to DayOfWeek.SATURDAY,
-        "saturday" to DayOfWeek.SATURDAY,
-        "dimanche" to DayOfWeek.SUNDAY,
-        "sunday" to DayOfWeek.SUNDAY,
-    )
+    private val DAY_KEYWORDS: Map<String, DayOfWeek> =
+        mapOf(
+            "lundi" to DayOfWeek.MONDAY,
+            "monday" to DayOfWeek.MONDAY,
+            "mardi" to DayOfWeek.TUESDAY,
+            "tuesday" to DayOfWeek.TUESDAY,
+            "mercredi" to DayOfWeek.WEDNESDAY,
+            "wednesday" to DayOfWeek.WEDNESDAY,
+            "jeudi" to DayOfWeek.THURSDAY,
+            "thursday" to DayOfWeek.THURSDAY,
+            "vendredi" to DayOfWeek.FRIDAY,
+            "friday" to DayOfWeek.FRIDAY,
+            "samedi" to DayOfWeek.SATURDAY,
+            "saturday" to DayOfWeek.SATURDAY,
+            "dimanche" to DayOfWeek.SUNDAY,
+            "sunday" to DayOfWeek.SUNDAY,
+        )
 
     // Longest names first so e.g. "tuesday" is tried before any shorter accidental match.
-    private val DAY_REGEX = Regex(
-        "\\b(?:" + DAY_KEYWORDS.keys.sortedByDescending { it.length }.joinToString("|") + ")\\b",
-        RegexOption.IGNORE_CASE,
-    )
+    private val DAY_REGEX =
+        Regex(
+            "\\b(?:" + DAY_KEYWORDS.keys.sortedByDescending { it.length }.joinToString("|") + ")\\b",
+            RegexOption.IGNORE_CASE,
+        )
 
     // A single "HH:MM"-ish token, e.g. "8h", "8h30", "08:00", "08.30".
     private const val TIME_PATTERN = """(\d{1,2})[:h.](\d{2})?"""
     private val TIME_TOKEN_REGEX = Regex("""\b$TIME_PATTERN\b""", RegexOption.IGNORE_CASE)
 
     // Two time tokens joined by a dash/"à"/"to", e.g. "8h-9h", "08:00 à 09:00".
-    private val TIME_RANGE_REGEX = Regex(
-        """\b$TIME_PATTERN\b\s*(?:-|–|—|à|to)\s*\b$TIME_PATTERN\b""",
-        RegexOption.IGNORE_CASE,
-    )
+    private val TIME_RANGE_REGEX =
+        Regex(
+            """\b$TIME_PATTERN\b\s*(?:-|–|—|à|to)\s*\b$TIME_PATTERN\b""",
+            RegexOption.IGNORE_CASE,
+        )
 
     // A "salle"/"room"/"classroom" label followed by a single alphanumeric
     // token (e.g. "Salle B12", "Room 203", "Salle Gymnase"). Deliberately
     // captures only one token — combined with matching per-line rather than
     // on the whole text, this can never swallow unrelated text (e.g. the
     // subject on the next line) into the room field.
-    private val ROOM_REGEX = Regex(
-        """\b(?:salle|room|classroom)\b\s*[:\-]?\s*([\p{L}0-9][\p{L}0-9\-]*)""",
-        RegexOption.IGNORE_CASE,
-    )
+    private val ROOM_REGEX =
+        Regex(
+            """\b(?:salle|room|classroom)\b\s*[:\-]?\s*([\p{L}0-9][\p{L}0-9\-]*)""",
+            RegexOption.IGNORE_CASE,
+        )
 
     private val WHITESPACE_REGEX = Regex("""\s+""")
 
@@ -93,8 +96,7 @@ object ScheduleTextParser {
         )
     }
 
-    private fun findDayOfWeek(line: String): DayOfWeek? =
-        DAY_REGEX.find(line)?.let { DAY_KEYWORDS[it.value.lowercase()] }
+    private fun findDayOfWeek(line: String): DayOfWeek? = DAY_REGEX.find(line)?.let { DAY_KEYWORDS[it.value.lowercase()] }
 
     /** @return the recognized start/end time, either of which may be `null` if not found. */
     private fun findTimeRange(line: String): Pair<LocalTime?, LocalTime?> {
@@ -111,7 +113,10 @@ object ScheduleTextParser {
         return single to null
     }
 
-    private fun toLocalTimeOrNull(hourText: String, minuteText: String): LocalTime? {
+    private fun toLocalTimeOrNull(
+        hourText: String,
+        minuteText: String,
+    ): LocalTime? {
         val hour = hourText.toIntOrNull() ?: return null
         val minute = minuteText.takeIf { it.isNotEmpty() }?.toIntOrNull() ?: 0
         if (hour !in 0..23 || minute !in 0..59) return null

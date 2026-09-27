@@ -9,28 +9,29 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * Daily Tracking milestone (#5). The existing `students` table is left
  * untouched, so upgrading preserves any students already saved on-device.
  */
-val MIGRATION_1_2: Migration = object : Migration(startVersion = 1, endVersion = 2) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS `daily_reports` (
-            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            `studentId` INTEGER NOT NULL,
-            `date` TEXT NOT NULL,
-            `moodLevel` INTEGER NOT NULL,
-            `focusLevel` INTEGER NOT NULL,
-            `socialInteractions` INTEGER NOT NULL,
-            `freeNotes` TEXT NOT NULL,
-            FOREIGN KEY(`studentId`) REFERENCES `students`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+val MIGRATION_1_2: Migration =
+    object : Migration(startVersion = 1, endVersion = 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `daily_reports` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `studentId` INTEGER NOT NULL,
+                `date` TEXT NOT NULL,
+                `moodLevel` INTEGER NOT NULL,
+                `focusLevel` INTEGER NOT NULL,
+                `socialInteractions` INTEGER NOT NULL,
+                `freeNotes` TEXT NOT NULL,
+                FOREIGN KEY(`studentId`) REFERENCES `students`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent(),
             )
-            """.trimIndent(),
-        )
-        db.execSQL(
-            "CREATE UNIQUE INDEX IF NOT EXISTS `index_daily_reports_studentId_date` " +
-                "ON `daily_reports` (`studentId`, `date`)",
-        )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_daily_reports_studentId_date` " +
+                    "ON `daily_reports` (`studentId`, `date`)",
+            )
+        }
     }
-}
 
 /**
  * Adds the `schedule_slots` table (see
@@ -39,19 +40,20 @@ val MIGRATION_1_2: Migration = object : Migration(startVersion = 1, endVersion =
  * `daily_reports` tables are left untouched, so upgrading preserves any data
  * already saved on-device.
  */
-val MIGRATION_2_3: Migration = object : Migration(startVersion = 2, endVersion = 3) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS `schedule_slots` (
-            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            `dayOfWeek` INTEGER NOT NULL,
-            `startTime` TEXT NOT NULL,
-            `endTime` TEXT NOT NULL,
-            `subject` TEXT NOT NULL,
-            `room` TEXT NOT NULL
+val MIGRATION_2_3: Migration =
+    object : Migration(startVersion = 2, endVersion = 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `schedule_slots` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `dayOfWeek` INTEGER NOT NULL,
+                `startTime` TEXT NOT NULL,
+                `endTime` TEXT NOT NULL,
+                `subject` TEXT NOT NULL,
+                `room` TEXT NOT NULL
+                )
+                """.trimIndent(),
             )
-            """.trimIndent(),
-        )
+        }
     }
-}

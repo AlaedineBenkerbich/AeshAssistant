@@ -138,4 +138,3 @@ private fun AeshDestination.AddScheduleSlot.toParsedScheduleSlot(): ParsedSchedu
         subject = subject,
         room = room,
     )
-

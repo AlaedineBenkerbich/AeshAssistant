@@ -9,12 +9,12 @@ import fr.alaedine.aesh.data.local.dao.DailyReportDao
 import fr.alaedine.aesh.data.local.dao.ScheduleSlotDao
 import fr.alaedine.aesh.data.local.dao.StudentDao
 import fr.alaedine.aesh.domain.repository.BackupRepository
-import java.io.InputStream
-import java.io.OutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.io.InputStream
+import java.io.OutputStream
 
 /**
  * [BackupRepository] backed by Room: serializes/restores every
@@ -31,18 +31,19 @@ class BackupRepositoryImpl(
     private val dailyReportDao: DailyReportDao,
     private val scheduleSlotDao: ScheduleSlotDao,
 ) : BackupRepository {
-
-    private val json = Json {
-        prettyPrint = true
-        ignoreUnknownKeys = true
-    }
+    private val json =
+        Json {
+            prettyPrint = true
+            ignoreUnknownKeys = true
+        }
 
     override suspend fun exportBackup(destination: OutputStream) {
-        val payload = BackupPayload(
-            students = studentDao.observeAll().first().map { it.toBackup() },
-            dailyReports = dailyReportDao.observeAll().first().map { it.toBackup() },
-            scheduleSlots = scheduleSlotDao.observeAll().first().map { it.toBackup() },
-        )
+        val payload =
+            BackupPayload(
+                students = studentDao.observeAll().first().map { it.toBackup() },
+                dailyReports = dailyReportDao.observeAll().first().map { it.toBackup() },
+                scheduleSlots = scheduleSlotDao.observeAll().first().map { it.toBackup() },
+            )
         withContext(Dispatchers.IO) {
             destination.use { stream ->
                 stream.write(json.encodeToString(BackupPayload.serializer(), payload).toByteArray())
@@ -51,11 +52,12 @@ class BackupRepositoryImpl(
     }
 
     override suspend fun importBackup(source: InputStream) {
-        val payload = withContext(Dispatchers.IO) {
-            source.use { stream ->
-                json.decodeFromString(BackupPayload.serializer(), stream.readBytes().decodeToString())
+        val payload =
+            withContext(Dispatchers.IO) {
+                source.use { stream ->
+                    json.decodeFromString(BackupPayload.serializer(), stream.readBytes().decodeToString())
+                }
             }
-        }
         require(payload.schemaVersion == BackupPayload.SCHEMA_VERSION) {
             "Unsupported backup schema version: ${payload.schemaVersion}"
         }

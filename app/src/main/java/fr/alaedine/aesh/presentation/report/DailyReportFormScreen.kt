@@ -40,13 +40,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.delay
-import org.koin.androidx.compose.koinViewModel
 
 /** How long the success state stays visible before [DailyReportFormRoute] navigates back. */
 private val SAVED_STATE_DISPLAY_DURATION = 900.milliseconds
@@ -146,10 +146,11 @@ private fun DailyReportForm(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(text = formattedDate(uiState.date), style = MaterialTheme.typography.bodyMedium)
@@ -221,9 +222,10 @@ private fun StudentDropdown(
             label = { Text(text = stringResource(R.string.label_student)) },
             placeholder = { Text(text = stringResource(R.string.placeholder_select_student)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(
             expanded = isExpanded,
@@ -243,7 +245,11 @@ private fun StudentDropdown(
 }
 
 @Composable
-private fun LevelSlider(label: String, level: Int, onLevelChanged: (Int) -> Unit) {
+private fun LevelSlider(
+    label: String,
+    level: Int,
+    onLevelChanged: (Int) -> Unit,
+) {
     Column {
         Text(text = "$label  ${levelEmoji(level)}", style = MaterialTheme.typography.titleMedium)
         Slider(
@@ -273,29 +279,31 @@ private fun SavedConfirmation(modifier: Modifier = Modifier) {
 }
 
 /** Maps a 1-5 observation level to an emoji, giving each slider an at-a-glance visual scale. */
-private fun levelEmoji(level: Int): String = when (level) {
-    1 -> "😞"
-    2 -> "🙁"
-    3 -> "😐"
-    4 -> "🙂"
-    else -> "😄"
-}
+private fun levelEmoji(level: Int): String =
+    when (level) {
+        1 -> "😞"
+        2 -> "🙁"
+        3 -> "😐"
+        4 -> "🙂"
+        else -> "😄"
+    }
 
-private fun formattedDate(date: LocalDate): String =
-    date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()))
+private fun formattedDate(date: LocalDate): String = date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()))
 
 @Preview(showBackground = true)
 @Composable
 private fun DailyReportFormScreenPreview() {
     AeshAssistantTheme {
         DailyReportFormScreen(
-            uiState = DailyReportFormUiState(
-                students = listOf(
-                    Student(id = 1L, firstName = "Alice", className = "CE2"),
-                    Student(id = 2L, firstName = "Amir", className = "CM2"),
+            uiState =
+                DailyReportFormUiState(
+                    students =
+                        listOf(
+                            Student(id = 1L, firstName = "Alice", className = "CE2"),
+                            Student(id = 2L, firstName = "Amir", className = "CM2"),
+                        ),
+                    isLoading = false,
                 ),
-                isLoading = false,
-            ),
             onStudentSelected = {},
             onMoodLevelChanged = {},
             onFocusLevelChanged = {},
@@ -313,15 +321,16 @@ private fun DailyReportFormScreenFilledPreview() {
     AeshAssistantTheme {
         val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
         DailyReportFormScreen(
-            uiState = DailyReportFormUiState(
-                students = listOf(alice),
-                selectedStudent = alice,
-                moodLevel = 4,
-                focusLevel = 2,
-                socialInteractions = 5,
-                freeNotes = "Great focus after the morning break.",
-                isLoading = false,
-            ),
+            uiState =
+                DailyReportFormUiState(
+                    students = listOf(alice),
+                    selectedStudent = alice,
+                    moodLevel = 4,
+                    focusLevel = 2,
+                    socialInteractions = 5,
+                    freeNotes = "Great focus after the morning break.",
+                    isLoading = false,
+                ),
             onStudentSelected = {},
             onMoodLevelChanged = {},
             onFocusLevelChanged = {},

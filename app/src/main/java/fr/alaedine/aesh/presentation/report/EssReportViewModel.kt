@@ -8,8 +8,6 @@ import fr.alaedine.aesh.domain.repository.PdfExportRepository
 import fr.alaedine.aesh.domain.repository.StudentRepository
 import fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase
 import fr.alaedine.aesh.domain.usecase.NoReportsInRangeException
-import java.io.OutputStream
-import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +16,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.OutputStream
+import java.time.LocalDate
 
 /**
  * Presentation-layer state holder for the ESS report generation screen:
@@ -31,12 +31,12 @@ class EssReportViewModel(
     private val generateEssReportUseCase: GenerateEssReportUseCase,
     private val pdfExportRepository: PdfExportRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(EssReportUiState())
     val uiState: StateFlow<EssReportUiState> = _uiState.asStateFlow()
 
     init {
-        studentRepository.observeStudents()
+        studentRepository
+            .observeStudents()
             .onEach { students -> _uiState.update { it.copy(students = students, isLoadingStudents = false) } }
             .launchIn(viewModelScope)
     }
@@ -66,11 +66,12 @@ class EssReportViewModel(
                 .onSuccess { text -> _uiState.update { it.copy(isGenerating = false, generatedText = text) } }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
-                    val message = when (error) {
-                        is NoReportsInRangeException -> EssReportStatusMessage.NoReportsInRange(error.studentFirstName)
-                        is AiFeatureUnavailableException -> EssReportStatusMessage.AiFeatureUnavailable
-                        else -> EssReportStatusMessage.GenerationFailed(error.message)
-                    }
+                    val message =
+                        when (error) {
+                            is NoReportsInRangeException -> EssReportStatusMessage.NoReportsInRange(error.studentFirstName)
+                            is AiFeatureUnavailableException -> EssReportStatusMessage.AiFeatureUnavailable
+                            else -> EssReportStatusMessage.GenerationFailed(error.message)
+                        }
                     _uiState.update { it.copy(isGenerating = false, statusMessage = message) }
                 }
         }
@@ -89,7 +90,10 @@ class EssReportViewModel(
      * `stringResource`) rather than built here, so this class stays free of
      * Android resources/`Context`.
      */
-    fun onExportRequested(destination: OutputStream, title: String) {
+    fun onExportRequested(
+        destination: OutputStream,
+        title: String,
+    ) {
         val state = _uiState.value
         if (state.selectedStudent == null) return
         val text = state.generatedText ?: return
@@ -97,8 +101,7 @@ class EssReportViewModel(
         viewModelScope.launch {
             runCatching {
                 pdfExportRepository.exportTextAsPdf(title = title, body = text, destination = destination)
-            }
-                .onSuccess { _uiState.update { it.copy(statusMessage = EssReportStatusMessage.ExportSuccess) } }
+            }.onSuccess { _uiState.update { it.copy(statusMessage = EssReportStatusMessage.ExportSuccess) } }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
                     _uiState.update {

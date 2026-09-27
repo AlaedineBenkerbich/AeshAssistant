@@ -52,12 +52,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import org.koin.androidx.compose.koinViewModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import org.koin.androidx.compose.koinViewModel
 
 private const val PDF_MIME_TYPE = "application/pdf"
 
@@ -80,24 +80,26 @@ fun EssReportRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val pdfTitle = stringResource(
-        R.string.ess_report_pdf_title,
-        uiState.selectedStudent?.firstName.orEmpty(),
-        uiState.startDate.toString(),
-        uiState.endDate.toString(),
-    )
+    val pdfTitle =
+        stringResource(
+            R.string.ess_report_pdf_title,
+            uiState.selectedStudent?.firstName.orEmpty(),
+            uiState.startDate.toString(),
+            uiState.endDate.toString(),
+        )
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(PDF_MIME_TYPE),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val destination = runCatching { context.contentResolver.openOutputStream(uri) }.getOrNull()
-        if (destination == null) {
-            viewModel.onExportFailedToOpenFile()
-        } else {
-            viewModel.onExportRequested(destination, pdfTitle)
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument(PDF_MIME_TYPE),
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val destination = runCatching { context.contentResolver.openOutputStream(uri) }.getOrNull()
+            if (destination == null) {
+                viewModel.onExportFailedToOpenFile()
+            } else {
+                viewModel.onExportRequested(destination, pdfTitle)
+            }
         }
-    }
 
     EssReportScreen(
         uiState = uiState,
@@ -159,11 +161,12 @@ fun EssReportScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
@@ -216,9 +219,10 @@ fun EssReportScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = stringResource(
-                        if (uiState.generatedText == null) R.string.ess_report_generate else R.string.ess_report_regenerate,
-                    ),
+                    text =
+                        stringResource(
+                            if (uiState.generatedText == null) R.string.ess_report_generate else R.string.ess_report_regenerate,
+                        ),
                 )
             }
 
@@ -246,16 +250,17 @@ fun EssReportScreen(
 
 /** Resolves a one-shot [EssReportStatusMessage] to its localized Snackbar text. */
 @Composable
-private fun resolvedStatusMessage(message: EssReportStatusMessage): String = when (message) {
-    is EssReportStatusMessage.NoReportsInRange ->
-        stringResource(R.string.ess_report_no_reports_in_range, message.studentFirstName)
-    is EssReportStatusMessage.AiFeatureUnavailable -> stringResource(R.string.ess_report_ai_unavailable)
-    is EssReportStatusMessage.GenerationFailed ->
-        message.reason ?: stringResource(R.string.ess_report_generation_failed_fallback)
-    is EssReportStatusMessage.ExportSuccess -> stringResource(R.string.ess_report_export_success)
-    is EssReportStatusMessage.ExportFailed -> stringResource(R.string.ess_report_export_failed, message.reason)
-    is EssReportStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
-}
+private fun resolvedStatusMessage(message: EssReportStatusMessage): String =
+    when (message) {
+        is EssReportStatusMessage.NoReportsInRange ->
+            stringResource(R.string.ess_report_no_reports_in_range, message.studentFirstName)
+        is EssReportStatusMessage.AiFeatureUnavailable -> stringResource(R.string.ess_report_ai_unavailable)
+        is EssReportStatusMessage.GenerationFailed ->
+            message.reason ?: stringResource(R.string.ess_report_generation_failed_fallback)
+        is EssReportStatusMessage.ExportSuccess -> stringResource(R.string.ess_report_export_success)
+        is EssReportStatusMessage.ExportFailed -> stringResource(R.string.ess_report_export_failed, message.reason)
+        is EssReportStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
+    }
 
 @Composable
 private fun GeneratingIndicator(modifier: Modifier = Modifier) {
@@ -291,9 +296,10 @@ private fun StudentDropdown(
             label = { Text(text = stringResource(R.string.label_student)) },
             placeholder = { Text(text = stringResource(R.string.placeholder_select_student)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(
             expanded = isExpanded,
@@ -366,21 +372,22 @@ private fun LocalDate.toUtcEpochMillis(): Long = atStartOfDay(ZoneOffset.UTC).to
 
 private fun Long.toUtcLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
-private fun formattedDate(date: LocalDate): String =
-    date.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
+private fun formattedDate(date: LocalDate): String = date.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
 
 @Preview(showBackground = true)
 @Composable
 private fun EssReportScreenPreview() {
     AeshAssistantTheme {
         EssReportScreen(
-            uiState = EssReportUiState(
-                students = listOf(
-                    Student(id = 1L, firstName = "Alice", className = "CE2"),
-                    Student(id = 2L, firstName = "Amir", className = "CM2"),
+            uiState =
+                EssReportUiState(
+                    students =
+                        listOf(
+                            Student(id = 1L, firstName = "Alice", className = "CE2"),
+                            Student(id = 2L, firstName = "Amir", className = "CM2"),
+                        ),
+                    isLoadingStudents = false,
                 ),
-                isLoadingStudents = false,
-            ),
             onStudentSelected = {},
             onStartDateSelected = {},
             onEndDateSelected = {},
@@ -399,12 +406,13 @@ private fun EssReportScreenGeneratingPreview() {
     AeshAssistantTheme {
         val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
         EssReportScreen(
-            uiState = EssReportUiState(
-                students = listOf(alice),
-                selectedStudent = alice,
-                isLoadingStudents = false,
-                isGenerating = true,
-            ),
+            uiState =
+                EssReportUiState(
+                    students = listOf(alice),
+                    selectedStudent = alice,
+                    isLoadingStudents = false,
+                    isGenerating = true,
+                ),
             onStudentSelected = {},
             onStartDateSelected = {},
             onEndDateSelected = {},
@@ -423,14 +431,16 @@ private fun EssReportScreenWithReportPreview() {
     AeshAssistantTheme {
         val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
         EssReportScreen(
-            uiState = EssReportUiState(
-                students = listOf(alice),
-                selectedStudent = alice,
-                isLoadingStudents = false,
-                generatedText = "Alice showed steady improvement in focus over the period, with particularly " +
-                    "strong engagement during afternoon sessions. Social interactions remained positive " +
-                    "throughout, and mood stayed stable.",
-            ),
+            uiState =
+                EssReportUiState(
+                    students = listOf(alice),
+                    selectedStudent = alice,
+                    isLoadingStudents = false,
+                    generatedText =
+                        "Alice showed steady improvement in focus over the period, with particularly " +
+                            "strong engagement during afternoon sessions. Social interactions remained positive " +
+                            "throughout, and mood stayed stable.",
+                ),
             onStudentSelected = {},
             onStartDateSelected = {},
             onEndDateSelected = {},

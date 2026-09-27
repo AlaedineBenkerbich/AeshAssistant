@@ -11,7 +11,6 @@ import fr.alaedine.aesh.domain.repository.StudentRepository
 import fr.alaedine.aesh.domain.usecase.HasIncompleteDailyReportsUseCase
 import fr.alaedine.aesh.presentation.report.FakeDailyReportRepository
 import fr.alaedine.aesh.presentation.student.FakeStudentRepository
-import java.time.LocalDate
 import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
 import org.koin.core.context.startKoin
@@ -21,6 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -39,7 +39,6 @@ import kotlin.test.assertTrue
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
 class DailyReportReminderWorkerTest {
-
     private val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
     private val today: LocalDate = LocalDate.now()
 
@@ -57,44 +56,50 @@ class DailyReportReminderWorkerTest {
     }
 
     @Test
-    fun `should post a notification when a student is missing todays report`() = runTest {
-        // Given
-        startTestKoin(students = listOf(alice), reports = emptyList())
-        val worker = TestListenableWorkerBuilder<DailyReportReminderWorker>(RuntimeEnvironment.getApplication()).build()
+    fun `should post a notification when a student is missing todays report`() =
+        runTest {
+            // Given
+            startTestKoin(students = listOf(alice), reports = emptyList())
+            val worker = TestListenableWorkerBuilder<DailyReportReminderWorker>(RuntimeEnvironment.getApplication()).build()
 
-        // When
-        val result = worker.doWork()
+            // When
+            val result = worker.doWork()
 
-        // Then
-        assertEquals(Result.success(), result)
-        val notificationManager = shadowOf(RuntimeEnvironment.getApplication().getSystemService(NotificationManager::class.java))
-        assertEquals(1, notificationManager.allNotifications.size)
-    }
+            // Then
+            assertEquals(Result.success(), result)
+            val notificationManager = shadowOf(RuntimeEnvironment.getApplication().getSystemService(NotificationManager::class.java))
+            assertEquals(1, notificationManager.allNotifications.size)
+        }
 
     @Test
-    fun `should not post a notification when every student already has todays report`() = runTest {
-        // Given
-        val todaysReport = DailyReport(
-            id = 1L,
-            date = today,
-            studentId = alice.id,
-            moodLevel = 4,
-            focusLevel = 4,
-            socialInteractions = 4,
-        )
-        startTestKoin(students = listOf(alice), reports = listOf(todaysReport))
-        val worker = TestListenableWorkerBuilder<DailyReportReminderWorker>(RuntimeEnvironment.getApplication()).build()
+    fun `should not post a notification when every student already has todays report`() =
+        runTest {
+            // Given
+            val todaysReport =
+                DailyReport(
+                    id = 1L,
+                    date = today,
+                    studentId = alice.id,
+                    moodLevel = 4,
+                    focusLevel = 4,
+                    socialInteractions = 4,
+                )
+            startTestKoin(students = listOf(alice), reports = listOf(todaysReport))
+            val worker = TestListenableWorkerBuilder<DailyReportReminderWorker>(RuntimeEnvironment.getApplication()).build()
 
-        // When
-        val result = worker.doWork()
+            // When
+            val result = worker.doWork()
 
-        // Then
-        assertEquals(Result.success(), result)
-        val notificationManager = shadowOf(RuntimeEnvironment.getApplication().getSystemService(NotificationManager::class.java))
-        assertTrue(notificationManager.allNotifications.isEmpty())
-    }
+            // Then
+            assertEquals(Result.success(), result)
+            val notificationManager = shadowOf(RuntimeEnvironment.getApplication().getSystemService(NotificationManager::class.java))
+            assertTrue(notificationManager.allNotifications.isEmpty())
+        }
 
-    private fun startTestKoin(students: List<Student>, reports: List<DailyReport>) {
+    private fun startTestKoin(
+        students: List<Student>,
+        reports: List<DailyReport>,
+    ) {
         startKoin {
             modules(
                 module {
