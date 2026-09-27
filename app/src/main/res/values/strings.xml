@@ -25,6 +25,10 @@
     <string name="home_empty_students">No students yet. Add one to start tracking daily reports.</string>
     <string name="cd_report_completed">Report completed</string>
     <string name="cd_report_missing">Report missing</string>
+    <!-- Appended to a calendar day cell\'s accessibility label when it is the current day. -->
+    <string name="cd_calendar_today">Today</string>
+    <!-- Appended to a calendar day cell\'s accessibility label when that day of the week has at least one scheduled class. -->
+    <string name="cd_calendar_has_scheduled_classes">Has scheduled classes</string>
     <plurals name="missing_reports_warning">
         <item quantity="one">%d student is still missing today\'s report.</item>
         <item quantity="other">%d students are still missing today\'s report.</item>

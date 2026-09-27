@@ -1,10 +1,14 @@
 package fr.alaedine.aesh.presentation.home
 
 import fr.alaedine.aesh.domain.model.DailyReport
+import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.report.FakeDailyReportRepository
+import fr.alaedine.aesh.presentation.schedule.FakeScheduleSlotRepository
 import fr.alaedine.aesh.presentation.student.FakeStudentRepository
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -19,8 +23,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * [HomeViewModel] reads [fr.alaedine.aesh.domain.repository.StudentRepository]
- * and [fr.alaedine.aesh.domain.repository.DailyReportRepository] through
+ * [HomeViewModel] reads [fr.alaedine.aesh.domain.repository.StudentRepository],
+ * [fr.alaedine.aesh.domain.repository.DailyReportRepository] and
+ * [fr.alaedine.aesh.domain.repository.ScheduleSlotRepository] through
  * `viewModelScope`, which requires the `Main` dispatcher to be available;
  * [UnconfinedTestDispatcher] makes coroutines launched on it run eagerly so
  * state updates are visible immediately, without needing manual virtual-time
@@ -46,7 +51,7 @@ class HomeViewModelTest {
     @Test
     fun `should expose todays date when the view model is initialized`() = runTest {
         // Given / When
-        val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository())
+        val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
 
         // Then
         assertEquals(today, viewModel.uiState.value.date)
@@ -58,6 +63,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             studentRepository = FakeStudentRepository(initialStudents = listOf(alice, amir)),
             dailyReportRepository = FakeDailyReportRepository(),
+            scheduleSlotRepository = FakeScheduleSlotRepository(),
         )
 
         // Then
@@ -83,6 +89,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             studentRepository = FakeStudentRepository(initialStudents = listOf(alice, amir)),
             dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(todaysReport)),
+            scheduleSlotRepository = FakeScheduleSlotRepository(),
         )
 
         // Then
@@ -108,6 +115,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
             dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(yesterdaysReport)),
+            scheduleSlotRepository = FakeScheduleSlotRepository(),
         )
 
         // Then
@@ -130,6 +138,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
             dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(todaysReport)),
+            scheduleSlotRepository = FakeScheduleSlotRepository(),
         )
 
         // Then
@@ -139,9 +148,47 @@ class HomeViewModelTest {
     @Test
     fun `should not warn about missing reports when there are no students`() = runTest {
         // Given / When
-        val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository())
+        val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
 
         // Then
         assertFalse(viewModel.uiState.value.hasMissingReports)
+    }
+
+    @Test
+    fun `should expose the days of week with at least one scheduled class`() = runTest {
+        // Given
+        val mondayMaths = ScheduleSlot(
+            id = 1L,
+            dayOfWeek = DayOfWeek.MONDAY,
+            startTime = LocalTime.of(9, 0),
+            endTime = LocalTime.of(10, 0),
+            subject = "Mathématiques",
+        )
+        val wednesdayPe = ScheduleSlot(
+            id = 2L,
+            dayOfWeek = DayOfWeek.WEDNESDAY,
+            startTime = LocalTime.of(14, 0),
+            endTime = LocalTime.of(15, 0),
+            subject = "EPS",
+        )
+
+        // When
+        val viewModel = HomeViewModel(
+            studentRepository = FakeStudentRepository(),
+            dailyReportRepository = FakeDailyReportRepository(),
+            scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mondayMaths, wednesdayPe)),
+        )
+
+        // Then
+        assertEquals(setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY), viewModel.uiState.value.daysWithScheduledClasses)
+    }
+
+    @Test
+    fun `should expose no days with scheduled classes when the weekly schedule is empty`() = runTest {
+        // Given / When
+        val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
+
+        // Then
+        assertTrue(viewModel.uiState.value.daysWithScheduledClasses.isEmpty())
     }
 }

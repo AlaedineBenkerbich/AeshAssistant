@@ -1,6 +1,7 @@
 package fr.alaedine.aesh.presentation.home
 
 import fr.alaedine.aesh.domain.model.Student
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
@@ -13,6 +14,11 @@ import java.time.LocalDate
  * [fr.alaedine.aesh.domain.repository.StudentRepository.observeStudents] and
  * [fr.alaedine.aesh.domain.repository.DailyReportRepository.observeReports]
  * by [HomeViewModel].
+ * @property daysWithScheduledClasses Which days of the week have at least
+ * one [fr.alaedine.aesh.domain.model.ScheduleSlot], kept in sync with
+ * [fr.alaedine.aesh.domain.repository.ScheduleSlotRepository.observeScheduleSlots]
+ * by [HomeViewModel]. Drives the small event dot under those days in the
+ * dashboard's calendar week strip.
  * @property isLoading Whether students/reports are still being loaded;
  * avoids briefly flashing the "missing report" warning before the first
  * emission arrives.
@@ -20,6 +26,7 @@ import java.time.LocalDate
 data class HomeUiState(
     val date: LocalDate = LocalDate.now(),
     val studentStatuses: List<StudentReportStatus> = emptyList(),
+    val daysWithScheduledClasses: Set<DayOfWeek> = emptySet(),
     val isLoading: Boolean = true,
 ) {
     /** How many students still don't have a report for [date]. */
