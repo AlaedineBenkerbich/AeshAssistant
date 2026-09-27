@@ -14,18 +14,22 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import java.time.LocalDate
 
 /**
  * Presentation-layer state holder for the dashboard/home screen.
  *
  * Combines [scheduleSlotRepository], [studentRepository] and
- * [dailyReportRepository] to derive today's [LessonBlock]s: solely the
- * schedule slots whose day of week matches today, each resolved with its
- * assigned students paired with whether they already have a report for
- * today (see [StudentReportStatus]) — this is what determines which
- * students need an observation today, not the full student roster. Also
- * derives which days of the week have at least one scheduled class, so the
- * dashboard's calendar week strip can mark them with an event dot.
+ * [dailyReportRepository] with the currently selected date (see
+ * [onDateSelected], [onPreviousWeekClicked] and [onNextWeekClicked]) to
+ * derive that date's [LessonBlock]s: solely the schedule slots whose day of
+ * week matches it, each resolved with its assigned students paired with
+ * whether they already have a report for that date (see
+ * [StudentReportStatus]) — this is what determines which students need an
+ * observation, not the full student roster. Also derives which days of the
+ * week have at least one scheduled class, so the dashboard's calendar week
+ * strip can mark them with an event dot regardless of which date is
+ * currently selected.
  */
 class HomeViewModel(
     private val studentRepository: StudentRepository,
@@ -35,28 +39,32 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    /** The date whose lesson blocks/report statuses are shown, independent from [HomeUiState.today]; changed via [onDateSelected], [onPreviousWeekClicked] and [onNextWeekClicked]. */
+    private val selectedDateFlow = MutableStateFlow(_uiState.value.date)
+
     init {
-        val today = _uiState.value.date
         combine(
+            selectedDateFlow,
             studentRepository.observeStudents(),
             dailyReportRepository.observeReports(),
             scheduleSlotRepository.observeScheduleSlots(),
-        ) { students, reports, scheduleSlots ->
+        ) { selectedDate, students, reports, scheduleSlots ->
             val studentsById = students.associateBy { it.id }
-            val studentIdsWithReportToday =
+            val studentIdsWithReportOnSelectedDate =
                 reports
-                    .filter { it.date == today }
+                    .filter { it.date == selectedDate }
                     .mapTo(mutableSetOf()) { it.studentId }
             val lessonBlocks =
                 scheduleSlots
-                    .filter { it.dayOfWeek == today.dayOfWeek }
+                    .filter { it.dayOfWeek == selectedDate.dayOfWeek }
                     .sortedBy { it.startTime }
-                    .map { slot -> slot.toLessonBlock(studentsById, studentIdsWithReportToday) }
+                    .map { slot -> slot.toLessonBlock(studentsById, studentIdsWithReportOnSelectedDate) }
             val daysWithScheduledClasses = scheduleSlots.mapTo(mutableSetOf()) { it.dayOfWeek }
-            lessonBlocks to daysWithScheduledClasses
-        }.onEach { (lessonBlocks, daysWithScheduledClasses) ->
+            Triple(selectedDate, lessonBlocks, daysWithScheduledClasses)
+        }.onEach { (selectedDate, lessonBlocks, daysWithScheduledClasses) ->
             _uiState.update {
                 it.copy(
+                    date = selectedDate,
                     lessonBlocks = lessonBlocks,
                     daysWithScheduledClasses = daysWithScheduledClasses,
                     isLoading = false,
@@ -65,10 +73,25 @@ class HomeViewModel(
         }.launchIn(viewModelScope)
     }
 
+    /** Displays [date]'s classes/report statuses instead of whichever day was previously selected, letting the AESH freely browse the calendar and reach any day, not just the present. */
+    fun onDateSelected(date: LocalDate) {
+        selectedDateFlow.value = date
+    }
+
+    /** Moves the selected date back exactly one week, keeping the same day of week (e.g. Wednesday -> the previous week's Wednesday). */
+    fun onPreviousWeekClicked() {
+        selectedDateFlow.update { it.minusWeeks(1) }
+    }
+
+    /** Moves the selected date forward exactly one week, keeping the same day of week. */
+    fun onNextWeekClicked() {
+        selectedDateFlow.update { it.plusWeeks(1) }
+    }
+
     /** Resolves this slot's [fr.alaedine.aesh.domain.model.ScheduleSlot.studentIds] into a [LessonBlock], skipping any id that no longer matches a known student. */
     private fun ScheduleSlot.toLessonBlock(
         studentsById: Map<Long, Student>,
-        studentIdsWithReportToday: Set<Long>,
+        studentIdsWithReportOnSelectedDate: Set<Long>,
     ): LessonBlock =
         LessonBlock(
             scheduleSlotId = id,
@@ -79,7 +102,7 @@ class HomeViewModel(
             studentStatuses =
                 studentIds.mapNotNull { studentId ->
                     studentsById[studentId]?.let { student ->
-                        StudentReportStatus(student = student, hasReportToday = student.id in studentIdsWithReportToday)
+                        StudentReportStatus(student = student, hasReport = student.id in studentIdsWithReportOnSelectedDate)
                     }
                 },
         )

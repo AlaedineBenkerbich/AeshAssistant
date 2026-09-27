@@ -25,15 +25,23 @@
     <string name="cd_new_daily_report">New daily report</string>
     <string name="cd_open_daily_report_for_student">Fill out observation for %1$s</string>
     <string name="home_empty_schedule_today">No classes scheduled for today. Tap + to log an observation manually.</string>
+    <string name="home_empty_schedule_other_day">No classes scheduled for this day.</string>
     <string name="cd_report_completed">Report completed</string>
     <string name="cd_report_missing">Report missing</string>
     <!-- Appended to a calendar day cell\'s accessibility label when it is the current day. -->
     <string name="cd_calendar_today">Today</string>
     <!-- Appended to a calendar day cell\'s accessibility label when that day of the week has at least one scheduled class. -->
     <string name="cd_calendar_has_scheduled_classes">Has scheduled classes</string>
+    <string name="cd_previous_week">Previous week</string>
+    <string name="cd_next_week">Next week</string>
+    <string name="cd_pick_date">Pick a date</string>
     <plurals name="missing_reports_warning">
         <item quantity="one">%d student is still missing today\'s report.</item>
         <item quantity="other">%d students are still missing today\'s report.</item>
+    </plurals>
+    <plurals name="missing_reports_warning_other_day">
+        <item quantity="one">%d student is still missing a report for this day.</item>
+        <item quantity="other">%d students are still missing a report for this day.</item>
     </plurals>
 
     <!-- Settings -->
