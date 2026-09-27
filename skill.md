@@ -93,3 +93,7 @@ Before opening a PR, run the unit tests locally with `./gradlew test` (or
 
 - **PRs must be squash-merged** (not "Create a merge commit", not "Rebase
   and merge") so `main` keeps a linear, single-commit-per-change history.
+- **Auto-merge must be enabled on every PR when it is opened** (e.g. via
+  `gh pr merge --squash --auto`), so it merges on its own as soon as CI
+  passes and required reviews are satisfied, without needing a manual
+  follow-up step.

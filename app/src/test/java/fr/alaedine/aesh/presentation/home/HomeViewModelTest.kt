@@ -37,6 +37,23 @@ class HomeViewModelTest {
     private val amir = Student(id = 2L, firstName = "Amir", className = "CM2")
     private val today = LocalDate.now()
 
+    /** A schedule slot on [dayOfWeek] (today's by default) assigned to [studentIds], for building [today]'s lesson blocks. */
+    private fun scheduleSlot(
+        id: Long,
+        studentIds: List<Long>,
+        startTime: LocalTime = LocalTime.of(9, 0),
+        endTime: LocalTime = LocalTime.of(10, 0),
+        subject: String = "Mathématiques",
+        dayOfWeek: DayOfWeek = today.dayOfWeek,
+    ) = ScheduleSlot(
+        id = id,
+        dayOfWeek = dayOfWeek,
+        startTime = startTime,
+        endTime = endTime,
+        subject = subject,
+        studentIds = studentIds,
+    )
+
     @BeforeTest
     fun setMainDispatcher() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -58,7 +75,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `should mark every student as missing todays report when none exist`() =
+    fun `should expose no lesson blocks when no class is scheduled today`() =
         runTest {
             // Given / When
             val viewModel =
@@ -69,8 +86,128 @@ class HomeViewModelTest {
                 )
 
             // Then
+            assertTrue(
+                viewModel.uiState.value.lessonBlocks
+                    .isEmpty(),
+            )
+        }
+
+    @Test
+    fun `should group todays schedule slots into lesson blocks with their assigned students`() =
+        runTest {
+            // Given
+            val mathsSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id, amir.id))
+
+            // When
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice, amir)),
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathsSlot)),
+                )
+
+            // Then
+            val lessonBlocks = viewModel.uiState.value.lessonBlocks
+            assertEquals(1, lessonBlocks.size)
+            assertEquals("Mathématiques", lessonBlocks.first().subject)
+            assertEquals(listOf(alice.id, amir.id), lessonBlocks.first().studentStatuses.map { it.student.id })
+        }
+
+    @Test
+    fun `should order todays lesson blocks by start time regardless of input order`() =
+        runTest {
+            // Given
+            val afternoonSlot =
+                scheduleSlot(
+                    id = 1L,
+                    studentIds = listOf(alice.id),
+                    startTime = LocalTime.of(14, 0),
+                    endTime = LocalTime.of(15, 0),
+                    subject = "EPS",
+                )
+            val morningSlot = scheduleSlot(id = 2L, studentIds = listOf(alice.id))
+
+            // When
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(afternoonSlot, morningSlot)),
+                )
+
+            // Then
+            assertEquals(
+                listOf("Mathématiques", "EPS"),
+                viewModel.uiState.value.lessonBlocks
+                    .map { it.subject },
+            )
+        }
+
+    @Test
+    fun `should exclude schedule slots for other days of the week from todays lesson blocks`() =
+        runTest {
+            // Given
+            val tomorrowsSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id), dayOfWeek = today.dayOfWeek.plus(1))
+
+            // When
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(tomorrowsSlot)),
+                )
+
+            // Then
+            assertTrue(
+                viewModel.uiState.value.lessonBlocks
+                    .isEmpty(),
+            )
+        }
+
+    @Test
+    fun `should exclude a student with no class scheduled today from every lesson block`() =
+        runTest {
+            // Given: only Alice is scheduled today; Amir has no class at all.
+            val mathsSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id))
+
+            // When
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice, amir)),
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathsSlot)),
+                )
+
+            // Then
+            val studentIdsShownToday =
+                viewModel.uiState.value.lessonBlocks
+                    .flatMap { it.studentStatuses }
+                    .map { it.student.id }
+            assertEquals(listOf(alice.id), studentIdsShownToday)
+        }
+
+    @Test
+    fun `should mark every scheduled student as missing todays report when none exist`() =
+        runTest {
+            // Given
+            val mathsSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id, amir.id))
+
+            // When
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice, amir)),
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathsSlot)),
+                )
+
+            // Then
             val state = viewModel.uiState.value
-            assertTrue(state.studentStatuses.all { !it.hasReportToday })
+            assertTrue(
+                state.lessonBlocks
+                    .single()
+                    .studentStatuses
+                    .all { !it.hasReportToday },
+            )
             assertTrue(state.hasMissingReports)
             assertEquals(2, state.missingReportCount)
         }
@@ -79,81 +216,98 @@ class HomeViewModelTest {
     fun `should mark a student as reported when they already have todays report`() =
         runTest {
             // Given
+            val mathsSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id, amir.id))
             val todaysReport =
-                DailyReport(
-                    id = 1L,
-                    date = today,
-                    studentId = alice.id,
-                    moodLevel = 4,
-                    focusLevel = 4,
-                    socialInteractions = 4,
-                )
+                DailyReport(id = 1L, date = today, studentId = alice.id, moodLevel = 4, focusLevel = 4, socialInteractions = 4)
 
             // When
             val viewModel =
                 HomeViewModel(
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice, amir)),
                     dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(todaysReport)),
-                    scheduleSlotRepository = FakeScheduleSlotRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathsSlot)),
                 )
 
             // Then
-            val state = viewModel.uiState.value
-            assertTrue(state.studentStatuses.first { it.student.id == alice.id }.hasReportToday)
-            assertFalse(state.studentStatuses.first { it.student.id == amir.id }.hasReportToday)
-            assertEquals(1, state.missingReportCount)
+            val statuses =
+                viewModel.uiState.value.lessonBlocks
+                    .single()
+                    .studentStatuses
+            assertTrue(statuses.first { it.student.id == alice.id }.hasReportToday)
+            assertFalse(statuses.first { it.student.id == amir.id }.hasReportToday)
+            assertEquals(1, viewModel.uiState.value.missingReportCount)
         }
 
     @Test
-    fun `should ignore reports from other days when computing todays status`() =
+    fun `should list a student in every lesson block they are scheduled for today`() =
         runTest {
             // Given
-            val yesterdaysReport =
-                DailyReport(
-                    id = 1L,
-                    date = today.minusDays(1),
-                    studentId = alice.id,
-                    moodLevel = 4,
-                    focusLevel = 4,
-                    socialInteractions = 4,
+            val morningSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id))
+            val afternoonSlot =
+                scheduleSlot(
+                    id = 2L,
+                    studentIds = listOf(alice.id),
+                    startTime = LocalTime.of(14, 0),
+                    endTime = LocalTime.of(15, 0),
+                    subject = "EPS",
                 )
-
-            // When
-            val viewModel =
-                HomeViewModel(
-                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
-                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(yesterdaysReport)),
-                    scheduleSlotRepository = FakeScheduleSlotRepository(),
-                )
-
-            // Then
-            assertFalse(
-                viewModel.uiState.value.studentStatuses
-                    .first()
-                    .hasReportToday,
-            )
-        }
-
-    @Test
-    fun `should not warn about missing reports when every student already has one today`() =
-        runTest {
-            // Given
             val todaysReport =
-                DailyReport(
-                    id = 1L,
-                    date = today,
-                    studentId = alice.id,
-                    moodLevel = 4,
-                    focusLevel = 4,
-                    socialInteractions = 4,
-                )
+                DailyReport(id = 1L, date = today, studentId = alice.id, moodLevel = 4, focusLevel = 4, socialInteractions = 4)
 
             // When
             val viewModel =
                 HomeViewModel(
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
                     dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(todaysReport)),
-                    scheduleSlotRepository = FakeScheduleSlotRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(morningSlot, afternoonSlot)),
+                )
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals(2, state.lessonBlocks.size)
+            assertTrue(state.lessonBlocks.all { block -> block.studentStatuses.single().hasReportToday })
+        }
+
+    @Test
+    fun `should ignore reports from other days when computing todays status`() =
+        runTest {
+            // Given
+            val mathsSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id))
+            val yesterdaysReport =
+                DailyReport(id = 1L, date = today.minusDays(1), studentId = alice.id, moodLevel = 4, focusLevel = 4, socialInteractions = 4)
+
+            // When
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(yesterdaysReport)),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathsSlot)),
+                )
+
+            // Then
+            assertFalse(
+                viewModel.uiState.value.lessonBlocks
+                    .single()
+                    .studentStatuses
+                    .single()
+                    .hasReportToday,
+            )
+        }
+
+    @Test
+    fun `should not warn about missing reports when every scheduled student already has one today`() =
+        runTest {
+            // Given
+            val mathsSlot = scheduleSlot(id = 1L, studentIds = listOf(alice.id))
+            val todaysReport =
+                DailyReport(id = 1L, date = today, studentId = alice.id, moodLevel = 4, focusLevel = 4, socialInteractions = 4)
+
+            // When
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(todaysReport)),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathsSlot)),
                 )
 
             // Then
@@ -161,10 +315,15 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `should not warn about missing reports when there are no students`() =
+    fun `should not warn about missing reports when no class is scheduled today`() =
         runTest {
             // Given / When
-            val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(),
+                )
 
             // Then
             assertFalse(viewModel.uiState.value.hasMissingReports)

@@ -5,12 +5,12 @@ import android.app.NotificationManager
 import androidx.work.ListenableWorker.Result
 import androidx.work.testing.TestListenableWorkerBuilder
 import fr.alaedine.aesh.domain.model.DailyReport
-import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
-import fr.alaedine.aesh.domain.repository.StudentRepository
+import fr.alaedine.aesh.domain.repository.ScheduleSlotRepository
 import fr.alaedine.aesh.domain.usecase.HasIncompleteDailyReportsUseCase
 import fr.alaedine.aesh.presentation.report.FakeDailyReportRepository
-import fr.alaedine.aesh.presentation.student.FakeStudentRepository
+import fr.alaedine.aesh.presentation.schedule.FakeScheduleSlotRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
 import org.koin.core.context.startKoin
@@ -21,6 +21,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import java.time.LocalTime
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -39,8 +40,17 @@ import kotlin.test.assertTrue
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
 class DailyReportReminderWorkerTest {
-    private val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+    private val aliceId = 1L
     private val today: LocalDate = LocalDate.now()
+    private val aliceScheduledToday =
+        ScheduleSlot(
+            id = 1L,
+            dayOfWeek = today.dayOfWeek,
+            startTime = LocalTime.of(9, 0),
+            endTime = LocalTime.of(10, 0),
+            subject = "Mathématiques",
+            studentIds = listOf(aliceId),
+        )
 
     @BeforeTest
     fun grantNotificationPermission() {
@@ -56,10 +66,10 @@ class DailyReportReminderWorkerTest {
     }
 
     @Test
-    fun `should post a notification when a student is missing todays report`() =
+    fun `should post a notification when a student scheduled today is missing todays report`() =
         runTest {
             // Given
-            startTestKoin(students = listOf(alice), reports = emptyList())
+            startTestKoin(scheduleSlots = listOf(aliceScheduledToday), reports = emptyList())
             val worker = TestListenableWorkerBuilder<DailyReportReminderWorker>(RuntimeEnvironment.getApplication()).build()
 
             // When
@@ -72,19 +82,30 @@ class DailyReportReminderWorkerTest {
         }
 
     @Test
-    fun `should not post a notification when every student already has todays report`() =
+    fun `should not post a notification when every student scheduled today already has a report`() =
         runTest {
             // Given
             val todaysReport =
-                DailyReport(
-                    id = 1L,
-                    date = today,
-                    studentId = alice.id,
-                    moodLevel = 4,
-                    focusLevel = 4,
-                    socialInteractions = 4,
-                )
-            startTestKoin(students = listOf(alice), reports = listOf(todaysReport))
+                DailyReport(id = 1L, date = today, studentId = aliceId, moodLevel = 4, focusLevel = 4, socialInteractions = 4)
+            startTestKoin(scheduleSlots = listOf(aliceScheduledToday), reports = listOf(todaysReport))
+            val worker = TestListenableWorkerBuilder<DailyReportReminderWorker>(RuntimeEnvironment.getApplication()).build()
+
+            // When
+            val result = worker.doWork()
+
+            // Then
+            assertEquals(Result.success(), result)
+            val notificationManager = shadowOf(RuntimeEnvironment.getApplication().getSystemService(NotificationManager::class.java))
+            assertTrue(notificationManager.allNotifications.isEmpty())
+        }
+
+    @Test
+    fun `should not post a notification when no student is scheduled today`() =
+        runTest {
+            // Given: an empty weekly schedule (e.g. a day off) — nobody
+            // needs an observation today, so the worker must stay quiet
+            // even though no report exists for anyone.
+            startTestKoin(scheduleSlots = emptyList(), reports = emptyList())
             val worker = TestListenableWorkerBuilder<DailyReportReminderWorker>(RuntimeEnvironment.getApplication()).build()
 
             // When
@@ -97,13 +118,13 @@ class DailyReportReminderWorkerTest {
         }
 
     private fun startTestKoin(
-        students: List<Student>,
+        scheduleSlots: List<ScheduleSlot>,
         reports: List<DailyReport>,
     ) {
         startKoin {
             modules(
                 module {
-                    single<StudentRepository> { FakeStudentRepository(students) }
+                    single<ScheduleSlotRepository> { FakeScheduleSlotRepository(scheduleSlots) }
                     single<DailyReportRepository> { FakeDailyReportRepository(reports) }
                     single { HasIncompleteDailyReportsUseCase(get(), get()) }
                     single { DailyReminderNotifier(RuntimeEnvironment.getApplication()) }
