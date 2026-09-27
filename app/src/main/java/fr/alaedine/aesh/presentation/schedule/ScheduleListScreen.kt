@@ -1,8 +1,7 @@
 package fr.alaedine.aesh.presentation.schedule
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -97,7 +96,6 @@ fun ScheduleListRoute(
     onAddScheduleSlot: () -> Unit,
     onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
-    onOpenDailyReportForm: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScheduleListViewModel = koinViewModel(),
@@ -108,7 +106,6 @@ fun ScheduleListRoute(
         onAddScheduleSlot = onAddScheduleSlot,
         onScanScheduleSlot = onScanScheduleSlot,
         onEditScheduleSlot = onEditScheduleSlot,
-        onOpenDailyReportForm = onOpenDailyReportForm,
         onNavigateBack = onNavigateBack,
         onDeleteRequested = viewModel::onDeleteRequested,
         onDeleteCancelled = viewModel::onDeleteCancelled,
@@ -124,7 +121,6 @@ fun ScheduleListScreen(
     onAddScheduleSlot: () -> Unit,
     onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
-    onOpenDailyReportForm: () -> Unit,
     onNavigateBack: () -> Unit,
     onDeleteRequested: (ScheduleSlot) -> Unit,
     onDeleteCancelled: () -> Unit,
@@ -178,7 +174,6 @@ fun ScheduleListScreen(
                 scheduleSlots = uiState.scheduleSlots,
                 studentsById = uiState.studentsById,
                 today = uiState.today,
-                onOpenDailyReportForm = onOpenDailyReportForm,
                 onEditScheduleSlot = onEditScheduleSlot,
                 onDeleteRequested = onDeleteRequested,
                 modifier =
@@ -217,7 +212,6 @@ private fun WeeklyScheduleGrid(
     scheduleSlots: List<ScheduleSlot>,
     studentsById: Map<Long, Student>,
     today: DayOfWeek,
-    onOpenDailyReportForm: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
     onDeleteRequested: (ScheduleSlot) -> Unit,
     modifier: Modifier = Modifier,
@@ -271,7 +265,6 @@ private fun WeeklyScheduleGrid(
                     hourCount = hourCount,
                     isToday = dayOfWeek == today,
                     subjectColors = subjectColors,
-                    onOpenDailyReportForm = onOpenDailyReportForm,
                     onEditScheduleSlot = onEditScheduleSlot,
                     onDeleteRequested = onDeleteRequested,
                     modifier = Modifier.weight(1f),
@@ -371,7 +364,6 @@ private fun DayColumn(
     hourCount: Int,
     isToday: Boolean,
     subjectColors: Map<String, Pair<Color, Color>>,
-    onOpenDailyReportForm: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
     onDeleteRequested: (ScheduleSlot) -> Unit,
     modifier: Modifier = Modifier,
@@ -404,7 +396,6 @@ private fun DayColumn(
                 studentNames = scheduleSlot.studentIds.mapNotNull { studentsById[it]?.firstName },
                 containerColor = containerColor,
                 contentColor = contentColor,
-                onClick = onOpenDailyReportForm,
                 onEditClick = { onEditScheduleSlot(scheduleSlot.id) },
                 onDeleteClick = { onDeleteRequested(scheduleSlot) },
                 modifier =
@@ -419,28 +410,25 @@ private fun DayColumn(
 }
 
 /**
- * A single class block within [DayColumn]. Tapping it jumps straight into
- * today's [fr.alaedine.aesh.presentation.report.DailyReportFormScreen] (the
- * "observation form") via [onClick], since logging an observation right
- * after a class is the far more common action; a long press (or, for
- * accessibility, the equivalent TalkBack custom action) reveals the slot's
- * full details plus edit/delete via a dropdown, since the block itself is
- * usually too small to host separate icon buttons.
+ * A single class block within [DayColumn]. Tapping it opens a dropdown menu
+ * with the slot's full details plus edit/delete actions, since the block
+ * itself is usually too small to host separate icon buttons; the same
+ * options are also exposed directly as TalkBack custom accessibility
+ * actions, letting screen reader users edit/delete without opening the menu
+ * first.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ScheduleSlotBlock(
     scheduleSlot: ScheduleSlot,
     studentNames: List<String>,
     containerColor: Color,
     contentColor: Color,
-    onClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showActionsMenu by remember { mutableStateOf(false) }
-    val openDailyReportLabel = stringResource(R.string.cd_open_daily_report_for_schedule_slot, scheduleSlot.subject)
+    val actionsLabel = stringResource(R.string.cd_schedule_slot_options, scheduleSlot.subject)
     val editLabel = stringResource(R.string.cd_edit_schedule_slot, scheduleSlot.subject)
     val deleteLabel = stringResource(R.string.cd_delete_schedule_slot, scheduleSlot.subject)
     Box(modifier = modifier) {
@@ -451,9 +439,9 @@ private fun ScheduleSlotBlock(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .combinedClickable(onClick = onClick, onLongClick = { showActionsMenu = true })
+                    .clickable(onClick = { showActionsMenu = true })
                     .semantics {
-                        contentDescription = openDailyReportLabel
+                        contentDescription = actionsLabel
                         customActions =
                             listOf(
                                 CustomAccessibilityAction(editLabel) {
@@ -607,7 +595,6 @@ private fun ScheduleListScreenPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onOpenDailyReportForm = {},
             onNavigateBack = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
@@ -663,7 +650,6 @@ private fun ScheduleListScreenFullWeekPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onOpenDailyReportForm = {},
             onNavigateBack = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
@@ -681,7 +667,6 @@ private fun ScheduleListScreenEmptyPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onOpenDailyReportForm = {},
             onNavigateBack = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
@@ -713,7 +698,6 @@ private fun ScheduleListScreenDeleteConfirmationPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onOpenDailyReportForm = {},
             onNavigateBack = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},

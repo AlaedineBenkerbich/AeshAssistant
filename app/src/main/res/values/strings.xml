@@ -23,6 +23,7 @@
     <string name="cd_nav_ess_report">ESS report</string>
     <string name="cd_nav_settings">Settings</string>
     <string name="cd_new_daily_report">New daily report</string>
+    <string name="cd_open_daily_report_for_student">Fill out observation for %1$s</string>
     <string name="home_empty_students">No students yet. Add one to start tracking daily reports.</string>
     <string name="cd_report_completed">Report completed</string>
     <string name="cd_report_missing">Report missing</string>
@@ -80,7 +81,7 @@
     <string name="cd_scan_schedule">Scan a physical schedule</string>
     <string name="cd_add_schedule_slot">Add class slot</string>
     <string name="schedule_list_empty">No classes yet. Tap + to add one.</string>
-    <string name="cd_open_daily_report_for_schedule_slot">Fill out observation for %1$s</string>
+    <string name="cd_schedule_slot_options">Edit or delete %1$s</string>
     <string name="cd_edit_schedule_slot">Edit %1$s</string>
     <string name="cd_delete_schedule_slot">Delete %1$s</string>
     <string name="delete_schedule_slot_confirm_text">This will permanently remove this class slot and cannot be undone.</string>

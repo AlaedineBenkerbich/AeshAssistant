@@ -26,10 +26,18 @@ import java.time.LocalDate
  * index allowing at most one report, so re-opening the form for the same
  * student/day edits that existing report instead of violating the
  * constraint with a duplicate insert.
+ *
+ * @param preselectedStudentId When non-null, the matching student is
+ * selected automatically the first time [studentRepository]'s student list
+ * loads (see [preselectInitialStudentIfNeeded]) — supplied as a Koin
+ * injection parameter sourced from the navigation argument when this form
+ * is reached by tapping a student on the dashboard rather than its "new
+ * report" FAB, see `DailyReportFormRoute`.
  */
 class DailyReportFormViewModel(
     private val dailyReportRepository: DailyReportRepository,
     private val studentRepository: StudentRepository,
+    private val preselectedStudentId: Long? = null,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DailyReportFormUiState())
     val uiState: StateFlow<DailyReportFormUiState> = _uiState.asStateFlow()
@@ -37,8 +45,23 @@ class DailyReportFormViewModel(
     init {
         studentRepository
             .observeStudents()
-            .onEach { students -> _uiState.update { it.copy(students = students, isLoading = false) } }
-            .launchIn(viewModelScope)
+            .onEach { students ->
+                _uiState.update { it.copy(students = students, isLoading = false) }
+                preselectInitialStudentIfNeeded(students)
+            }.launchIn(viewModelScope)
+    }
+
+    /**
+     * Selects [preselectedStudentId]'s matching student the first time the
+     * student list loads, so the form opens ready to fill out rather than
+     * requiring the student to be picked again from the dropdown. A no-op
+     * once a student has already been selected (manually or by this very
+     * call) or if [preselectedStudentId] doesn't match any known student.
+     */
+    private fun preselectInitialStudentIfNeeded(students: List<Student>) {
+        if (preselectedStudentId == null || _uiState.value.selectedStudent != null) return
+        val student = students.find { it.id == preselectedStudentId } ?: return
+        onStudentSelected(student)
     }
 
     /** Picks [student] as the subject of this report, loading the currently selected date's existing report for them, if any. */

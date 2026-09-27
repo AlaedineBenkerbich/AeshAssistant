@@ -36,7 +36,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         composable<AeshDestination.Dashboard> {
             HomeRoute(
                 onNavigateToStudents = { navController.navigate(AeshDestination.StudentList) },
-                onNavigateToDailyReport = { navController.navigate(AeshDestination.DailyReportForm) },
+                onNavigateToDailyReport = { studentId -> navController.navigate(AeshDestination.DailyReportForm(studentId)) },
                 onNavigateToSchedule = { navController.navigate(AeshDestination.ScheduleList) },
                 onNavigateToEssReport = { navController.navigate(AeshDestination.EssReportForm) },
                 onNavigateToSettings = { navController.navigate(AeshDestination.Settings) },
@@ -67,8 +67,10 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                 onNavigateBack = { navController.popBackStack() },
             )
         }
-        composable<AeshDestination.DailyReportForm> {
+        composable<AeshDestination.DailyReportForm> { backStackEntry ->
+            val destination = backStackEntry.toRoute<AeshDestination.DailyReportForm>()
             DailyReportFormRoute(
+                studentId = destination.studentId,
                 onNavigateBack = { navController.popBackStack() },
             )
         }
@@ -84,7 +86,6 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                 onEditScheduleSlot = { scheduleSlotId ->
                     navController.navigate(AeshDestination.EditScheduleSlot(scheduleSlotId))
                 },
-                onOpenDailyReportForm = { navController.navigate(AeshDestination.DailyReportForm) },
                 onNavigateBack = { navController.popBackStack() },
             )
         }

@@ -22,6 +22,7 @@
     <string name="cd_nav_ess_report">Rapport ESS</string>
     <string name="cd_nav_settings">Paramètres</string>
     <string name="cd_new_daily_report">Nouveau rapport quotidien</string>
+    <string name="cd_open_daily_report_for_student">Remplir l\'observation pour %1$s</string>
     <string name="home_empty_students">Aucun élève pour le moment. Ajoutez-en un pour commencer à suivre les rapports quotidiens.</string>
     <string name="cd_report_completed">Rapport complété</string>
     <string name="cd_report_missing">Rapport manquant</string>
@@ -80,7 +81,7 @@
     <string name="cd_scan_schedule">Scanner un emploi du temps physique</string>
     <string name="cd_add_schedule_slot">Ajouter un créneau</string>
     <string name="schedule_list_empty">Aucun cours pour le moment. Appuyez sur + pour en ajouter un.</string>
-    <string name="cd_open_daily_report_for_schedule_slot">Remplir l\'observation pour %1$s</string>
+    <string name="cd_schedule_slot_options">Modifier ou supprimer %1$s</string>
     <string name="cd_edit_schedule_slot">Modifier %1$s</string>
     <string name="cd_delete_schedule_slot">Supprimer %1$s</string>
     <string name="delete_schedule_slot_confirm_text">Cette action supprimera définitivement ce créneau et ne peut pas être annulée.</string>

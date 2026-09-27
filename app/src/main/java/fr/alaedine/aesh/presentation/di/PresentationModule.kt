@@ -29,7 +29,11 @@ val presentationModule =
         // editing) is supplied at call time via `koinViewModel(parameters = ...)`
         // from the navigation argument, see `StudentFormRoute`.
         viewModel { params -> StudentFormViewModel(get(), params.getOrNull()) }
-        viewModel { DailyReportFormViewModel(get(), get()) }
+        // Same nullable-id-as-injection-parameter pattern as
+        // `StudentFormViewModel` above: `null` when reached from the "new
+        // report" FAB, or a student id to preselect when reached by tapping
+        // a student row on the dashboard, see `DailyReportFormRoute`.
+        viewModel { params -> DailyReportFormViewModel(get(), get(), params.getOrNull()) }
         viewModel { EssReportViewModel(get(), get(), get()) }
         viewModel { ScheduleListViewModel(get(), get()) }
         // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`

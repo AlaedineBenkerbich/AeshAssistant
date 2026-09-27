@@ -65,7 +65,7 @@ import java.util.Locale
 @Composable
 fun HomeRoute(
     onNavigateToStudents: () -> Unit,
-    onNavigateToDailyReport: () -> Unit,
+    onNavigateToDailyReport: (Long?) -> Unit,
     onNavigateToSchedule: () -> Unit,
     onNavigateToEssReport: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -88,15 +88,19 @@ fun HomeRoute(
  * The app's main entry point: a calendar-style week strip highlighting
  * today (see [CalendarWeekHeader]), a per-student breakdown of whether
  * their daily report has been filled out yet (warning icon when missing,
- * see [StudentReportStatusRow]), and a FAB to jump straight into the
- * [fr.alaedine.aesh.presentation.report.DailyReportFormScreen].
+ * see [StudentReportStatusRow]). Tapping a student row jumps straight into
+ * the [fr.alaedine.aesh.presentation.report.DailyReportFormScreen] with
+ * that student preselected — logging an observation for a specific student
+ * is the far more common action — while the FAB opens the same form
+ * without preselecting anyone, for the rarer case of picking the student
+ * from within the form.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
     onNavigateToStudents: () -> Unit,
-    onNavigateToDailyReport: () -> Unit,
+    onNavigateToDailyReport: (Long?) -> Unit,
     onNavigateToSchedule: () -> Unit,
     onNavigateToEssReport: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -124,7 +128,7 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToDailyReport) {
+            FloatingActionButton(onClick = { onNavigateToDailyReport(null) }) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_daily_report))
             }
         },
@@ -157,7 +161,10 @@ fun HomeScreen(
                 }
             } else {
                 items(items = uiState.studentStatuses, key = { it.student.id }) { status ->
-                    StudentReportStatusRow(status = status)
+                    StudentReportStatusRow(
+                        status = status,
+                        onClick = { onNavigateToDailyReport(status.student.id) },
+                    )
                 }
             }
         }
@@ -311,13 +318,28 @@ private fun MissingReportsWarning(
     }
 }
 
-/** A single student's name/class alongside a check (report filled) or warning (report missing) icon. */
+/**
+ * A single student's name/class alongside a check (report filled) or
+ * warning (report missing) icon. Tapping the row invokes [onClick] to jump
+ * straight into today's [fr.alaedine.aesh.presentation.report.DailyReportFormScreen]
+ * with this student preselected, since logging an observation for them is
+ * the far more common action.
+ */
 @Composable
 private fun StudentReportStatusRow(
     status: StudentReportStatus,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    val openDailyReportLabel =
+        stringResource(
+            R.string.cd_open_daily_report_for_student,
+            stringResource(R.string.student_display_name, status.student.firstName, status.student.className),
+        )
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = openDailyReportLabel },
+    ) {
         Row(
             modifier =
                 Modifier
