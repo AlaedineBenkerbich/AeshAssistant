@@ -21,7 +21,7 @@ import org.koin.dsl.module
  * screen to its dependencies as the app grows.
  */
 val presentationModule = module {
-    viewModel { HomeViewModel(get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { SettingsViewModel(get()) }
     viewModel { StudentListViewModel(get()) }
     // The nullable student id (null when adding, an existing id when

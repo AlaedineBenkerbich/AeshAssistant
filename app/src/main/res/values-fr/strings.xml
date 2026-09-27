@@ -24,6 +24,10 @@
     <string name="home_empty_students">Aucun élève pour le moment. Ajoutez-en un pour commencer à suivre les rapports quotidiens.</string>
     <string name="cd_report_completed">Rapport complété</string>
     <string name="cd_report_missing">Rapport manquant</string>
+    <!-- Appended to a calendar day cell\'s accessibility label when it is the current day. -->
+    <string name="cd_calendar_today">Aujourd\'hui</string>
+    <!-- Appended to a calendar day cell\'s accessibility label when that day of the week has at least one scheduled class. -->
+    <string name="cd_calendar_has_scheduled_classes">Cours prévus</string>
     <plurals name="missing_reports_warning">
         <item quantity="one">%d élève n\'a pas encore de rapport aujourd\'hui.</item>
         <item quantity="many">%d élèves n\'ont pas encore de rapport aujourd\'hui.</item>

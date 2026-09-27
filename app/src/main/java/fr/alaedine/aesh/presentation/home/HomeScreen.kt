@@ -1,13 +1,18 @@
 package fr.alaedine.aesh.presentation.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
@@ -30,16 +35,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.time.temporal.WeekFields
 import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
 
@@ -71,10 +85,11 @@ fun HomeRoute(
 }
 
 /**
- * The app's main entry point: today's date, a per-student breakdown of
- * whether their daily report has been filled out yet (warning icon when
- * missing, see [StudentReportStatusRow]), and a FAB to jump straight into
- * the [fr.alaedine.aesh.presentation.report.DailyReportFormScreen].
+ * The app's main entry point: a calendar-style week strip highlighting
+ * today (see [CalendarWeekHeader]), a per-student breakdown of whether
+ * their daily report has been filled out yet (warning icon when missing,
+ * see [StudentReportStatusRow]), and a FAB to jump straight into the
+ * [fr.alaedine.aesh.presentation.report.DailyReportFormScreen].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,7 +137,10 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Text(text = formattedDate(uiState.date), style = MaterialTheme.typography.headlineMedium)
+                CalendarWeekHeader(
+                    today = uiState.date,
+                    daysWithScheduledClasses = uiState.daysWithScheduledClasses,
+                )
             }
             if (uiState.hasMissingReports) {
                 item {
@@ -144,6 +162,113 @@ fun HomeScreen(
         }
     }
 }
+
+/**
+ * Calendar-style dashboard header: the current month/year followed by a
+ * week strip (locale-aware first day of week) with [today] highlighted and
+ * a small dot under any day that has at least one entry in
+ * [daysWithScheduledClasses], so the date display feels like a real
+ * calendar rather than a plain date string.
+ */
+@Composable
+private fun CalendarWeekHeader(
+    today: LocalDate,
+    daysWithScheduledClasses: Set<DayOfWeek>,
+    modifier: Modifier = Modifier,
+) {
+    // Read through LocalLocale (rather than Locale.getDefault()) so this
+    // recomposes if the user changes the system locale while the app is running.
+    val locale = LocalLocale.current.platformLocale
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = monthYearLabel(today, locale),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                currentWeekDates(today, locale).forEach { date ->
+                    CalendarDayCell(
+                        date = date,
+                        isToday = date == today,
+                        hasScheduledClasses = date.dayOfWeek in daysWithScheduledClasses,
+                        locale = locale,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** A single day cell in [CalendarWeekHeader]: weekday label, a day-of-month number circled when [isToday], and an event dot when [hasScheduledClasses]. */
+@Composable
+private fun CalendarDayCell(
+    date: LocalDate,
+    isToday: Boolean,
+    hasScheduledClasses: Boolean,
+    locale: Locale,
+    modifier: Modifier = Modifier,
+) {
+    val todayLabel = stringResource(R.string.cd_calendar_today)
+    val hasScheduledClassesLabel = stringResource(R.string.cd_calendar_has_scheduled_classes)
+    val accessibilityLabel = buildString {
+        append(date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", locale)))
+        if (isToday) append(", ").append(todayLabel)
+        if (hasScheduledClasses) append(", ").append(hasScheduledClassesLabel)
+    }
+    Column(
+        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = accessibilityLabel },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = date.dayOfMonth.toString(),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(if (hasScheduledClasses) MaterialTheme.colorScheme.tertiary else Color.Transparent),
+        )
+    }
+}
+
+/** The 7 [LocalDate]s of the week containing [date], starting from [locale]'s first day of the week. */
+private fun currentWeekDates(date: LocalDate, locale: Locale): List<LocalDate> {
+    val firstDayOfWeek = WeekFields.of(locale).firstDayOfWeek
+    val offsetFromWeekStart = (date.dayOfWeek.value - firstDayOfWeek.value + 7) % 7
+    val startOfWeek = date.minusDays(offsetFromWeekStart.toLong())
+    return List(7) { startOfWeek.plusDays(it.toLong()) }
+}
+
+/** E.g. "September 2026". */
+private fun monthYearLabel(date: LocalDate, locale: Locale): String =
+    date.format(DateTimeFormatter.ofPattern("MMMM yyyy", locale))
+        .replaceFirstChar { it.titlecase(locale) }
 
 /** Warning banner shown when [missingCount] students still haven't filled out today's report. */
 @Composable
@@ -206,9 +331,6 @@ private fun StudentReportStatusRow(status: StudentReportStatus, modifier: Modifi
     }
 }
 
-private fun formattedDate(date: LocalDate): String =
-    date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()))
-
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreview() {
@@ -225,6 +347,7 @@ private fun HomeScreenPreview() {
                         hasReportToday = false,
                     ),
                 ),
+                daysWithScheduledClasses = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
                 isLoading = false,
             ),
             onNavigateToStudents = {},
