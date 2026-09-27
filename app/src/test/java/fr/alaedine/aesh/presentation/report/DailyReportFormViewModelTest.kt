@@ -371,4 +371,106 @@ class DailyReportFormViewModelTest {
             assertEquals(4, savedReports.first().moodLevel)
             assertTrue(viewModel.uiState.value.isSaved)
         }
+
+    @Test
+    fun `should preselect the student matching the prefilled student id once students load`() =
+        runTest {
+            // Given / When: mirrors tapping a student row on the dashboard, which supplies both a student id and a date.
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    preselectedStudentId = alice.id,
+                    prefilledDate = today,
+                )
+
+            // Then
+            assertEquals(alice, viewModel.uiState.value.selectedStudent)
+        }
+
+    @Test
+    fun `should default the report date to the prefilled date when provided`() =
+        runTest {
+            // Given
+            val previousDay = today.minusDays(1)
+
+            // When
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    prefilledDate = previousDay,
+                )
+
+            // Then
+            assertEquals(previousDay, viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should clamp a future prefilled date to today`() =
+        runTest {
+            // Given: the dashboard allows browsing forward in time, unlike this form.
+            val nextWeek = today.plusWeeks(1)
+
+            // When
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    prefilledDate = nextWeek,
+                )
+
+            // Then
+            assertEquals(today, viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should load the prefilled dates existing report once the preselected student loads`() =
+        runTest {
+            // Given: reopening the form for a student/day already reported, e.g. re-tapping a completed observation on the dashboard.
+            val previousDay = today.minusDays(3)
+            val existingReport =
+                DailyReport(
+                    id = 9L,
+                    date = previousDay,
+                    studentId = alice.id,
+                    moodLevel = 2,
+                    focusLevel = 5,
+                    socialInteractions = 3,
+                    freeNotes = "Logged from the dashboard",
+                )
+
+            // When
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(existingReport)),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    preselectedStudentId = alice.id,
+                    prefilledDate = previousDay,
+                )
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals(previousDay, state.date)
+            assertEquals(alice, state.selectedStudent)
+            assertTrue(state.isEditing)
+            assertEquals(existingReport.id, state.reportId)
+            assertEquals(existingReport.moodLevel, state.moodLevel)
+            assertEquals(existingReport.freeNotes, state.freeNotes)
+        }
+
+    @Test
+    fun `should default the report date to today when no date is prefilled`() =
+        runTest {
+            // Given / When: mirrors the dashboard's "new report" FAB, which doesn't supply a date.
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    prefilledDate = null,
+                )
+
+            // Then
+            assertEquals(today, viewModel.uiState.value.date)
+        }
 }

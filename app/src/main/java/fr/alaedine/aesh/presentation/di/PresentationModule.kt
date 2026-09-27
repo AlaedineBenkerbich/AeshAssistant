@@ -12,6 +12,7 @@ import fr.alaedine.aesh.presentation.student.StudentFormViewModel
 import fr.alaedine.aesh.presentation.student.StudentListViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import java.time.LocalDate
 
 /**
  * Provides the presentation layer's [androidx.lifecycle.ViewModel]s.
@@ -32,8 +33,10 @@ val presentationModule =
         // Same nullable-id-as-injection-parameter pattern as
         // `StudentFormViewModel` above: `null` when reached from the "new
         // report" FAB, or a student id to preselect when reached by tapping
-        // a student row on the dashboard, see `DailyReportFormRoute`.
-        viewModel { params -> DailyReportFormViewModel(get(), get(), params.getOrNull()) }
+        // a student row on the dashboard, see `DailyReportFormRoute`. The
+        // dashboard's selected date rides along the same way, resolved by
+        // Koin's type-based matching (see `ScheduleFormViewModel` below).
+        viewModel { params -> DailyReportFormViewModel(get(), get(), params.getOrNull<Long>(), params.getOrNull<LocalDate>()) }
         viewModel { EssReportViewModel(get(), get(), get()) }
         viewModel { ScheduleListViewModel(get(), get()) }
         // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`

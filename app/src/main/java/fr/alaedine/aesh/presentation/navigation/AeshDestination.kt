@@ -41,10 +41,19 @@ sealed interface AeshDestination {
      * `HomeScreen`'s `StudentReportStatusRow`). `null` when reached from the
      * dashboard's "new report" FAB instead, in which case the student is
      * picked from within the form.
+     *
+     * [date] is an ISO-8601 string (e.g. `"2026-09-27"`), keeping this
+     * destination serializable with primitive types only (same pattern as
+     * [AddScheduleSlot]'s recognized fields). It carries over the
+     * dashboard's currently selected date so editing/completing an
+     * observation opens the form already on the right day instead of
+     * always defaulting to today. `null` when reached from the "new
+     * report" FAB, in which case the form defaults to today.
      */
     @Serializable
     data class DailyReportForm(
         val studentId: Long? = null,
+        val date: String? = null,
     ) : AeshDestination
 
     /**
