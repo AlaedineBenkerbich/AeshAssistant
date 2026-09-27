@@ -33,9 +33,19 @@ sealed interface AeshDestination {
         val studentId: Long,
     ) : AeshDestination
 
-    /** Daily observation form; the student is picked from within the form (see `DailyReportFormRoute`). */
+    /**
+     * Daily observation form (see `DailyReportFormRoute`).
+     *
+     * [studentId] preselects that student on load — used when this
+     * destination is reached by tapping a student row on the dashboard (see
+     * `HomeScreen`'s `StudentReportStatusRow`). `null` when reached from the
+     * dashboard's "new report" FAB instead, in which case the student is
+     * picked from within the form.
+     */
     @Serializable
-    data object DailyReportForm : AeshDestination
+    data class DailyReportForm(
+        val studentId: Long? = null,
+    ) : AeshDestination
 
     /**
      * ESS (*Équipe de Suivi de Scolarisation*) report generation screen; the

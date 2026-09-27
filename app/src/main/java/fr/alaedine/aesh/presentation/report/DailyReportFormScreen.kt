@@ -50,6 +50,7 @@ import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -66,12 +67,17 @@ private val SAVED_STATE_DISPLAY_DURATION = 900.milliseconds
  * from the stateless [DailyReportFormScreen] so the latter has no
  * Android/ViewModel dependencies and stays trivially previewable and
  * testable.
+ *
+ * @param studentId `null` when reached from the dashboard's "new report"
+ * FAB (the student is picked from within the form), or the id of the
+ * student to preselect when reached by tapping their row on the dashboard.
  */
 @Composable
 fun DailyReportFormRoute(
+    studentId: Long?,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: DailyReportFormViewModel = koinViewModel(),
+    viewModel: DailyReportFormViewModel = koinViewModel(parameters = { parametersOf(studentId) }),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
