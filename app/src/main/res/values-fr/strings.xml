@@ -23,7 +23,7 @@
     <string name="cd_nav_settings">Paramètres</string>
     <string name="cd_new_daily_report">Nouveau rapport quotidien</string>
     <string name="cd_open_daily_report_for_student">Remplir l\'observation pour %1$s</string>
-    <string name="home_empty_students">Aucun élève pour le moment. Ajoutez-en un pour commencer à suivre les rapports quotidiens.</string>
+    <string name="home_empty_schedule_today">Aucun cours prévu aujourd\'hui. Appuyez sur + pour enregistrer une observation manuellement.</string>
     <string name="cd_report_completed">Rapport complété</string>
     <string name="cd_report_missing">Rapport manquant</string>
     <!-- Appended to a calendar day cell\'s accessibility label when it is the current day. -->

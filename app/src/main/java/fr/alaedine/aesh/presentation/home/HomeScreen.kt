@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -52,10 +53,13 @@ import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import java.util.Locale
+
+private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
  * Stateful entry point wired to [HomeViewModel]. Kept separate from the
@@ -88,12 +92,16 @@ fun HomeRoute(
  * The app's main entry point: a calendar-style week strip highlighting
  * today (see [CalendarWeekHeader]), a per-student breakdown of whether
  * their daily report has been filled out yet (warning icon when missing,
- * see [StudentReportStatusRow]). Tapping a student row jumps straight into
- * the [fr.alaedine.aesh.presentation.report.DailyReportFormScreen] with
- * that student preselected — logging an observation for a specific student
- * is the far more common action — while the FAB opens the same form
- * without preselecting anyone, for the rarer case of picking the student
- * from within the form.
+ * see [StudentReportStatusRow]), segmented lesson by lesson: one
+ * [LessonBlockHeader] per today's [fr.alaedine.aesh.domain.model.ScheduleSlot],
+ * in schedule order, so only students who actually have a class today show
+ * up — solely the schedule determines who needs an observation. Tapping a
+ * student row jumps straight into the
+ * [fr.alaedine.aesh.presentation.report.DailyReportFormScreen] with that
+ * student preselected — logging an observation for a specific student is
+ * the far more common action — while the FAB opens the same form without
+ * preselecting anyone, letting the AESH manually log an observation for any
+ * known student even if they weren't on today's schedule.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,19 +160,27 @@ fun HomeScreen(
                     MissingReportsWarning(missingCount = uiState.missingReportCount)
                 }
             }
-            if (uiState.studentStatuses.isEmpty() && !uiState.isLoading) {
+            if (uiState.lessonBlocks.isEmpty() && !uiState.isLoading) {
                 item {
                     Text(
-                        text = stringResource(R.string.home_empty_students),
+                        text = stringResource(R.string.home_empty_schedule_today),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             } else {
-                items(items = uiState.studentStatuses, key = { it.student.id }) { status ->
-                    StudentReportStatusRow(
-                        status = status,
-                        onClick = { onNavigateToDailyReport(status.student.id) },
-                    )
+                uiState.lessonBlocks.forEach { lessonBlock ->
+                    item(key = "lesson-header-${lessonBlock.scheduleSlotId}") {
+                        LessonBlockHeader(lessonBlock = lessonBlock)
+                    }
+                    items(
+                        items = lessonBlock.studentStatuses,
+                        key = { "${lessonBlock.scheduleSlotId}-${it.student.id}" },
+                    ) { status ->
+                        StudentReportStatusRow(
+                            status = status,
+                            onClick = { onNavigateToDailyReport(status.student.id) },
+                        )
+                    }
                 }
             }
         }
@@ -319,6 +335,51 @@ private fun MissingReportsWarning(
 }
 
 /**
+ * Section header segmenting the dashboard's student list lesson by lesson:
+ * [lessonBlock]'s subject alongside its time range and room, in a tinted
+ * [Surface] so it reads as a distinct heading rather than another list row.
+ * Every [StudentReportStatusRow] that follows, until the next header,
+ * belongs to this class.
+ */
+@Composable
+private fun LessonBlockHeader(
+    lessonBlock: LessonBlock,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = MaterialTheme.shapes.medium,
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = lessonBlock.subject,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = lessonBlock.timeAndRoomLabel(),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+    }
+}
+
+/** E.g. "09:00 – 10:00 • Room 12", omitting the room when blank. */
+private fun LessonBlock.timeAndRoomLabel(): String {
+    val timeRange = "${startTime.format(TIME_FORMATTER)} – ${endTime.format(TIME_FORMATTER)}"
+    return listOfNotNull(timeRange, room.takeIf { it.isNotBlank() }).joinToString(" • ")
+}
+
+/**
  * A single student's name/class alongside a check (report filled) or
  * warning (report missing) icon. Tapping the row invokes [onClick] to jump
  * straight into today's [fr.alaedine.aesh.presentation.report.DailyReportFormScreen]
@@ -381,15 +442,39 @@ private fun HomeScreenPreview() {
         HomeScreen(
             uiState =
                 HomeUiState(
-                    studentStatuses =
+                    lessonBlocks =
                         listOf(
-                            StudentReportStatus(
-                                student = Student(id = 1L, firstName = "Alice", className = "CE2"),
-                                hasReportToday = true,
+                            LessonBlock(
+                                scheduleSlotId = 1L,
+                                startTime = LocalTime.of(9, 0),
+                                endTime = LocalTime.of(10, 0),
+                                subject = "Mathématiques",
+                                room = "12",
+                                studentStatuses =
+                                    listOf(
+                                        StudentReportStatus(
+                                            student = Student(id = 1L, firstName = "Alice", className = "CE2"),
+                                            hasReportToday = true,
+                                        ),
+                                        StudentReportStatus(
+                                            student = Student(id = 2L, firstName = "Amir", className = "CM2"),
+                                            hasReportToday = false,
+                                        ),
+                                    ),
                             ),
-                            StudentReportStatus(
-                                student = Student(id = 2L, firstName = "Amir", className = "CM2"),
-                                hasReportToday = false,
+                            LessonBlock(
+                                scheduleSlotId = 2L,
+                                startTime = LocalTime.of(14, 0),
+                                endTime = LocalTime.of(15, 0),
+                                subject = "EPS",
+                                room = "",
+                                studentStatuses =
+                                    listOf(
+                                        StudentReportStatus(
+                                            student = Student(id = 2L, firstName = "Amir", className = "CM2"),
+                                            hasReportToday = false,
+                                        ),
+                                    ),
                             ),
                         ),
                     daysWithScheduledClasses = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
@@ -411,11 +496,21 @@ private fun HomeScreenAllReportedPreview() {
         HomeScreen(
             uiState =
                 HomeUiState(
-                    studentStatuses =
+                    lessonBlocks =
                         listOf(
-                            StudentReportStatus(
-                                student = Student(id = 1L, firstName = "Alice", className = "CE2"),
-                                hasReportToday = true,
+                            LessonBlock(
+                                scheduleSlotId = 1L,
+                                startTime = LocalTime.of(9, 0),
+                                endTime = LocalTime.of(10, 0),
+                                subject = "Mathématiques",
+                                room = "12",
+                                studentStatuses =
+                                    listOf(
+                                        StudentReportStatus(
+                                            student = Student(id = 1L, firstName = "Alice", className = "CE2"),
+                                            hasReportToday = true,
+                                        ),
+                                    ),
                             ),
                         ),
                     isLoading = false,
@@ -434,7 +529,7 @@ private fun HomeScreenAllReportedPreview() {
 private fun HomeScreenEmptyPreview() {
     AeshAssistantTheme {
         HomeScreen(
-            uiState = HomeUiState(studentStatuses = emptyList(), isLoading = false),
+            uiState = HomeUiState(lessonBlocks = emptyList(), isLoading = false),
             onNavigateToStudents = {},
             onNavigateToDailyReport = {},
             onNavigateToSchedule = {},
