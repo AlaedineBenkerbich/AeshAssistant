@@ -4,14 +4,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -19,6 +22,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,13 +37,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
+import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -82,6 +89,7 @@ fun ScheduleFormRoute(
         onEndTimeChanged = viewModel::onEndTimeChanged,
         onSubjectChanged = viewModel::onSubjectChanged,
         onRoomChanged = viewModel::onRoomChanged,
+        onStudentToggled = viewModel::onStudentToggled,
         onSaveClicked = viewModel::onSaveClicked,
         onNavigateBack = onNavigateBack,
         modifier = modifier,
@@ -97,6 +105,7 @@ fun ScheduleFormScreen(
     onEndTimeChanged: (LocalTime) -> Unit,
     onSubjectChanged: (String) -> Unit,
     onRoomChanged: (String) -> Unit,
+    onStudentToggled: (Long) -> Unit,
     onSaveClicked: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -161,12 +170,59 @@ fun ScheduleFormScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+            StudentAssignmentSection(
+                students = uiState.students,
+                selectedStudentIds = uiState.selectedStudentIds,
+                onStudentToggled = onStudentToggled,
+            )
             Button(
                 onClick = onSaveClicked,
                 enabled = uiState.canSave,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(text = stringResource(R.string.action_save))
+            }
+        }
+    }
+}
+
+/**
+ * Checkbox list assigning zero or more [students] to this slot. At least
+ * one is required to save (see [ScheduleFormUiState.canSave]), so it's
+ * always clear which student(s) an observation logged from this slot is
+ * for.
+ */
+@Composable
+private fun StudentAssignmentSection(
+    students: List<Student>,
+    selectedStudentIds: Set<Long>,
+    onStudentToggled: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(text = stringResource(R.string.schedule_field_students), style = MaterialTheme.typography.titleSmall)
+        if (students.isEmpty()) {
+            Text(
+                text = stringResource(R.string.schedule_no_students_available),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        } else {
+            students.forEach { student ->
+                val isSelected = student.id in selectedStudentIds
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = isSelected,
+                                onValueChange = { onStudentToggled(student.id) },
+                                role = Role.Checkbox,
+                            ),
+                ) {
+                    Checkbox(checked = isSelected, onCheckedChange = null)
+                    Text(text = stringResource(R.string.student_display_name, student.firstName, student.className))
+                }
             }
         }
     }
@@ -279,12 +335,20 @@ private fun DayOfWeek.displayName(): String = getDisplayName(TextStyle.FULL, Loc
 private fun ScheduleFormScreenAddPreview() {
     AeshAssistantTheme {
         ScheduleFormScreen(
-            uiState = ScheduleFormUiState(),
+            uiState =
+                ScheduleFormUiState(
+                    students =
+                        listOf(
+                            Student(id = 1L, firstName = "Alice", className = "CE2"),
+                            Student(id = 2L, firstName = "Amir", className = "CM2"),
+                        ),
+                ),
             onDayOfWeekChanged = {},
             onStartTimeChanged = {},
             onEndTimeChanged = {},
             onSubjectChanged = {},
             onRoomChanged = {},
+            onStudentToggled = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )
@@ -304,12 +368,19 @@ private fun ScheduleFormScreenEditPreview() {
                     endTime = LocalTime.of(11, 0),
                     subject = "Mathématiques",
                     room = "B12",
+                    students =
+                        listOf(
+                            Student(id = 1L, firstName = "Alice", className = "CE2"),
+                            Student(id = 2L, firstName = "Amir", className = "CM2"),
+                        ),
+                    selectedStudentIds = setOf(1L),
                 ),
             onDayOfWeekChanged = {},
             onStartTimeChanged = {},
             onEndTimeChanged = {},
             onSubjectChanged = {},
             onRoomChanged = {},
+            onStudentToggled = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )

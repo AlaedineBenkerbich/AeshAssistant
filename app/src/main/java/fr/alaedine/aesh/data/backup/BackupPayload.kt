@@ -24,9 +24,10 @@ data class BackupPayload(
     val students: List<BackupStudent> = emptyList(),
     val dailyReports: List<BackupDailyReport> = emptyList(),
     val scheduleSlots: List<BackupScheduleSlot> = emptyList(),
+    val scheduleSlotStudentCrossRefs: List<BackupScheduleSlotStudentCrossRef> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA_VERSION = 1
+        const val SCHEMA_VERSION = 2
     }
 }
 
@@ -63,4 +64,11 @@ data class BackupScheduleSlot(
     val endTime: String,
     val subject: String,
     val room: String,
+)
+
+/** JSON-friendly mirror of [fr.alaedine.aesh.data.local.entity.ScheduleSlotStudentCrossRef]. */
+@Serializable
+data class BackupScheduleSlotStudentCrossRef(
+    val scheduleSlotId: Long,
+    val studentId: Long,
 )

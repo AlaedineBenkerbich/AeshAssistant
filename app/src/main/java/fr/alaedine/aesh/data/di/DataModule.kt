@@ -4,6 +4,7 @@ import androidx.room.Room
 import fr.alaedine.aesh.data.local.AeshDatabase
 import fr.alaedine.aesh.data.local.MIGRATION_1_2
 import fr.alaedine.aesh.data.local.MIGRATION_2_3
+import fr.alaedine.aesh.data.local.MIGRATION_3_4
 import fr.alaedine.aesh.data.repository.BackupRepositoryImpl
 import fr.alaedine.aesh.data.repository.DailyReportRepositoryImpl
 import fr.alaedine.aesh.data.repository.ScheduleSlotRepositoryImpl
@@ -30,7 +31,7 @@ val dataModule =
         single {
             Room
                 .databaseBuilder(androidContext(), AeshDatabase::class.java, DATABASE_NAME)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
         }
         single { get<AeshDatabase>().studentDao() }
@@ -38,6 +39,6 @@ val dataModule =
         single { get<AeshDatabase>().scheduleSlotDao() }
         single<StudentRepository> { StudentRepositoryImpl(get()) }
         single<DailyReportRepository> { DailyReportRepositoryImpl(get()) }
-        single<ScheduleSlotRepository> { ScheduleSlotRepositoryImpl(get()) }
+        single<ScheduleSlotRepository> { ScheduleSlotRepositoryImpl(get(), get()) }
         single<BackupRepository> { BackupRepositoryImpl(get(), get(), get(), get()) }
     }

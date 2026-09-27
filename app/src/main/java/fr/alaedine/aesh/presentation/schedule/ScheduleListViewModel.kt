@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.repository.ScheduleSlotRepository
+import fr.alaedine.aesh.domain.repository.StudentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -15,22 +17,28 @@ import kotlinx.coroutines.launch
 /**
  * Presentation-layer state holder for the weekly schedule list screen.
  *
- * Keeps [uiState] in sync with [scheduleSlotRepository] and drives the
- * delete-confirmation flow: [onDeleteRequested] stages a slot for removal
- * so [ScheduleListScreen] can show a confirmation dialog, and the actual
- * deletion only happens once [onDeleteConfirmed] is called.
+ * Keeps [uiState] in sync with [scheduleSlotRepository] and
+ * [studentRepository] — the latter resolves each slot's assigned student
+ * ids into display names (see [ScheduleListUiState.studentsById]) — and
+ * drives the delete-confirmation flow: [onDeleteRequested] stages a slot for
+ * removal so [ScheduleListScreen] can show a confirmation dialog, and the
+ * actual deletion only happens once [onDeleteConfirmed] is called.
  */
 class ScheduleListViewModel(
     private val scheduleSlotRepository: ScheduleSlotRepository,
+    private val studentRepository: StudentRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScheduleListUiState())
     val uiState: StateFlow<ScheduleListUiState> = _uiState.asStateFlow()
 
     init {
-        scheduleSlotRepository
-            .observeScheduleSlots()
-            .onEach { scheduleSlots -> _uiState.update { it.copy(scheduleSlots = scheduleSlots, isLoading = false) } }
-            .launchIn(viewModelScope)
+        combine(
+            scheduleSlotRepository.observeScheduleSlots(),
+            studentRepository.observeStudents(),
+        ) { scheduleSlots, students -> scheduleSlots to students.associateBy { it.id } }
+            .onEach { (scheduleSlots, studentsById) ->
+                _uiState.update { it.copy(scheduleSlots = scheduleSlots, studentsById = studentsById, isLoading = false) }
+            }.launchIn(viewModelScope)
     }
 
     /** Stages [scheduleSlot] for deletion, prompting [ScheduleListScreen] to show a confirmation dialog. */

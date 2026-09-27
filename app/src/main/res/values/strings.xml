@@ -71,6 +71,8 @@
     <string name="schedule_field_subject">Subject</string>
     <string name="schedule_field_room">Room</string>
     <string name="schedule_field_day">Day</string>
+    <string name="schedule_field_students">Students</string>
+    <string name="schedule_no_students_available">No students yet. Add one before creating a class.</string>
 
     <!-- Schedule list -->
     <string name="schedule_list_title">Weekly schedule</string>

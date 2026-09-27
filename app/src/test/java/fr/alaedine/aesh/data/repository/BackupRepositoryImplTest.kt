@@ -8,6 +8,7 @@ import fr.alaedine.aesh.data.local.dao.ScheduleSlotDao
 import fr.alaedine.aesh.data.local.dao.StudentDao
 import fr.alaedine.aesh.data.local.entity.DailyReportEntity
 import fr.alaedine.aesh.data.local.entity.ScheduleSlotEntity
+import fr.alaedine.aesh.data.local.entity.ScheduleSlotStudentCrossRef
 import fr.alaedine.aesh.data.local.entity.StudentEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -80,14 +81,18 @@ class BackupRepositoryImplTest {
                     freeNotes = "Great day",
                 ),
             )
-            scheduleSlotDao.insert(
-                ScheduleSlotEntity(
-                    dayOfWeek = DayOfWeek.MONDAY,
-                    startTime = LocalTime.of(9, 0),
-                    endTime = LocalTime.of(10, 0),
-                    subject = "Mathématiques",
-                    room = "B12",
-                ),
+            val scheduleSlotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(9, 0),
+                        endTime = LocalTime.of(10, 0),
+                        subject = "Mathématiques",
+                        room = "B12",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(
+                listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = scheduleSlotId, studentId = studentId)),
             )
 
             // When
@@ -100,6 +105,10 @@ class BackupRepositoryImplTest {
             assertEquals(listOf("Alice"), payload.students.map { it.firstName })
             assertEquals(listOf("Great day"), payload.dailyReports.map { it.freeNotes })
             assertEquals(listOf("Mathématiques"), payload.scheduleSlots.map { it.subject })
+            assertEquals(
+                listOf(scheduleSlotId to studentId),
+                payload.scheduleSlotStudentCrossRefs.map { it.scheduleSlotId to it.studentId },
+            )
         }
 
     @Test
@@ -117,14 +126,18 @@ class BackupRepositoryImplTest {
                     freeNotes = "Great day",
                 ),
             )
-            scheduleSlotDao.insert(
-                ScheduleSlotEntity(
-                    dayOfWeek = DayOfWeek.MONDAY,
-                    startTime = LocalTime.of(9, 0),
-                    endTime = LocalTime.of(10, 0),
-                    subject = "Mathématiques",
-                    room = "B12",
-                ),
+            val scheduleSlotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(9, 0),
+                        endTime = LocalTime.of(10, 0),
+                        subject = "Mathématiques",
+                        room = "B12",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(
+                listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = scheduleSlotId, studentId = studentId)),
             )
             val backup = ByteArrayOutputStream()
             repository.exportBackup(backup)
@@ -141,6 +154,38 @@ class BackupRepositoryImplTest {
             assertEquals(studentId, restoredReport.studentId)
             val restoredSlot = scheduleSlotDao.observeAll().first().single()
             assertEquals("Mathématiques", restoredSlot.subject)
+            val restoredCrossRef = scheduleSlotDao.getAllStudentCrossRefs().single()
+            assertEquals(scheduleSlotId, restoredCrossRef.scheduleSlotId)
+            assertEquals(studentId, restoredCrossRef.studentId)
+        }
+
+    @Test
+    fun `should replace existing student assignments instead of merging when importing a backup`() =
+        runTest {
+            // Given: a backup where Bob is assigned to Math...
+            val bobId = studentDao.insert(StudentEntity(firstName = "Bob", className = "CM2"))
+            val mathSlotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(9, 0),
+                        endTime = LocalTime.of(10, 0),
+                        subject = "Mathématiques",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = mathSlotId, studentId = bobId)))
+            val backup = ByteArrayOutputStream()
+            repository.exportBackup(backup)
+
+            // ...and Alice was assigned to that same slot afterwards
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            scheduleSlotDao.insertStudentCrossRefs(listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = mathSlotId, studentId = aliceId)))
+
+            // When
+            repository.importBackup(ByteArrayInputStream(backup.toByteArray()))
+
+            // Then
+            assertEquals(listOf(bobId), scheduleSlotDao.getAllStudentCrossRefs().map { it.studentId })
         }
 
     @Test

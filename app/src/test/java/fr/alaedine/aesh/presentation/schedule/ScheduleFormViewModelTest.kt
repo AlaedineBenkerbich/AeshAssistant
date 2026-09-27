@@ -2,6 +2,8 @@ package fr.alaedine.aesh.presentation.schedule
 
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.domain.model.ScheduleSlot
+import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.student.FakeStudentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -28,6 +30,8 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScheduleFormViewModelTest {
+    private val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+
     @BeforeTest
     fun setMainDispatcher() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -42,10 +46,25 @@ class ScheduleFormViewModelTest {
     fun `should expose default fields when adding a new schedule slot`() =
         runTest {
             // Given / When
-            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null)
+            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), FakeStudentRepository(), scheduleSlotId = null)
 
             // Then
             assertEquals(ScheduleFormUiState(), viewModel.uiState.value)
+        }
+
+    @Test
+    fun `should expose the available students to assign when adding a new schedule slot`() =
+        runTest {
+            // Given / When
+            val viewModel =
+                ScheduleFormViewModel(
+                    FakeScheduleSlotRepository(),
+                    FakeStudentRepository(initialStudents = listOf(alice)),
+                    scheduleSlotId = null,
+                )
+
+            // Then
+            assertEquals(listOf(alice), viewModel.uiState.value.students)
         }
 
     @Test
@@ -60,11 +79,13 @@ class ScheduleFormViewModelTest {
                     endTime = LocalTime.of(11, 0),
                     subject = "Mathématiques",
                     room = "B12",
+                    studentIds = listOf(alice.id),
                 )
             val repository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot))
 
             // When
-            val viewModel = ScheduleFormViewModel(repository, scheduleSlotId = mathSlot.id)
+            val viewModel =
+                ScheduleFormViewModel(repository, FakeStudentRepository(initialStudents = listOf(alice)), scheduleSlotId = mathSlot.id)
 
             // Then
             val state = viewModel.uiState.value
@@ -73,6 +94,7 @@ class ScheduleFormViewModelTest {
             assertEquals(mathSlot.endTime, state.endTime)
             assertEquals(mathSlot.subject, state.subject)
             assertEquals(mathSlot.room, state.room)
+            assertEquals(setOf(alice.id), state.selectedStudentIds)
             assertTrue(state.isEditing)
         }
 
@@ -80,7 +102,13 @@ class ScheduleFormViewModelTest {
     fun `should not allow saving when the subject is blank`() =
         runTest {
             // Given
-            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null)
+            val viewModel =
+                ScheduleFormViewModel(
+                    FakeScheduleSlotRepository(),
+                    FakeStudentRepository(initialStudents = listOf(alice)),
+                    scheduleSlotId = null,
+                )
+            viewModel.onStudentToggled(alice.id)
 
             // When
             viewModel.onSubjectChanged("")
@@ -93,8 +121,14 @@ class ScheduleFormViewModelTest {
     fun `should not allow saving when the end time is not after the start time`() =
         runTest {
             // Given
-            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null)
+            val viewModel =
+                ScheduleFormViewModel(
+                    FakeScheduleSlotRepository(),
+                    FakeStudentRepository(initialStudents = listOf(alice)),
+                    scheduleSlotId = null,
+                )
             viewModel.onSubjectChanged("Mathématiques")
+            viewModel.onStudentToggled(alice.id)
 
             // When
             viewModel.onStartTimeChanged(LocalTime.of(9, 0))
@@ -105,16 +139,59 @@ class ScheduleFormViewModelTest {
         }
 
     @Test
-    fun `should allow saving when the required fields are valid`() =
+    fun `should not allow saving when no student is assigned`() =
         runTest {
             // Given
-            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null)
+            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), FakeStudentRepository(), scheduleSlotId = null)
 
             // When
             viewModel.onSubjectChanged("Mathématiques")
 
             // Then
+            assertFalse(viewModel.uiState.value.canSave)
+        }
+
+    @Test
+    fun `should allow saving when the required fields are valid`() =
+        runTest {
+            // Given
+            val viewModel =
+                ScheduleFormViewModel(
+                    FakeScheduleSlotRepository(),
+                    FakeStudentRepository(initialStudents = listOf(alice)),
+                    scheduleSlotId = null,
+                )
+
+            // When
+            viewModel.onSubjectChanged("Mathématiques")
+            viewModel.onStudentToggled(alice.id)
+
+            // Then
             assertTrue(viewModel.uiState.value.canSave)
+        }
+
+    @Test
+    fun `should toggle a student's assignment when selected and deselected`() =
+        runTest {
+            // Given
+            val viewModel =
+                ScheduleFormViewModel(
+                    FakeScheduleSlotRepository(),
+                    FakeStudentRepository(initialStudents = listOf(alice)),
+                    scheduleSlotId = null,
+                )
+
+            // When
+            viewModel.onStudentToggled(alice.id)
+
+            // Then
+            assertEquals(setOf(alice.id), viewModel.uiState.value.selectedStudentIds)
+
+            // When
+            viewModel.onStudentToggled(alice.id)
+
+            // Then
+            assertEquals(emptySet(), viewModel.uiState.value.selectedStudentIds)
         }
 
     @Test
@@ -122,10 +199,12 @@ class ScheduleFormViewModelTest {
         runTest {
             // Given
             val repository = FakeScheduleSlotRepository()
-            val viewModel = ScheduleFormViewModel(repository, scheduleSlotId = null)
+            val viewModel =
+                ScheduleFormViewModel(repository, FakeStudentRepository(initialStudents = listOf(alice)), scheduleSlotId = null)
             viewModel.onDayOfWeekChanged(DayOfWeek.THURSDAY)
             viewModel.onSubjectChanged("Mathématiques")
             viewModel.onRoomChanged("B12")
+            viewModel.onStudentToggled(alice.id)
 
             // When
             viewModel.onSaveClicked()
@@ -135,6 +214,7 @@ class ScheduleFormViewModelTest {
             assertEquals(DayOfWeek.THURSDAY, saved.dayOfWeek)
             assertEquals("Mathématiques", saved.subject)
             assertEquals("B12", saved.room)
+            assertEquals(listOf(alice.id), saved.studentIds)
             assertTrue(viewModel.uiState.value.isSaved)
         }
 
@@ -149,9 +229,11 @@ class ScheduleFormViewModelTest {
                     startTime = LocalTime.of(8, 0),
                     endTime = LocalTime.of(9, 0),
                     subject = "Mathématiques",
+                    studentIds = listOf(alice.id),
                 )
             val repository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot))
-            val viewModel = ScheduleFormViewModel(repository, scheduleSlotId = mathSlot.id)
+            val viewModel =
+                ScheduleFormViewModel(repository, FakeStudentRepository(initialStudents = listOf(alice)), scheduleSlotId = mathSlot.id)
 
             // When
             viewModel.onRoomChanged("B12")
@@ -167,7 +249,7 @@ class ScheduleFormViewModelTest {
         runTest {
             // Given
             val repository = FakeScheduleSlotRepository()
-            val viewModel = ScheduleFormViewModel(repository, scheduleSlotId = null)
+            val viewModel = ScheduleFormViewModel(repository, FakeStudentRepository(), scheduleSlotId = null)
             viewModel.onSubjectChanged("")
 
             // When
@@ -192,7 +274,8 @@ class ScheduleFormViewModelTest {
                 )
 
             // When
-            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null, prefill = prefill)
+            val viewModel =
+                ScheduleFormViewModel(FakeScheduleSlotRepository(), FakeStudentRepository(), scheduleSlotId = null, prefill = prefill)
 
             // Then
             val state = viewModel.uiState.value
@@ -211,7 +294,8 @@ class ScheduleFormViewModelTest {
             val prefill = ParsedScheduleSlot(subject = "Mathématiques")
 
             // When
-            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), scheduleSlotId = null, prefill = prefill)
+            val viewModel =
+                ScheduleFormViewModel(FakeScheduleSlotRepository(), FakeStudentRepository(), scheduleSlotId = null, prefill = prefill)
 
             // Then
             val state = viewModel.uiState.value
@@ -238,7 +322,8 @@ class ScheduleFormViewModelTest {
             val prefill = ParsedScheduleSlot(subject = "Should not appear")
 
             // When
-            val viewModel = ScheduleFormViewModel(repository, scheduleSlotId = mathSlot.id, prefill = prefill)
+            val viewModel =
+                ScheduleFormViewModel(repository, FakeStudentRepository(), scheduleSlotId = mathSlot.id, prefill = prefill)
 
             // Then
             assertEquals(mathSlot.subject, viewModel.uiState.value.subject)

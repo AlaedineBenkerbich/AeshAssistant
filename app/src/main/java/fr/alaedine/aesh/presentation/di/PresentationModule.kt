@@ -31,14 +31,14 @@ val presentationModule =
         viewModel { params -> StudentFormViewModel(get(), params.getOrNull()) }
         viewModel { DailyReportFormViewModel(get(), get()) }
         viewModel { EssReportViewModel(get(), get(), get()) }
-        viewModel { ScheduleListViewModel(get()) }
+        viewModel { ScheduleListViewModel(get(), get()) }
         // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`
         // above, plus an optional scanner pre-fill (both sourced from the
         // navigation argument, see `ScheduleFormRoute`). Koin's `ParametersHolder`
         // resolves each `getOrNull<T>()` call by matching type, so the two
         // parameters can be passed/retrieved in any order.
         viewModel { params ->
-            ScheduleFormViewModel(get(), params.getOrNull<Long>(), params.getOrNull<ParsedScheduleSlot>())
+            ScheduleFormViewModel(get(), get(), params.getOrNull<Long>(), params.getOrNull<ParsedScheduleSlot>())
         }
         viewModel { ScheduleScannerViewModel(get()) }
     }

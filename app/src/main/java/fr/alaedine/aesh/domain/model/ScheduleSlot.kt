@@ -15,6 +15,11 @@ import java.time.LocalTime
  * @property endTime The time the class ends; expected to be after [startTime].
  * @property subject The class/subject name (e.g. "Mathématiques").
  * @property room Where the class takes place, if tracked.
+ * @property studentIds [fr.alaedine.aesh.domain.model.Student.id]s of every
+ * student assigned to this class slot. A slot must have at least one
+ * assigned student (enforced by
+ * [fr.alaedine.aesh.presentation.schedule.ScheduleFormUiState.canSave]), so
+ * it's always clear who an observation logged from this slot is for.
  */
 data class ScheduleSlot(
     val id: Long = 0L,
@@ -23,4 +28,5 @@ data class ScheduleSlot(
     val endTime: LocalTime,
     val subject: String,
     val room: String = "",
+    val studentIds: List<Long> = emptyList(),
 )
