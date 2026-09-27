@@ -86,6 +86,9 @@ private const val DEFAULT_GRID_END_HOUR = 17
 /** Floor for a rendered block's height so a slot with a degenerate (zero or negative) duration stays visible and tappable. */
 private const val MIN_BLOCK_DURATION_MINUTES = 15
 
+/** [WeeklyScheduleGrid] always shows these days by default, even with no classes, so the week reads consistently rather than shrinking to whatever happens to be scheduled. */
+private val DEFAULT_WEEK_DAYS = listOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+
 /**
  * Stateful entry point wired to [ScheduleListViewModel]. Kept separate from
  * the stateless [ScheduleListScreen] so the latter has no Android/ViewModel
@@ -197,13 +200,15 @@ fun ScheduleListScreen(
 
 /**
  * Renders [scheduleSlots] as a time-based weekly grid, evoking a real
- * timetable/calendar app rather than a plain list: one column per day that
- * actually has a class (Monday-first, matching [scheduleSlots]' existing
- * order), a shared hour axis on the left ([TimeAxisColumn]), hourly
- * gridlines, and every slot rendered as a colored block ([ScheduleSlotBlock])
- * positioned and sized from its start time and duration. Colors are assigned
- * per-subject (see [subjectColorPalette]) so recurring subjects are easy to
- * spot at a glance, and [today]'s column is highlighted the same way
+ * timetable/calendar app rather than a plain list: one column per day,
+ * Monday-first — [DEFAULT_WEEK_DAYS] always shown even with no classes so
+ * the week reads consistently, plus any additional day that actually has a
+ * class (e.g. a Saturday slot) — a shared hour axis on the left
+ * ([TimeAxisColumn]), hourly gridlines, and every slot rendered as a colored
+ * block ([ScheduleSlotBlock]) positioned and sized from its start time and
+ * duration. Colors are assigned per-subject (see [subjectColorPalette]) so
+ * recurring subjects are easy to spot at a glance, and [today]'s column is
+ * highlighted the same way
  * [fr.alaedine.aesh.presentation.home.HomeScreen]'s week strip highlights
  * the current day.
  */
@@ -219,11 +224,13 @@ private fun WeeklyScheduleGrid(
     // Read through LocalLocale (rather than Locale.getDefault()) so this
     // recomposes if the user changes the system locale while the app is running.
     val locale = LocalLocale.current.platformLocale
-    // Slots already arrive ordered Monday-first by day then start time (see
-    // `ScheduleSlotDao.observeAll`), so grouping preserves that order without
-    // re-sorting, and only days with at least one class become columns.
     val scheduleSlotsByDay = scheduleSlots.groupBy { it.dayOfWeek }
-    val days = scheduleSlotsByDay.keys.toList()
+    // Monday-Friday are always shown, even on a day with no classes, so an
+    // empty Tuesday between two busy days doesn't just disappear from the
+    // grid; any day beyond that range only becomes a column when it
+    // actually has a class, keeping a Saturday slot visible without
+    // permanently reserving weekend columns nobody uses.
+    val days = (DEFAULT_WEEK_DAYS.toSet() + scheduleSlotsByDay.keys).sortedBy { it.value }
     val gridStartHour =
         minOf(scheduleSlots.minOfOrNull { it.startTime.hour } ?: DEFAULT_GRID_START_HOUR, DEFAULT_GRID_START_HOUR)
     val gridEndHour =

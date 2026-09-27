@@ -206,7 +206,7 @@ class HomeViewModelTest {
                 state.lessonBlocks
                     .single()
                     .studentStatuses
-                    .all { !it.hasReportToday },
+                    .all { !it.hasReport },
             )
             assertTrue(state.hasMissingReports)
             assertEquals(2, state.missingReportCount)
@@ -233,8 +233,8 @@ class HomeViewModelTest {
                 viewModel.uiState.value.lessonBlocks
                     .single()
                     .studentStatuses
-            assertTrue(statuses.first { it.student.id == alice.id }.hasReportToday)
-            assertFalse(statuses.first { it.student.id == amir.id }.hasReportToday)
+            assertTrue(statuses.first { it.student.id == alice.id }.hasReport)
+            assertFalse(statuses.first { it.student.id == amir.id }.hasReport)
             assertEquals(1, viewModel.uiState.value.missingReportCount)
         }
 
@@ -265,7 +265,7 @@ class HomeViewModelTest {
             // Then
             val state = viewModel.uiState.value
             assertEquals(2, state.lessonBlocks.size)
-            assertTrue(state.lessonBlocks.all { block -> block.studentStatuses.single().hasReportToday })
+            assertTrue(state.lessonBlocks.all { block -> block.studentStatuses.single().hasReport })
         }
 
     @Test
@@ -290,7 +290,7 @@ class HomeViewModelTest {
                     .single()
                     .studentStatuses
                     .single()
-                    .hasReportToday,
+                    .hasReport,
             )
         }
 
@@ -373,5 +373,108 @@ class HomeViewModelTest {
                 viewModel.uiState.value.daysWithScheduledClasses
                     .isEmpty(),
             )
+        }
+
+    @Test
+    fun `should expose todays date as both the selected date and today when the view model is initialized`() =
+        runTest {
+            // Given / When
+            val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
+
+            // Then
+            assertEquals(today, viewModel.uiState.value.today)
+        }
+
+    @Test
+    fun `should display an arbitrary days lesson blocks when that date is selected`() =
+        runTest {
+            // Given: a class scheduled tomorrow (a different day of week than today, so it's not part of today's lesson blocks).
+            val tomorrow = today.plusDays(1)
+            val slot = scheduleSlot(id = 1L, studentIds = listOf(alice.id), dayOfWeek = tomorrow.dayOfWeek)
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(slot)),
+                )
+            assertTrue(
+                viewModel.uiState.value.lessonBlocks
+                    .isEmpty(),
+            )
+
+            // When
+            viewModel.onDateSelected(tomorrow)
+
+            // Then
+            assertEquals(tomorrow, viewModel.uiState.value.date)
+            assertEquals(1, viewModel.uiState.value.lessonBlocks.size)
+        }
+
+    @Test
+    fun `should compute report status against the selected date rather than today`() =
+        runTest {
+            // Given: Alice's only report is for yesterday, not today.
+            val yesterday = today.minusDays(1)
+            val slot = scheduleSlot(id = 1L, studentIds = listOf(alice.id), dayOfWeek = yesterday.dayOfWeek)
+            val yesterdaysReport =
+                DailyReport(id = 1L, date = yesterday, studentId = alice.id, moodLevel = 4, focusLevel = 4, socialInteractions = 4)
+            val viewModel =
+                HomeViewModel(
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(yesterdaysReport)),
+                    scheduleSlotRepository = FakeScheduleSlotRepository(initialScheduleSlots = listOf(slot)),
+                )
+
+            // When
+            viewModel.onDateSelected(yesterday)
+
+            // Then
+            assertTrue(
+                viewModel.uiState.value.lessonBlocks
+                    .single()
+                    .studentStatuses
+                    .single()
+                    .hasReport,
+            )
+        }
+
+    @Test
+    fun `should move the selected date back exactly one week when the previous week is requested`() =
+        runTest {
+            // Given
+            val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
+
+            // When
+            viewModel.onPreviousWeekClicked()
+
+            // Then
+            assertEquals(today.minusWeeks(1), viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should move the selected date forward exactly one week when the next week is requested`() =
+        runTest {
+            // Given
+            val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
+
+            // When
+            viewModel.onNextWeekClicked()
+
+            // Then
+            assertEquals(today.plusWeeks(1), viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should keep today unchanged while navigating to a different selected date`() =
+        runTest {
+            // Given
+            val viewModel = HomeViewModel(FakeStudentRepository(), FakeDailyReportRepository(), FakeScheduleSlotRepository())
+
+            // When
+            viewModel.onNextWeekClicked()
+
+            // Then
+            assertEquals(today, viewModel.uiState.value.today)
+            assertEquals(today.plusWeeks(1), viewModel.uiState.value.date)
         }
 }

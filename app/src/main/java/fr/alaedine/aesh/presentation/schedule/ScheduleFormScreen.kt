@@ -228,6 +228,12 @@ private fun StudentAssignmentSection(
     }
 }
 
+/**
+ * Dropdown restricted to Monday through Saturday: Sunday is excluded since
+ * the AESH doesn't work Sundays, so a class can't be scheduled that day
+ * (see [ScheduleFormViewModel.onDayOfWeekChanged] for the matching
+ * defensive guard against setting it any other way).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DayOfWeekDropdown(
@@ -254,7 +260,7 @@ private fun DayOfWeekDropdown(
             expanded = isExpanded,
             onDismissRequest = { isExpanded = false },
         ) {
-            DayOfWeek.entries.forEach { dayOfWeek ->
+            DayOfWeek.entries.filter { it != DayOfWeek.SUNDAY }.forEach { dayOfWeek ->
                 DropdownMenuItem(
                     text = { Text(text = dayOfWeek.displayName()) },
                     onClick = {

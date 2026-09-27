@@ -24,16 +24,25 @@
     <string name="cd_new_daily_report">Nouveau rapport quotidien</string>
     <string name="cd_open_daily_report_for_student">Remplir l\'observation pour %1$s</string>
     <string name="home_empty_schedule_today">Aucun cours prévu aujourd\'hui. Appuyez sur + pour enregistrer une observation manuellement.</string>
+    <string name="home_empty_schedule_other_day">Aucun cours prévu ce jour-là.</string>
     <string name="cd_report_completed">Rapport complété</string>
     <string name="cd_report_missing">Rapport manquant</string>
     <!-- Appended to a calendar day cell\'s accessibility label when it is the current day. -->
     <string name="cd_calendar_today">Aujourd\'hui</string>
     <!-- Appended to a calendar day cell\'s accessibility label when that day of the week has at least one scheduled class. -->
     <string name="cd_calendar_has_scheduled_classes">Cours prévus</string>
+    <string name="cd_previous_week">Semaine précédente</string>
+    <string name="cd_next_week">Semaine suivante</string>
+    <string name="cd_pick_date">Choisir une date</string>
     <plurals name="missing_reports_warning">
         <item quantity="one">%d élève n\'a pas encore de rapport aujourd\'hui.</item>
         <item quantity="many">%d élèves n\'ont pas encore de rapport aujourd\'hui.</item>
         <item quantity="other">%d élèves n\'ont pas encore de rapport aujourd\'hui.</item>
+    </plurals>
+    <plurals name="missing_reports_warning_other_day">
+        <item quantity="one">%d élève n\'a pas encore de rapport pour ce jour.</item>
+        <item quantity="many">%d élèves n\'ont pas encore de rapport pour ce jour.</item>
+        <item quantity="other">%d élèves n\'ont pas encore de rapport pour ce jour.</item>
     </plurals>
 
     <!-- Settings -->

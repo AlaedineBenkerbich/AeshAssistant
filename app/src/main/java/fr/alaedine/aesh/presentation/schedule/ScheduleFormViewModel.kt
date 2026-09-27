@@ -77,7 +77,9 @@ class ScheduleFormViewModel(
         }
     }
 
+    /** Updates the day of week, ignoring [DayOfWeek.SUNDAY] since the AESH doesn't work Sundays and a class can't be scheduled that day; [DayOfWeekDropdown] already excludes it from the options offered, this is a defensive fallback. */
     fun onDayOfWeekChanged(dayOfWeek: DayOfWeek) {
+        if (dayOfWeek == DayOfWeek.SUNDAY) return
         _uiState.update { it.copy(dayOfWeek = dayOfWeek) }
     }
 
@@ -139,7 +141,10 @@ class ScheduleFormViewModel(
 private fun ScheduleFormUiState.withPrefill(prefill: ParsedScheduleSlot?): ScheduleFormUiState {
     if (prefill == null) return this
     return copy(
-        dayOfWeek = prefill.dayOfWeek ?: dayOfWeek,
+        // A scanned physical schedule could recognize "dimanche"/"sunday" text, but classes can't be scheduled
+        // on Sundays (see ScheduleFormViewModel.onDayOfWeekChanged), so that particular recognized value is
+        // dropped here and the default day of week is kept instead.
+        dayOfWeek = prefill.dayOfWeek?.takeIf { it != DayOfWeek.SUNDAY } ?: dayOfWeek,
         startTime = prefill.startTime ?: startTime,
         endTime = prefill.endTime ?: endTime,
         subject = prefill.subject ?: subject,
