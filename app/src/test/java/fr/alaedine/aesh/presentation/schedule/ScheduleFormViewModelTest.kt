@@ -171,6 +171,48 @@ class ScheduleFormViewModelTest {
         }
 
     @Test
+    fun `should ignore selecting Sunday since classes cant be scheduled that day`() =
+        runTest {
+            // Given
+            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), FakeStudentRepository(), scheduleSlotId = null)
+            val dayBeforeChange = viewModel.uiState.value.dayOfWeek
+
+            // When
+            viewModel.onDayOfWeekChanged(DayOfWeek.SUNDAY)
+
+            // Then
+            assertEquals(dayBeforeChange, viewModel.uiState.value.dayOfWeek)
+        }
+
+    @Test
+    fun `should still allow selecting Saturday since only Sunday is restricted`() =
+        runTest {
+            // Given
+            val viewModel = ScheduleFormViewModel(FakeScheduleSlotRepository(), FakeStudentRepository(), scheduleSlotId = null)
+
+            // When
+            viewModel.onDayOfWeekChanged(DayOfWeek.SATURDAY)
+
+            // Then
+            assertEquals(DayOfWeek.SATURDAY, viewModel.uiState.value.dayOfWeek)
+        }
+
+    @Test
+    fun `should ignore a scanner prefill that recognized Sunday`() =
+        runTest {
+            // Given
+            val defaults = ScheduleFormUiState()
+            val prefill = ParsedScheduleSlot(dayOfWeek = DayOfWeek.SUNDAY, subject = "Mathématiques")
+
+            // When
+            val viewModel =
+                ScheduleFormViewModel(FakeScheduleSlotRepository(), FakeStudentRepository(), scheduleSlotId = null, prefill = prefill)
+
+            // Then
+            assertEquals(defaults.dayOfWeek, viewModel.uiState.value.dayOfWeek)
+        }
+
+    @Test
     fun `should toggle a student's assignment when selected and deselected`() =
         runTest {
             // Given
