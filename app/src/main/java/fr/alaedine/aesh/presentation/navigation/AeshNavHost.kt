@@ -84,6 +84,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                 onEditScheduleSlot = { scheduleSlotId ->
                     navController.navigate(AeshDestination.EditScheduleSlot(scheduleSlotId))
                 },
+                onOpenDailyReportForm = { navController.navigate(AeshDestination.DailyReportForm) },
                 onNavigateBack = { navController.popBackStack() },
             )
         }
