@@ -18,8 +18,9 @@ import java.io.OutputStream
 
 /**
  * [BackupRepository] backed by Room: serializes/restores every
- * [StudentDao], [DailyReportDao] and [ScheduleSlotDao] row as a single JSON
- * document (see [BackupPayload]).
+ * [StudentDao], [DailyReportDao] and [ScheduleSlotDao] row — including each
+ * slot's student assignments — as a single JSON document (see
+ * [BackupPayload]).
  *
  * Needs [database] itself (in addition to the individual DAOs) to wrap the
  * multi-table restore in [withTransaction], so a failure partway through
@@ -43,6 +44,7 @@ class BackupRepositoryImpl(
                 students = studentDao.observeAll().first().map { it.toBackup() },
                 dailyReports = dailyReportDao.observeAll().first().map { it.toBackup() },
                 scheduleSlots = scheduleSlotDao.observeAll().first().map { it.toBackup() },
+                scheduleSlotStudentCrossRefs = scheduleSlotDao.getAllStudentCrossRefs().map { it.toBackup() },
             )
         withContext(Dispatchers.IO) {
             destination.use { stream ->
@@ -63,8 +65,10 @@ class BackupRepositoryImpl(
         }
 
         database.withTransaction {
-            // Children first so foreign keys never dangle mid-restore; schedule
-            // slots have no FK but are cleared here too for a fully atomic reset.
+            // Children first so foreign keys never dangle mid-restore: the
+            // slot<->student cross-refs reference both students and schedule
+            // slots, so they're cleared before either of those tables is.
+            scheduleSlotDao.deleteAllStudentCrossRefs()
             dailyReportDao.deleteAll()
             scheduleSlotDao.deleteAll()
             studentDao.deleteAll()
@@ -72,6 +76,7 @@ class BackupRepositoryImpl(
             studentDao.insertAll(payload.students.map { it.toEntity() })
             dailyReportDao.insertAll(payload.dailyReports.map { it.toEntity() })
             scheduleSlotDao.insertAll(payload.scheduleSlots.map { it.toEntity() })
+            scheduleSlotDao.insertStudentCrossRefs(payload.scheduleSlotStudentCrossRefs.map { it.toEntity() })
         }
     }
 }

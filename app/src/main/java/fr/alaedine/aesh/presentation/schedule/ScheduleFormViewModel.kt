@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.repository.ScheduleSlotRepository
+import fr.alaedine.aesh.domain.repository.StudentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -22,6 +25,10 @@ import java.time.LocalTime
  * `presentationModule` supplies [scheduleSlotId] as a Koin injection
  * parameter sourced from the navigation argument, see [ScheduleFormRoute].
  *
+ * Also keeps the student picker in sync with [studentRepository], since
+ * every slot must be assigned at least one student (see
+ * [ScheduleFormUiState.canSave]).
+ *
  * @param prefill Fields recognized by the schedule photo scanner (see
  * `presentation.schedule.scanner`), applied on top of the default "add
  * slot" field values. Only meaningful when [scheduleSlotId] is `null`;
@@ -29,6 +36,7 @@ import java.time.LocalTime
  */
 class ScheduleFormViewModel(
     private val scheduleSlotRepository: ScheduleSlotRepository,
+    private val studentRepository: StudentRepository,
     private val scheduleSlotId: Long?,
     prefill: ParsedScheduleSlot? = null,
 ) : ViewModel() {
@@ -39,6 +47,10 @@ class ScheduleFormViewModel(
     val uiState: StateFlow<ScheduleFormUiState> = _uiState.asStateFlow()
 
     init {
+        studentRepository
+            .observeStudents()
+            .onEach { students -> _uiState.update { it.copy(students = students) } }
+            .launchIn(viewModelScope)
         loadExistingScheduleSlot()
     }
 
@@ -57,6 +69,7 @@ class ScheduleFormViewModel(
                         endTime = scheduleSlot.endTime,
                         subject = scheduleSlot.subject,
                         room = scheduleSlot.room,
+                        selectedStudentIds = scheduleSlot.studentIds.toSet(),
                         isLoading = false,
                     )
                 }
@@ -84,6 +97,19 @@ class ScheduleFormViewModel(
         _uiState.update { it.copy(room = room) }
     }
 
+    /** Toggles whether the student identified by [studentId] is assigned to this slot. */
+    fun onStudentToggled(studentId: Long) {
+        _uiState.update { state ->
+            val selectedStudentIds =
+                if (studentId in state.selectedStudentIds) {
+                    state.selectedStudentIds - studentId
+                } else {
+                    state.selectedStudentIds + studentId
+                }
+            state.copy(selectedStudentIds = selectedStudentIds)
+        }
+    }
+
     /** Persists the current field values, adding a new slot or updating the existing one. */
     fun onSaveClicked() {
         val state = _uiState.value
@@ -96,6 +122,7 @@ class ScheduleFormViewModel(
                 endTime = state.endTime,
                 subject = state.subject.trim(),
                 room = state.room.trim(),
+                studentIds = state.selectedStudentIds.toList(),
             )
         viewModelScope.launch {
             if (scheduleSlotId == null) {

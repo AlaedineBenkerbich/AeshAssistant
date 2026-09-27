@@ -3,6 +3,8 @@ package fr.alaedine.aesh.data.repository
 import androidx.room.Room
 import fr.alaedine.aesh.data.local.AeshDatabase
 import fr.alaedine.aesh.data.local.dao.ScheduleSlotDao
+import fr.alaedine.aesh.data.local.dao.StudentDao
+import fr.alaedine.aesh.data.local.entity.StudentEntity
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -22,8 +24,8 @@ import kotlin.test.assertNull
  * Exercises [ScheduleSlotRepositoryImpl] end-to-end against a real
  * (in-memory) Room database, verifying the `domain`-facing CRUD contract —
  * including the [ScheduleSlot] <->
- * [fr.alaedine.aesh.data.local.entity.ScheduleSlotEntity] mapping — that the
- * rest of the app depends on.
+ * [fr.alaedine.aesh.data.local.entity.ScheduleSlotEntity] mapping and its
+ * student assignments — that the rest of the app depends on.
  *
  * [Config.application] swaps out the manifest-declared
  * [fr.alaedine.aesh.AeshApplication] (which starts Koin) for a plain
@@ -36,6 +38,7 @@ import kotlin.test.assertNull
 class ScheduleSlotRepositoryImplTest {
     private lateinit var database: AeshDatabase
     private lateinit var scheduleSlotDao: ScheduleSlotDao
+    private lateinit var studentDao: StudentDao
     private lateinit var repository: ScheduleSlotRepositoryImpl
 
     @BeforeTest
@@ -45,7 +48,8 @@ class ScheduleSlotRepositoryImplTest {
                 .inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), AeshDatabase::class.java)
                 .build()
         scheduleSlotDao = database.scheduleSlotDao()
-        repository = ScheduleSlotRepositoryImpl(scheduleSlotDao)
+        studentDao = database.studentDao()
+        repository = ScheduleSlotRepositoryImpl(database, scheduleSlotDao)
     }
 
     @AfterTest
@@ -161,5 +165,74 @@ class ScheduleSlotRepositoryImplTest {
 
             // Then
             assertNull(repository.getScheduleSlotById(id))
+        }
+
+    @Test
+    fun `should persist assigned students when a schedule slot is added`() =
+        runTest {
+            // Given
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            val amirId = studentDao.insert(StudentEntity(firstName = "Amir", className = "CM2"))
+            val scheduleSlot =
+                ScheduleSlot(
+                    dayOfWeek = DayOfWeek.MONDAY,
+                    startTime = LocalTime.of(8, 0),
+                    endTime = LocalTime.of(9, 0),
+                    subject = "Mathématiques",
+                    studentIds = listOf(aliceId, amirId),
+                )
+
+            // When
+            val id = repository.addScheduleSlot(scheduleSlot)
+
+            // Then
+            assertEquals(listOf(aliceId, amirId), repository.getScheduleSlotById(id)?.studentIds?.sorted())
+        }
+
+    @Test
+    fun `should replace assigned students when an existing schedule slot is updated`() =
+        runTest {
+            // Given
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            val amirId = studentDao.insert(StudentEntity(firstName = "Amir", className = "CM2"))
+            val id =
+                repository.addScheduleSlot(
+                    ScheduleSlot(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Mathématiques",
+                        studentIds = listOf(aliceId),
+                    ),
+                )
+            val updated = repository.getScheduleSlotById(id)!!.copy(studentIds = listOf(amirId))
+
+            // When
+            repository.updateScheduleSlot(updated)
+
+            // Then
+            assertEquals(listOf(amirId), repository.getScheduleSlotById(id)?.studentIds)
+        }
+
+    @Test
+    fun `should include assigned students when observing schedule slots`() =
+        runTest {
+            // Given
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            repository.addScheduleSlot(
+                ScheduleSlot(
+                    dayOfWeek = DayOfWeek.MONDAY,
+                    startTime = LocalTime.of(8, 0),
+                    endTime = LocalTime.of(9, 0),
+                    subject = "Mathématiques",
+                    studentIds = listOf(aliceId),
+                ),
+            )
+
+            // When
+            val scheduleSlots = repository.observeScheduleSlots().first()
+
+            // Then
+            assertEquals(listOf(aliceId), scheduleSlots.single().studentIds)
         }
 }

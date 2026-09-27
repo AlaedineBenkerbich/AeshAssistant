@@ -57,3 +57,33 @@ val MIGRATION_2_3: Migration =
             )
         }
     }
+
+/**
+ * Adds the `schedule_slot_student_cross_ref` junction table (see
+ * [fr.alaedine.aesh.data.local.entity.ScheduleSlotStudentCrossRef]) so a
+ * class slot can be assigned one or more students, introduced for the
+ * Assign Students To Classes milestone. Existing `students`,
+ * `daily_reports` and `schedule_slots` tables are left untouched, so
+ * upgrading preserves any data already saved on-device — schedule slots
+ * saved before this migration simply start out with no assigned students.
+ */
+val MIGRATION_3_4: Migration =
+    object : Migration(startVersion = 3, endVersion = 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `schedule_slot_student_cross_ref` (
+                `scheduleSlotId` INTEGER NOT NULL,
+                `studentId` INTEGER NOT NULL,
+                PRIMARY KEY(`scheduleSlotId`, `studentId`),
+                FOREIGN KEY(`scheduleSlotId`) REFERENCES `schedule_slots`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                FOREIGN KEY(`studentId`) REFERENCES `students`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_schedule_slot_student_cross_ref_studentId` " +
+                    "ON `schedule_slot_student_cross_ref` (`studentId`)",
+            )
+        }
+    }

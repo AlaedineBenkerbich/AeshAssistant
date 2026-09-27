@@ -71,6 +71,8 @@
     <string name="schedule_field_subject">Matière</string>
     <string name="schedule_field_room">Salle</string>
     <string name="schedule_field_day">Jour</string>
+    <string name="schedule_field_students">Élèves</string>
+    <string name="schedule_no_students_available">Aucun élève pour le moment. Ajoutez-en un avant de créer un cours.</string>
 
     <!-- Schedule list -->
     <string name="schedule_list_title">Emploi du temps hebdomadaire</string>

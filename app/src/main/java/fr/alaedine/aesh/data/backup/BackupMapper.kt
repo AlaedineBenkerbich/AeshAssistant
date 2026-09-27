@@ -2,6 +2,7 @@ package fr.alaedine.aesh.data.backup
 
 import fr.alaedine.aesh.data.local.entity.DailyReportEntity
 import fr.alaedine.aesh.data.local.entity.ScheduleSlotEntity
+import fr.alaedine.aesh.data.local.entity.ScheduleSlotStudentCrossRef
 import fr.alaedine.aesh.data.local.entity.StudentEntity
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -69,4 +70,18 @@ fun BackupScheduleSlot.toEntity(): ScheduleSlotEntity =
         endTime = LocalTime.parse(endTime),
         subject = subject,
         room = room,
+    )
+
+/** Maps the Room-persisted row to its backup JSON representation. */
+fun ScheduleSlotStudentCrossRef.toBackup(): BackupScheduleSlotStudentCrossRef =
+    BackupScheduleSlotStudentCrossRef(
+        scheduleSlotId = scheduleSlotId,
+        studentId = studentId,
+    )
+
+/** Maps a backup JSON row back to its Room-persisted representation. */
+fun BackupScheduleSlotStudentCrossRef.toEntity(): ScheduleSlotStudentCrossRef =
+    ScheduleSlotStudentCrossRef(
+        scheduleSlotId = scheduleSlotId,
+        studentId = studentId,
     )

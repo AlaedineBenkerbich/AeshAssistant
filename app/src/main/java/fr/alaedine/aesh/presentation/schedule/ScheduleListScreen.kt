@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ScheduleSlot
+import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import java.time.DayOfWeek
@@ -157,6 +158,7 @@ fun ScheduleListScreen(
                     items(items = scheduleSlots, key = { it.id }) { scheduleSlot ->
                         ScheduleSlotRow(
                             scheduleSlot = scheduleSlot,
+                            studentNames = scheduleSlot.studentIds.mapNotNull { uiState.studentsById[it]?.firstName },
                             onClick = onOpenDailyReportForm,
                             onEditClick = { onEditScheduleSlot(scheduleSlot.id) },
                             onDeleteClick = { onDeleteRequested(scheduleSlot) },
@@ -188,6 +190,7 @@ fun ScheduleListScreen(
 @Composable
 private fun ScheduleSlotRow(
     scheduleSlot: ScheduleSlot,
+    studentNames: List<String>,
     onClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -210,7 +213,7 @@ private fun ScheduleSlotRow(
         ) {
             Column {
                 Text(text = scheduleSlot.subject, style = MaterialTheme.typography.titleMedium)
-                Text(text = scheduleSlot.formattedSubtitle(), style = MaterialTheme.typography.bodyMedium)
+                Text(text = scheduleSlot.formattedSubtitle(studentNames), style = MaterialTheme.typography.bodyMedium)
             }
             Row {
                 IconButton(onClick = onEditClick) {
@@ -253,9 +256,11 @@ private fun DeleteScheduleSlotConfirmationDialog(
     )
 }
 
-private fun ScheduleSlot.formattedSubtitle(): String {
+/** Builds the slot's time/room/assigned-students subtitle, skipping room and/or students when there's nothing to show. */
+private fun ScheduleSlot.formattedSubtitle(studentNames: List<String>): String {
     val timeRange = "${startTime.format(TIME_FORMATTER)} – ${endTime.format(TIME_FORMATTER)}"
-    return if (room.isNotBlank()) "$timeRange • $room" else timeRange
+    val parts = listOfNotNull(timeRange, room.takeIf { it.isNotBlank() }, studentNames.takeIf { it.isNotEmpty() }?.joinToString(", "))
+    return parts.joinToString(" • ")
 }
 
 private fun DayOfWeek.displayName(): String = getDisplayName(TextStyle.FULL, Locale.getDefault())
@@ -264,6 +269,8 @@ private fun DayOfWeek.displayName(): String = getDisplayName(TextStyle.FULL, Loc
 @Composable
 private fun ScheduleListScreenPreview() {
     AeshAssistantTheme {
+        val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+        val amir = Student(id = 2L, firstName = "Amir", className = "CM2")
         ScheduleListScreen(
             uiState =
                 ScheduleListUiState(
@@ -276,6 +283,7 @@ private fun ScheduleListScreenPreview() {
                                 endTime = LocalTime.of(9, 30),
                                 subject = "Mathématiques",
                                 room = "B12",
+                                studentIds = listOf(alice.id, amir.id),
                             ),
                             ScheduleSlot(
                                 id = 2L,
@@ -284,6 +292,7 @@ private fun ScheduleListScreenPreview() {
                                 endTime = LocalTime.of(10, 30),
                                 subject = "Français",
                                 room = "B12",
+                                studentIds = listOf(alice.id),
                             ),
                             ScheduleSlot(
                                 id = 3L,
@@ -292,8 +301,10 @@ private fun ScheduleListScreenPreview() {
                                 endTime = LocalTime.of(9, 30),
                                 subject = "Sport",
                                 room = "Gymnase",
+                                studentIds = listOf(amir.id),
                             ),
                         ),
+                    studentsById = listOf(alice, amir).associateBy { it.id },
                     isLoading = false,
                 ),
             onAddScheduleSlot = {},

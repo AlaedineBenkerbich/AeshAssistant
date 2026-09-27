@@ -1,6 +1,7 @@
 package fr.alaedine.aesh.presentation.schedule
 
 import fr.alaedine.aesh.domain.model.ScheduleSlot
+import fr.alaedine.aesh.domain.model.Student
 
 /**
  * Immutable UI state rendered by [ScheduleListScreen].
@@ -8,6 +9,10 @@ import fr.alaedine.aesh.domain.model.ScheduleSlot
  * @property scheduleSlots Weekly class slots to display, kept in sync with
  * [fr.alaedine.aesh.domain.repository.ScheduleSlotRepository.observeScheduleSlots]
  * and already ordered Monday-first by day then start time.
+ * @property studentsById Every known student keyed by [Student.id], kept in
+ * sync with
+ * [fr.alaedine.aesh.domain.repository.StudentRepository.observeStudents];
+ * used to resolve each slot's [ScheduleSlot.studentIds] into display names.
  * @property isLoading Whether the initial load from the repository is still
  * in flight; avoids flashing the empty-state message before the first
  * emission arrives.
@@ -16,6 +21,7 @@ import fr.alaedine.aesh.domain.model.ScheduleSlot
  */
 data class ScheduleListUiState(
     val scheduleSlots: List<ScheduleSlot> = emptyList(),
+    val studentsById: Map<Long, Student> = emptyMap(),
     val isLoading: Boolean = true,
     val pendingDeletion: ScheduleSlot? = null,
 )

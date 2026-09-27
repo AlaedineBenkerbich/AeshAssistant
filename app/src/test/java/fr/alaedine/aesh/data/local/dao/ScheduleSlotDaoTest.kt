@@ -3,6 +3,8 @@ package fr.alaedine.aesh.data.local.dao
 import androidx.room.Room
 import fr.alaedine.aesh.data.local.AeshDatabase
 import fr.alaedine.aesh.data.local.entity.ScheduleSlotEntity
+import fr.alaedine.aesh.data.local.entity.ScheduleSlotStudentCrossRef
+import fr.alaedine.aesh.data.local.entity.StudentEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
@@ -33,6 +35,7 @@ import kotlin.test.assertNull
 class ScheduleSlotDaoTest {
     private lateinit var database: AeshDatabase
     private lateinit var scheduleSlotDao: ScheduleSlotDao
+    private lateinit var studentDao: StudentDao
 
     @BeforeTest
     fun createDatabase() {
@@ -41,6 +44,7 @@ class ScheduleSlotDaoTest {
                 .inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), AeshDatabase::class.java)
                 .build()
         scheduleSlotDao = database.scheduleSlotDao()
+        studentDao = database.studentDao()
     }
 
     @AfterTest
@@ -213,5 +217,192 @@ class ScheduleSlotDaoTest {
 
             // Then
             assertEquals(emptyList(), scheduleSlotDao.observeAll().first())
+        }
+
+    @Test
+    fun `should return every assigned student when observing all with students`() =
+        runTest {
+            // Given
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            val amirId = studentDao.insert(StudentEntity(firstName = "Amir", className = "CM2"))
+            val slotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Mathématiques",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(
+                listOf(
+                    ScheduleSlotStudentCrossRef(scheduleSlotId = slotId, studentId = aliceId),
+                    ScheduleSlotStudentCrossRef(scheduleSlotId = slotId, studentId = amirId),
+                ),
+            )
+
+            // When
+            val slotsWithStudents = scheduleSlotDao.observeAllWithStudents().first()
+
+            // Then
+            assertEquals(
+                listOf("Alice", "Amir"),
+                slotsWithStudents
+                    .single()
+                    .students
+                    .map { it.firstName }
+                    .sorted(),
+            )
+        }
+
+    @Test
+    fun `should return the slot joined with its assigned students when getting by id with students`() =
+        runTest {
+            // Given
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            val slotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Mathématiques",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = slotId, studentId = aliceId)))
+
+            // When
+            val result = scheduleSlotDao.getByIdWithStudents(slotId)
+
+            // Then
+            assertEquals(listOf("Alice"), result?.students?.map { it.firstName })
+        }
+
+    @Test
+    fun `should return an empty student list when getting by id with students and none are assigned`() =
+        runTest {
+            // Given
+            val slotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Mathématiques",
+                    ),
+                )
+
+            // When
+            val result = scheduleSlotDao.getByIdWithStudents(slotId)
+
+            // Then
+            assertEquals(emptyList(), result?.students)
+        }
+
+    @Test
+    fun `should remove the cross-ref row when the schedule slot is deleted`() =
+        runTest {
+            // Given
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            val slot =
+                ScheduleSlotEntity(
+                    dayOfWeek = DayOfWeek.MONDAY,
+                    startTime = LocalTime.of(8, 0),
+                    endTime = LocalTime.of(9, 0),
+                    subject = "Mathématiques",
+                )
+            val slotId = scheduleSlotDao.insert(slot)
+            scheduleSlotDao.insertStudentCrossRefs(listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = slotId, studentId = aliceId)))
+
+            // When
+            scheduleSlotDao.delete(slot.copy(id = slotId))
+
+            // Then
+            assertEquals(emptyList(), scheduleSlotDao.getAllStudentCrossRefs())
+        }
+
+    @Test
+    fun `should remove the cross-ref row when the assigned student is deleted`() =
+        runTest {
+            // Given
+            val alice = StudentEntity(firstName = "Alice", className = "CE2")
+            val aliceId = studentDao.insert(alice)
+            val slotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Mathématiques",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = slotId, studentId = aliceId)))
+
+            // When
+            studentDao.delete(alice.copy(id = aliceId))
+
+            // Then
+            assertEquals(emptyList(), scheduleSlotDao.getAllStudentCrossRefs())
+        }
+
+    @Test
+    fun `should remove only the given slot's cross-refs when deleting cross-refs for a slot`() =
+        runTest {
+            // Given: two slots, each with one assigned student
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            val amirId = studentDao.insert(StudentEntity(firstName = "Amir", className = "CM2"))
+            val mathSlotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Mathématiques",
+                    ),
+                )
+            val sportSlotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.TUESDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Sport",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(
+                listOf(
+                    ScheduleSlotStudentCrossRef(scheduleSlotId = mathSlotId, studentId = aliceId),
+                    ScheduleSlotStudentCrossRef(scheduleSlotId = sportSlotId, studentId = amirId),
+                ),
+            )
+
+            // When
+            scheduleSlotDao.deleteStudentCrossRefsForSlot(mathSlotId)
+
+            // Then
+            assertEquals(listOf(sportSlotId), scheduleSlotDao.getAllStudentCrossRefs().map { it.scheduleSlotId })
+        }
+
+    @Test
+    fun `should remove every cross-ref row when deleting all cross-refs`() =
+        runTest {
+            // Given
+            val aliceId = studentDao.insert(StudentEntity(firstName = "Alice", className = "CE2"))
+            val slotId =
+                scheduleSlotDao.insert(
+                    ScheduleSlotEntity(
+                        dayOfWeek = DayOfWeek.MONDAY,
+                        startTime = LocalTime.of(8, 0),
+                        endTime = LocalTime.of(9, 0),
+                        subject = "Mathématiques",
+                    ),
+                )
+            scheduleSlotDao.insertStudentCrossRefs(listOf(ScheduleSlotStudentCrossRef(scheduleSlotId = slotId, studentId = aliceId)))
+
+            // When
+            scheduleSlotDao.deleteAllStudentCrossRefs()
+
+            // Then
+            assertEquals(emptyList(), scheduleSlotDao.getAllStudentCrossRefs())
         }
 }

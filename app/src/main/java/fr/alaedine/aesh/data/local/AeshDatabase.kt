@@ -8,6 +8,7 @@ import fr.alaedine.aesh.data.local.dao.ScheduleSlotDao
 import fr.alaedine.aesh.data.local.dao.StudentDao
 import fr.alaedine.aesh.data.local.entity.DailyReportEntity
 import fr.alaedine.aesh.data.local.entity.ScheduleSlotEntity
+import fr.alaedine.aesh.data.local.entity.ScheduleSlotStudentCrossRef
 import fr.alaedine.aesh.data.local.entity.StudentEntity
 
 /**
@@ -15,8 +16,13 @@ import fr.alaedine.aesh.data.local.entity.StudentEntity
  * future milestones will be added here as their issues land.
  */
 @Database(
-    entities = [StudentEntity::class, DailyReportEntity::class, ScheduleSlotEntity::class],
-    version = 3,
+    entities = [
+        StudentEntity::class,
+        DailyReportEntity::class,
+        ScheduleSlotEntity::class,
+        ScheduleSlotStudentCrossRef::class,
+    ],
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
