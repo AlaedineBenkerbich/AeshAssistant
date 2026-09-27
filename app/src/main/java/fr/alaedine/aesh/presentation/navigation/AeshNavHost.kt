@@ -17,6 +17,7 @@ import fr.alaedine.aesh.presentation.settings.SettingsRoute
 import fr.alaedine.aesh.presentation.student.StudentFormRoute
 import fr.alaedine.aesh.presentation.student.StudentListRoute
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 
 /**
@@ -36,7 +37,9 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         composable<AeshDestination.Dashboard> {
             HomeRoute(
                 onNavigateToStudents = { navController.navigate(AeshDestination.StudentList) },
-                onNavigateToDailyReport = { studentId -> navController.navigate(AeshDestination.DailyReportForm(studentId)) },
+                onNavigateToDailyReport = { studentId, date ->
+                    navController.navigate(AeshDestination.DailyReportForm(studentId = studentId, date = date?.toString()))
+                },
                 onNavigateToSchedule = { navController.navigate(AeshDestination.ScheduleList) },
                 onNavigateToEssReport = { navController.navigate(AeshDestination.EssReportForm) },
                 onNavigateToSettings = { navController.navigate(AeshDestination.Settings) },
@@ -71,6 +74,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
             val destination = backStackEntry.toRoute<AeshDestination.DailyReportForm>()
             DailyReportFormRoute(
                 studentId = destination.studentId,
+                date = destination.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
                 onNavigateBack = { navController.popBackStack() },
             )
         }

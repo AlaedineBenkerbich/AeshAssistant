@@ -82,7 +82,7 @@ private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
 @Composable
 fun HomeRoute(
     onNavigateToStudents: () -> Unit,
-    onNavigateToDailyReport: (Long?) -> Unit,
+    onNavigateToDailyReport: (Long?, LocalDate?) -> Unit,
     onNavigateToSchedule: () -> Unit,
     onNavigateToEssReport: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -107,17 +107,19 @@ fun HomeRoute(
 /**
  * The app's main entry point: a freely scrollable, calendar-style week strip
  * (see [CalendarWeekHeader]) that can jump to any day — via the previous/
- * next week arrows, tapping a day cell, or picking a date outright from the
- * month/year label's date picker — rather than being stuck on the present.
- * Below it, a per-student breakdown of whether their daily report has been
- * filled out yet for the selected day (warning icon when missing, see
- * [StudentReportStatusRow]), segmented lesson by lesson: one
- * [LessonBlockHeader] per [fr.alaedine.aesh.domain.model.ScheduleSlot] on
- * that day, in schedule order, so only students who actually have a class
- * then show up — solely the schedule determines who needs an observation.
- * Tapping a student row jumps straight into the
+ * next week arrows, tapping a day cell, picking a date outright from the
+ * month/year label's date picker, or the "Today" button — rather than
+ * being stuck on the present. Below it, a per-student breakdown of whether
+ * their daily report has been filled out yet for the selected day (warning
+ * icon when missing, see [StudentReportStatusRow]), segmented lesson by
+ * lesson: one [LessonBlockHeader] per
+ * [fr.alaedine.aesh.domain.model.ScheduleSlot] on that day, in schedule
+ * order, so only students who actually have a class then show up — solely
+ * the schedule determines who needs an observation. Tapping a student row
+ * jumps straight into the
  * [fr.alaedine.aesh.presentation.report.DailyReportFormScreen] with that
- * student preselected — logging an observation for a specific student is
+ * student and [uiState]'s currently selected date preselected — editing or
+ * completing an observation for a specific student on a specific day is
  * the far more common action — while the FAB opens the same form without
  * preselecting anyone, letting the AESH manually log an observation for any
  * known student even if they weren't on the selected day's schedule.
@@ -127,7 +129,7 @@ fun HomeRoute(
 fun HomeScreen(
     uiState: HomeUiState,
     onNavigateToStudents: () -> Unit,
-    onNavigateToDailyReport: (Long?) -> Unit,
+    onNavigateToDailyReport: (Long?, LocalDate?) -> Unit,
     onNavigateToSchedule: () -> Unit,
     onNavigateToEssReport: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -158,7 +160,7 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { onNavigateToDailyReport(null) }) {
+            FloatingActionButton(onClick = { onNavigateToDailyReport(null, null) }) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_daily_report))
             }
         },
@@ -211,7 +213,7 @@ fun HomeScreen(
                     ) { status ->
                         StudentReportStatusRow(
                             status = status,
-                            onClick = { onNavigateToDailyReport(status.student.id) },
+                            onClick = { onNavigateToDailyReport(status.student.id, uiState.date) },
                         )
                     }
                 }
@@ -230,7 +232,10 @@ fun HomeScreen(
  * [onDateSelected]). [selectedDate] is filled in and [today] outlined when
  * they differ, so the user can always tell which day they're viewing versus
  * which day it actually is; a small dot marks any day with at least one
- * entry in [daysWithScheduledClasses].
+ * entry in [daysWithScheduledClasses]. A "Today" button appears next to the
+ * next-week arrow whenever [selectedDate] isn't [today], letting the user
+ * jump straight back to the present after browsing away instead of having
+ * to manually navigate back week by week.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -278,11 +283,20 @@ private fun CalendarWeekHeader(
                                 onClick = { isDatePickerVisible = true },
                             ).padding(horizontal = 8.dp, vertical = 4.dp),
                 )
-                IconButton(onClick = onNextWeekClicked) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = stringResource(R.string.cd_next_week),
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Only shown once the user has actually navigated away from today,
+                    // since there'd be nothing to "return" to otherwise.
+                    if (selectedDate != today) {
+                        TextButton(onClick = { onDateSelected(today) }) {
+                            Text(text = stringResource(R.string.action_today))
+                        }
+                    }
+                    IconButton(onClick = onNextWeekClicked) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.cd_next_week),
+                        )
+                    }
                 }
             }
             Row(
@@ -509,9 +523,10 @@ private fun LessonBlock.timeAndRoomLabel(): String {
 /**
  * A single student's name/class alongside a check (report filled) or
  * warning (report missing) icon. Tapping the row invokes [onClick] to jump
- * straight into today's [fr.alaedine.aesh.presentation.report.DailyReportFormScreen]
- * with this student preselected, since logging an observation for them is
- * the far more common action.
+ * straight into the [fr.alaedine.aesh.presentation.report.DailyReportFormScreen]
+ * with this student and the dashboard's currently selected date preselected,
+ * since editing or completing their observation for that day is the far
+ * more common action.
  */
 @Composable
 private fun StudentReportStatusRow(
@@ -608,7 +623,7 @@ private fun HomeScreenPreview() {
                     isLoading = false,
                 ),
             onNavigateToStudents = {},
-            onNavigateToDailyReport = {},
+            onNavigateToDailyReport = { _, _ -> },
             onNavigateToSchedule = {},
             onNavigateToEssReport = {},
             onNavigateToSettings = {},
@@ -646,7 +661,7 @@ private fun HomeScreenAllReportedPreview() {
                     isLoading = false,
                 ),
             onNavigateToStudents = {},
-            onNavigateToDailyReport = {},
+            onNavigateToDailyReport = { _, _ -> },
             onNavigateToSchedule = {},
             onNavigateToEssReport = {},
             onNavigateToSettings = {},
@@ -664,7 +679,7 @@ private fun HomeScreenEmptyPreview() {
         HomeScreen(
             uiState = HomeUiState(lessonBlocks = emptyList(), isLoading = false),
             onNavigateToStudents = {},
-            onNavigateToDailyReport = {},
+            onNavigateToDailyReport = { _, _ -> },
             onNavigateToSchedule = {},
             onNavigateToEssReport = {},
             onNavigateToSettings = {},

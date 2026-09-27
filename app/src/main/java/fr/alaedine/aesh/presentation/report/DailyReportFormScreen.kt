@@ -71,13 +71,19 @@ private val SAVED_STATE_DISPLAY_DURATION = 900.milliseconds
  * @param studentId `null` when reached from the dashboard's "new report"
  * FAB (the student is picked from within the form), or the id of the
  * student to preselect when reached by tapping their row on the dashboard.
+ * @param date The dashboard's currently selected date when reached by
+ * tapping a student row there, so editing/completing that day's
+ * observation opens the form already on the right day; `null` when
+ * reached from the "new report" FAB, in which case the form defaults to
+ * today (see [DailyReportFormViewModel]).
  */
 @Composable
 fun DailyReportFormRoute(
     studentId: Long?,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: DailyReportFormViewModel = koinViewModel(parameters = { parametersOf(studentId) }),
+    date: LocalDate? = null,
+    viewModel: DailyReportFormViewModel = koinViewModel(parameters = { parametersOf(studentId, date) }),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

@@ -20,8 +20,8 @@ import java.time.LocalDate
  *
  * Keeps the student picker in sync with [studentRepository]. Once a student
  * is picked and/or a date is chosen via [onDateSelected] (defaults to
- * today, letting a missed observation be backfilled for a previous day),
- * that `(date, studentId)` pair's report is looked up via
+ * [prefilledDate], letting a missed observation be backfilled for a
+ * previous day), that `(date, studentId)` pair's report is looked up via
  * [DailyReportRepository.getReportByDateAndStudent]: the pair is a unique
  * index allowing at most one report, so re-opening the form for the same
  * student/day edits that existing report instead of violating the
@@ -33,13 +33,24 @@ import java.time.LocalDate
  * injection parameter sourced from the navigation argument when this form
  * is reached by tapping a student on the dashboard rather than its "new
  * report" FAB, see `DailyReportFormRoute`.
+ * @param prefilledDate The initial [DailyReportFormUiState.date], sourced
+ * the same way as [preselectedStudentId] — the dashboard's currently
+ * selected date when reached by tapping a student row, so editing/
+ * completing that day's observation opens the form already on the right
+ * day instead of always defaulting to today. Clamped to today when it's in
+ * the future (the dashboard, unlike this form, allows browsing forward in
+ * time) since an observation can't be logged for a day that hasn't
+ * happened yet. Defaults to today when `null`, i.e. when reached from the
+ * "new report" FAB.
  */
 class DailyReportFormViewModel(
     private val dailyReportRepository: DailyReportRepository,
     private val studentRepository: StudentRepository,
     private val preselectedStudentId: Long? = null,
+    prefilledDate: LocalDate? = null,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(DailyReportFormUiState())
+    private val _uiState =
+        MutableStateFlow(DailyReportFormUiState(date = (prefilledDate ?: LocalDate.now()).coerceAtMost(LocalDate.now())))
     val uiState: StateFlow<DailyReportFormUiState> = _uiState.asStateFlow()
 
     init {

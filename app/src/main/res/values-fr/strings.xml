@@ -34,6 +34,7 @@
     <string name="cd_previous_week">Semaine précédente</string>
     <string name="cd_next_week">Semaine suivante</string>
     <string name="cd_pick_date">Choisir une date</string>
+    <string name="action_today">Aujourd\'hui</string>
     <plurals name="missing_reports_warning">
         <item quantity="one">%d élève n\'a pas encore de rapport aujourd\'hui.</item>
         <item quantity="many">%d élèves n\'ont pas encore de rapport aujourd\'hui.</item>
