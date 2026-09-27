@@ -7,6 +7,7 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_save">Save</string>
     <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
     <string name="action_ok">OK</string>
     <!-- Formats a person\'s first name with their class, e.g. "Alice — CE2". -->
     <string name="student_display_name">%1$s — %2$s</string>
