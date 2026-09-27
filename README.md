@@ -64,6 +64,8 @@ Open the project in Android Studio and run the `app` module on a device or
 emulator running API 26+.
 
 ```bash
+./gradlew ktlintCheck         # formatting check (ktlint)
+./gradlew ktlintFormat        # auto-fix formatting
 ./gradlew testDebugUnitTest   # unit tests
 ./gradlew lintDebug           # static analysis
 ./gradlew assembleDebug       # debug APK
@@ -71,8 +73,9 @@ emulator running API 26+.
 
 ## Continuous integration & releases
 
-- **`.github/workflows/android.yml`** builds, lints and unit-tests every pull
-  request targeting `main` (and pushes to `main`).
+- **`.github/workflows/android.yml`** checks Kotlin formatting, builds,
+  lints and unit-tests every pull request targeting `main` (and pushes to
+  `main`).
 - **`.github/workflows/release.yml`** publishes signed, installable APKs as
   [GitHub Releases](../../releases). Trigger it either by running the
   workflow manually from the Actions tab, or by pushing a tag matching

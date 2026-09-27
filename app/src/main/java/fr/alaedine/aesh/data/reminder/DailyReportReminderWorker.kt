@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import fr.alaedine.aesh.domain.usecase.HasIncompleteDailyReportsUseCase
-import java.time.LocalDate
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.time.LocalDate
 
 /**
  * Background chore that fires once a day (scheduled by
@@ -24,8 +24,8 @@ import org.koin.core.component.inject
 class DailyReportReminderWorker(
     context: Context,
     workerParameters: WorkerParameters,
-) : CoroutineWorker(context, workerParameters), KoinComponent {
-
+) : CoroutineWorker(context, workerParameters),
+    KoinComponent {
     private val hasIncompleteDailyReportsUseCase: HasIncompleteDailyReportsUseCase by inject()
     private val notifier: DailyReminderNotifier by inject()
 

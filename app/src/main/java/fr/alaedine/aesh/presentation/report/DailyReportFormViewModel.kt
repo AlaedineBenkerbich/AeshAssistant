@@ -28,12 +28,12 @@ class DailyReportFormViewModel(
     private val dailyReportRepository: DailyReportRepository,
     private val studentRepository: StudentRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(DailyReportFormUiState())
     val uiState: StateFlow<DailyReportFormUiState> = _uiState.asStateFlow()
 
     init {
-        studentRepository.observeStudents()
+        studentRepository
+            .observeStudents()
             .onEach { students -> _uiState.update { it.copy(students = students, isLoading = false) } }
             .launchIn(viewModelScope)
     }
@@ -91,15 +91,16 @@ class DailyReportFormViewModel(
     fun onSaveClicked() {
         val state = _uiState.value
         val student = state.selectedStudent ?: return
-        val report = DailyReport(
-            id = state.reportId ?: 0L,
-            date = state.date,
-            studentId = student.id,
-            moodLevel = state.moodLevel,
-            focusLevel = state.focusLevel,
-            socialInteractions = state.socialInteractions,
-            freeNotes = state.freeNotes.trim(),
-        )
+        val report =
+            DailyReport(
+                id = state.reportId ?: 0L,
+                date = state.date,
+                studentId = student.id,
+                moodLevel = state.moodLevel,
+                focusLevel = state.focusLevel,
+                socialInteractions = state.socialInteractions,
+                freeNotes = state.freeNotes.trim(),
+            )
         viewModelScope.launch {
             if (state.reportId == null) {
                 dailyReportRepository.addReport(report)

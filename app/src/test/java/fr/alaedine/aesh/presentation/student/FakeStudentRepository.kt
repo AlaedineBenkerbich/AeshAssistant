@@ -13,14 +13,12 @@ import kotlinx.coroutines.flow.update
 class FakeStudentRepository(
     initialStudents: List<Student> = emptyList(),
 ) : StudentRepository {
-
     private val students = MutableStateFlow(initialStudents)
     private var nextId = (initialStudents.maxOfOrNull { it.id } ?: 0L) + 1
 
     override fun observeStudents(): Flow<List<Student>> = students
 
-    override suspend fun getStudentById(id: Long): Student? =
-        students.value.find { it.id == id }
+    override suspend fun getStudentById(id: Long): Student? = students.value.find { it.id == id }
 
     override suspend fun addStudent(student: Student): Long {
         val id = nextId++

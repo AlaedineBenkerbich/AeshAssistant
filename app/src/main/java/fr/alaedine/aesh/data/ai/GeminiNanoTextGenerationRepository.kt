@@ -18,19 +18,23 @@ import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
  * ML Kit recognizer.
  */
 class GeminiNanoTextGenerationRepository : AiTextGenerationRepository {
-
     private val generativeModel by lazy { Generation.getClient() }
 
-    override suspend fun generate(prompt: String): Result<String> = runCatching {
-        when (generativeModel.checkStatus()) {
-            FeatureStatus.UNAVAILABLE -> throw AiFeatureUnavailableException()
-            FeatureStatus.AVAILABLE -> Unit
-            // DOWNLOADABLE or DOWNLOADING: either way, awaiting the download
-            // flow below suspends until the model is ready to run.
-            else -> awaitModelDownload()
+    override suspend fun generate(prompt: String): Result<String> =
+        runCatching {
+            when (generativeModel.checkStatus()) {
+                FeatureStatus.UNAVAILABLE -> throw AiFeatureUnavailableException()
+                FeatureStatus.AVAILABLE -> Unit
+                // DOWNLOADABLE or DOWNLOADING: either way, awaiting the download
+                // flow below suspends until the model is ready to run.
+                else -> awaitModelDownload()
+            }
+            generativeModel
+                .generateContent(prompt)
+                .candidates
+                .first()
+                .text
         }
-        generativeModel.generateContent(prompt).candidates.first().text
-    }
 
     /** Suspends until the on-device model finishes downloading, throwing if the download itself fails. */
     private suspend fun awaitModelDownload() {

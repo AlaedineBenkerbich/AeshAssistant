@@ -22,11 +22,11 @@ import java.util.concurrent.TimeUnit
 class WorkManagerReminderScheduler(
     private val workManager: WorkManager,
 ) : ReminderScheduler {
-
     override fun scheduleDaily() {
-        val request = PeriodicWorkRequestBuilder<DailyReportReminderWorker>(1, TimeUnit.DAYS)
-            .setInitialDelay(computeInitialDelayMillis(REMINDER_TIME), TimeUnit.MILLISECONDS)
-            .build()
+        val request =
+            PeriodicWorkRequestBuilder<DailyReportReminderWorker>(1, TimeUnit.DAYS)
+                .setInitialDelay(computeInitialDelayMillis(REMINDER_TIME), TimeUnit.MILLISECONDS)
+                .build()
 
         workManager.enqueueUniquePeriodicWork(
             UNIQUE_WORK_NAME,

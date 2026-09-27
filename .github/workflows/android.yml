@@ -1,7 +1,7 @@
 name: Android CI
 
-# Builds, lints and unit-tests the app on every pull request targeting main,
-# and on pushes to main (post-merge safety net).
+# Checks Kotlin formatting, builds, lints and unit-tests the app on every
+# pull request targeting main, and on pushes to main (post-merge safety net).
 on:
   pull_request:
     branches: [ "main" ]
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build, lint & unit test
+    name: Format, build, lint & unit test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,6 +32,9 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      - name: Check Kotlin formatting
+        run: ./gradlew ktlintCheck --stacktrace
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace

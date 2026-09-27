@@ -12,7 +12,6 @@ package fr.alaedine.aesh.domain.reminder
  * know WorkManager is the underlying mechanism.
  */
 interface ReminderScheduler {
-
     /**
      * Enqueues the daily reminder if it isn't already scheduled. Safe to
      * call every app start: it never resets an already-pending schedule.

@@ -49,13 +49,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import org.koin.androidx.compose.koinViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import java.util.Locale
-import org.koin.androidx.compose.koinViewModel
 
 /**
  * Stateful entry point wired to [HomeViewModel]. Kept separate from the
@@ -130,9 +130,10 @@ fun HomeScreen(
         },
     ) { contentPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -181,9 +182,10 @@ private fun CalendarWeekHeader(
     val locale = LocalLocale.current.platformLocale
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
@@ -220,11 +222,12 @@ private fun CalendarDayCell(
 ) {
     val todayLabel = stringResource(R.string.cd_calendar_today)
     val hasScheduledClassesLabel = stringResource(R.string.cd_calendar_has_scheduled_classes)
-    val accessibilityLabel = buildString {
-        append(date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", locale)))
-        if (isToday) append(", ").append(todayLabel)
-        if (hasScheduledClasses) append(", ").append(hasScheduledClassesLabel)
-    }
+    val accessibilityLabel =
+        buildString {
+            append(date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", locale)))
+            if (isToday) append(", ").append(todayLabel)
+            if (hasScheduledClasses) append(", ").append(hasScheduledClassesLabel)
+        }
     Column(
         modifier = modifier.semantics(mergeDescendants = true) { contentDescription = accessibilityLabel },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -236,10 +239,11 @@ private fun CalendarDayCell(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent),
+            modifier =
+                Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -249,16 +253,20 @@ private fun CalendarDayCell(
             )
         }
         Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(if (hasScheduledClasses) MaterialTheme.colorScheme.tertiary else Color.Transparent),
+            modifier =
+                Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(if (hasScheduledClasses) MaterialTheme.colorScheme.tertiary else Color.Transparent),
         )
     }
 }
 
 /** The 7 [LocalDate]s of the week containing [date], starting from [locale]'s first day of the week. */
-private fun currentWeekDates(date: LocalDate, locale: Locale): List<LocalDate> {
+private fun currentWeekDates(
+    date: LocalDate,
+    locale: Locale,
+): List<LocalDate> {
     val firstDayOfWeek = WeekFields.of(locale).firstDayOfWeek
     val offsetFromWeekStart = (date.dayOfWeek.value - firstDayOfWeek.value + 7) % 7
     val startOfWeek = date.minusDays(offsetFromWeekStart.toLong())
@@ -266,21 +274,29 @@ private fun currentWeekDates(date: LocalDate, locale: Locale): List<LocalDate> {
 }
 
 /** E.g. "September 2026". */
-private fun monthYearLabel(date: LocalDate, locale: Locale): String =
-    date.format(DateTimeFormatter.ofPattern("MMMM yyyy", locale))
+private fun monthYearLabel(
+    date: LocalDate,
+    locale: Locale,
+): String =
+    date
+        .format(DateTimeFormatter.ofPattern("MMMM yyyy", locale))
         .replaceFirstChar { it.titlecase(locale) }
 
 /** Warning banner shown when [missingCount] students still haven't filled out today's report. */
 @Composable
-private fun MissingReportsWarning(missingCount: Int, modifier: Modifier = Modifier) {
+private fun MissingReportsWarning(
+    missingCount: Int,
+    modifier: Modifier = Modifier,
+) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -297,21 +313,26 @@ private fun MissingReportsWarning(missingCount: Int, modifier: Modifier = Modifi
 
 /** A single student's name/class alongside a check (report filled) or warning (report missing) icon. */
 @Composable
-private fun StudentReportStatusRow(status: StudentReportStatus, modifier: Modifier = Modifier) {
+private fun StudentReportStatusRow(
+    status: StudentReportStatus,
+    modifier: Modifier = Modifier,
+) {
     Card(modifier = modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(
-                    R.string.student_display_name,
-                    status.student.firstName,
-                    status.student.className,
-                ),
+                text =
+                    stringResource(
+                        R.string.student_display_name,
+                        status.student.firstName,
+                        status.student.className,
+                    ),
                 style = MaterialTheme.typography.titleMedium,
             )
             if (status.hasReportToday) {
@@ -336,20 +357,22 @@ private fun StudentReportStatusRow(status: StudentReportStatus, modifier: Modifi
 private fun HomeScreenPreview() {
     AeshAssistantTheme {
         HomeScreen(
-            uiState = HomeUiState(
-                studentStatuses = listOf(
-                    StudentReportStatus(
-                        student = Student(id = 1L, firstName = "Alice", className = "CE2"),
-                        hasReportToday = true,
-                    ),
-                    StudentReportStatus(
-                        student = Student(id = 2L, firstName = "Amir", className = "CM2"),
-                        hasReportToday = false,
-                    ),
+            uiState =
+                HomeUiState(
+                    studentStatuses =
+                        listOf(
+                            StudentReportStatus(
+                                student = Student(id = 1L, firstName = "Alice", className = "CE2"),
+                                hasReportToday = true,
+                            ),
+                            StudentReportStatus(
+                                student = Student(id = 2L, firstName = "Amir", className = "CM2"),
+                                hasReportToday = false,
+                            ),
+                        ),
+                    daysWithScheduledClasses = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                    isLoading = false,
                 ),
-                daysWithScheduledClasses = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
-                isLoading = false,
-            ),
             onNavigateToStudents = {},
             onNavigateToDailyReport = {},
             onNavigateToSchedule = {},
@@ -364,15 +387,17 @@ private fun HomeScreenPreview() {
 private fun HomeScreenAllReportedPreview() {
     AeshAssistantTheme {
         HomeScreen(
-            uiState = HomeUiState(
-                studentStatuses = listOf(
-                    StudentReportStatus(
-                        student = Student(id = 1L, firstName = "Alice", className = "CE2"),
-                        hasReportToday = true,
-                    ),
+            uiState =
+                HomeUiState(
+                    studentStatuses =
+                        listOf(
+                            StudentReportStatus(
+                                student = Student(id = 1L, firstName = "Alice", className = "CE2"),
+                                hasReportToday = true,
+                            ),
+                        ),
+                    isLoading = false,
                 ),
-                isLoading = false,
-            ),
             onNavigateToStudents = {},
             onNavigateToDailyReport = {},
             onNavigateToSchedule = {},

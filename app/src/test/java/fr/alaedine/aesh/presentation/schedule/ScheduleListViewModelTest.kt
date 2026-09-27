@@ -1,14 +1,14 @@
 package fr.alaedine.aesh.presentation.schedule
 
 import fr.alaedine.aesh.domain.model.ScheduleSlot
-import java.time.DayOfWeek
-import java.time.LocalTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import java.time.DayOfWeek
+import java.time.LocalTime
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -25,14 +25,14 @@ import kotlin.test.assertNull
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScheduleListViewModelTest {
-
-    private val mathSlot = ScheduleSlot(
-        id = 1L,
-        dayOfWeek = DayOfWeek.MONDAY,
-        startTime = LocalTime.of(8, 0),
-        endTime = LocalTime.of(9, 0),
-        subject = "Mathématiques",
-    )
+    private val mathSlot =
+        ScheduleSlot(
+            id = 1L,
+            dayOfWeek = DayOfWeek.MONDAY,
+            startTime = LocalTime.of(8, 0),
+            endTime = LocalTime.of(9, 0),
+            subject = "Mathématiques",
+        )
 
     @BeforeTest
     fun setMainDispatcher() {
@@ -45,62 +45,67 @@ class ScheduleListViewModelTest {
     }
 
     @Test
-    fun `should expose the repository schedule slots when the view model is initialized`() = runTest {
-        // Given / When
-        val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
+    fun `should expose the repository schedule slots when the view model is initialized`() =
+        runTest {
+            // Given / When
+            val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
 
-        // Then
-        assertEquals(listOf(mathSlot), viewModel.uiState.value.scheduleSlots)
-    }
-
-    @Test
-    fun `should stage the schedule slot for deletion when deletion is requested`() = runTest {
-        // Given
-        val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
-
-        // When
-        viewModel.onDeleteRequested(mathSlot)
-
-        // Then
-        assertEquals(mathSlot, viewModel.uiState.value.pendingDeletion)
-    }
+            // Then
+            assertEquals(listOf(mathSlot), viewModel.uiState.value.scheduleSlots)
+        }
 
     @Test
-    fun `should clear the pending deletion when deletion is cancelled`() = runTest {
-        // Given
-        val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
-        viewModel.onDeleteRequested(mathSlot)
+    fun `should stage the schedule slot for deletion when deletion is requested`() =
+        runTest {
+            // Given
+            val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
 
-        // When
-        viewModel.onDeleteCancelled()
+            // When
+            viewModel.onDeleteRequested(mathSlot)
 
-        // Then
-        assertNull(viewModel.uiState.value.pendingDeletion)
-    }
-
-    @Test
-    fun `should remove the schedule slot and clear the pending deletion when deletion is confirmed`() = runTest {
-        // Given
-        val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
-        viewModel.onDeleteRequested(mathSlot)
-
-        // When
-        viewModel.onDeleteConfirmed()
-
-        // Then
-        assertEquals(emptyList(), viewModel.uiState.value.scheduleSlots)
-        assertNull(viewModel.uiState.value.pendingDeletion)
-    }
+            // Then
+            assertEquals(mathSlot, viewModel.uiState.value.pendingDeletion)
+        }
 
     @Test
-    fun `should leave state unchanged when deletion is confirmed without a pending schedule slot`() = runTest {
-        // Given
-        val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
+    fun `should clear the pending deletion when deletion is cancelled`() =
+        runTest {
+            // Given
+            val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
+            viewModel.onDeleteRequested(mathSlot)
 
-        // When
-        viewModel.onDeleteConfirmed()
+            // When
+            viewModel.onDeleteCancelled()
 
-        // Then
-        assertEquals(listOf(mathSlot), viewModel.uiState.value.scheduleSlots)
-    }
+            // Then
+            assertNull(viewModel.uiState.value.pendingDeletion)
+        }
+
+    @Test
+    fun `should remove the schedule slot and clear the pending deletion when deletion is confirmed`() =
+        runTest {
+            // Given
+            val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
+            viewModel.onDeleteRequested(mathSlot)
+
+            // When
+            viewModel.onDeleteConfirmed()
+
+            // Then
+            assertEquals(emptyList(), viewModel.uiState.value.scheduleSlots)
+            assertNull(viewModel.uiState.value.pendingDeletion)
+        }
+
+    @Test
+    fun `should leave state unchanged when deletion is confirmed without a pending schedule slot`() =
+        runTest {
+            // Given
+            val viewModel = ScheduleListViewModel(FakeScheduleSlotRepository(initialScheduleSlots = listOf(mathSlot)))
+
+            // When
+            viewModel.onDeleteConfirmed()
+
+            // Then
+            assertEquals(listOf(mathSlot), viewModel.uiState.value.scheduleSlots)
+        }
 }

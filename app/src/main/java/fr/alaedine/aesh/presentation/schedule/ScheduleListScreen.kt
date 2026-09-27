@@ -40,12 +40,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import org.koin.androidx.compose.koinViewModel
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-import org.koin.androidx.compose.koinViewModel
 
 private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -124,9 +124,10 @@ fun ScheduleListScreen(
     ) { contentPadding ->
         if (uiState.scheduleSlots.isEmpty() && !uiState.isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -139,9 +140,10 @@ fun ScheduleListScreen(
             // `ScheduleSlotDao.observeAll`), so grouping preserves that order without re-sorting.
             val scheduleSlotsByDay = uiState.scheduleSlots.groupBy { it.dayOfWeek }
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -193,14 +195,16 @@ private fun ScheduleSlotRow(
     val openDailyReportLabel = stringResource(R.string.cd_open_daily_report_for_schedule_slot, scheduleSlot.subject)
     Card(
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = openDailyReportLabel },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = openDailyReportLabel },
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -227,7 +231,11 @@ private fun ScheduleSlotRow(
 }
 
 @Composable
-private fun DeleteScheduleSlotConfirmationDialog(scheduleSlot: ScheduleSlot, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun DeleteScheduleSlotConfirmationDialog(
+    scheduleSlot: ScheduleSlot,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(R.string.confirm_delete_title, scheduleSlot.subject)) },
@@ -257,35 +265,37 @@ private fun DayOfWeek.displayName(): String = getDisplayName(TextStyle.FULL, Loc
 private fun ScheduleListScreenPreview() {
     AeshAssistantTheme {
         ScheduleListScreen(
-            uiState = ScheduleListUiState(
-                scheduleSlots = listOf(
-                    ScheduleSlot(
-                        id = 1L,
-                        dayOfWeek = DayOfWeek.MONDAY,
-                        startTime = LocalTime.of(8, 30),
-                        endTime = LocalTime.of(9, 30),
-                        subject = "Mathématiques",
-                        room = "B12",
-                    ),
-                    ScheduleSlot(
-                        id = 2L,
-                        dayOfWeek = DayOfWeek.MONDAY,
-                        startTime = LocalTime.of(9, 30),
-                        endTime = LocalTime.of(10, 30),
-                        subject = "Français",
-                        room = "B12",
-                    ),
-                    ScheduleSlot(
-                        id = 3L,
-                        dayOfWeek = DayOfWeek.TUESDAY,
-                        startTime = LocalTime.of(8, 30),
-                        endTime = LocalTime.of(9, 30),
-                        subject = "Sport",
-                        room = "Gymnase",
-                    ),
+            uiState =
+                ScheduleListUiState(
+                    scheduleSlots =
+                        listOf(
+                            ScheduleSlot(
+                                id = 1L,
+                                dayOfWeek = DayOfWeek.MONDAY,
+                                startTime = LocalTime.of(8, 30),
+                                endTime = LocalTime.of(9, 30),
+                                subject = "Mathématiques",
+                                room = "B12",
+                            ),
+                            ScheduleSlot(
+                                id = 2L,
+                                dayOfWeek = DayOfWeek.MONDAY,
+                                startTime = LocalTime.of(9, 30),
+                                endTime = LocalTime.of(10, 30),
+                                subject = "Français",
+                                room = "B12",
+                            ),
+                            ScheduleSlot(
+                                id = 3L,
+                                dayOfWeek = DayOfWeek.TUESDAY,
+                                startTime = LocalTime.of(8, 30),
+                                endTime = LocalTime.of(9, 30),
+                                subject = "Sport",
+                                room = "Gymnase",
+                            ),
+                        ),
+                    isLoading = false,
                 ),
-                isLoading = false,
-            ),
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
@@ -320,20 +330,22 @@ private fun ScheduleListScreenEmptyPreview() {
 @Composable
 private fun ScheduleListScreenDeleteConfirmationPreview() {
     AeshAssistantTheme {
-        val mathSlot = ScheduleSlot(
-            id = 1L,
-            dayOfWeek = DayOfWeek.MONDAY,
-            startTime = LocalTime.of(8, 30),
-            endTime = LocalTime.of(9, 30),
-            subject = "Mathématiques",
-            room = "B12",
-        )
+        val mathSlot =
+            ScheduleSlot(
+                id = 1L,
+                dayOfWeek = DayOfWeek.MONDAY,
+                startTime = LocalTime.of(8, 30),
+                endTime = LocalTime.of(9, 30),
+                subject = "Mathématiques",
+                room = "B12",
+            )
         ScheduleListScreen(
-            uiState = ScheduleListUiState(
-                scheduleSlots = listOf(mathSlot),
-                isLoading = false,
-                pendingDeletion = mathSlot,
-            ),
+            uiState =
+                ScheduleListUiState(
+                    scheduleSlots = listOf(mathSlot),
+                    isLoading = false,
+                    pendingDeletion = mathSlot,
+                ),
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},

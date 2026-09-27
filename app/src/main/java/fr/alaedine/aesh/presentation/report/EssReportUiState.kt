@@ -59,7 +59,9 @@ data class EssReportUiState(
  */
 sealed interface EssReportStatusMessage {
     /** No daily reports exist for [studentFirstName] within the selected date range. */
-    data class NoReportsInRange(val studentFirstName: String) : EssReportStatusMessage
+    data class NoReportsInRange(
+        val studentFirstName: String,
+    ) : EssReportStatusMessage
 
     /** The on-device generative model isn't supported on this device. */
     data object AiFeatureUnavailable : EssReportStatusMessage
@@ -69,8 +71,15 @@ sealed interface EssReportStatusMessage {
      * underlying (untranslated) error message when available, falling back
      * to a generic localized message otherwise.
      */
-    data class GenerationFailed(val reason: String?) : EssReportStatusMessage
+    data class GenerationFailed(
+        val reason: String?,
+    ) : EssReportStatusMessage
+
     data object ExportSuccess : EssReportStatusMessage
-    data class ExportFailed(val reason: String) : EssReportStatusMessage
+
+    data class ExportFailed(
+        val reason: String,
+    ) : EssReportStatusMessage
+
     data object ExportFileOpenFailed : EssReportStatusMessage
 }

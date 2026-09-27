@@ -7,7 +7,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class WorkManagerReminderSchedulerTest {
-
     private val targetTime = LocalTime.of(17, 0)
 
     @Test

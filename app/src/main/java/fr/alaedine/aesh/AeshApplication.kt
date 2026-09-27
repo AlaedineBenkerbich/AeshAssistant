@@ -16,11 +16,11 @@ import org.koin.core.context.startKoin
 class AeshApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        val koinApp = startKoin {
-            androidContext(this@AeshApplication)
-            modules(appModules)
-        }
+        val koinApp =
+            startKoin {
+                androidContext(this@AeshApplication)
+                modules(appModules)
+            }
         koinApp.koin.get<ReminderScheduler>().scheduleDaily()
     }
 }
-

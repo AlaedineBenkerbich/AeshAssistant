@@ -14,8 +14,9 @@ import org.koin.dsl.module
  * separate from [dataModule] since neither touches Room/local persistence —
  * same rationale as [scannerModule].
  */
-val essReportModule = module {
-    single<AiTextGenerationRepository> { GeminiNanoTextGenerationRepository() }
-    single<PdfExportRepository> { AndroidPdfExportRepository() }
-    single { GenerateEssReportUseCase(get(), get()) }
-}
+val essReportModule =
+    module {
+        single<AiTextGenerationRepository> { GeminiNanoTextGenerationRepository() }
+        single<PdfExportRepository> { AndroidPdfExportRepository() }
+        single { GenerateEssReportUseCase(get(), get()) }
+    }

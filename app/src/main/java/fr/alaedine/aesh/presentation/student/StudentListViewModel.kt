@@ -23,12 +23,12 @@ import kotlinx.coroutines.launch
 class StudentListViewModel(
     private val studentRepository: StudentRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(StudentListUiState())
     val uiState: StateFlow<StudentListUiState> = _uiState.asStateFlow()
 
     init {
-        studentRepository.observeStudents()
+        studentRepository
+            .observeStudents()
             .onEach { students -> _uiState.update { it.copy(students = students, isLoading = false) } }
             .launchIn(viewModelScope)
     }

@@ -23,7 +23,6 @@ class StudentFormViewModel(
     private val studentRepository: StudentRepository,
     private val studentId: Long?,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(StudentFormUiState(studentId = studentId))
     val uiState: StateFlow<StudentFormUiState> = _uiState.asStateFlow()
 
@@ -67,12 +66,13 @@ class StudentFormViewModel(
     fun onSaveClicked() {
         val state = _uiState.value
         if (!state.canSave) return
-        val student = Student(
-            id = studentId ?: 0L,
-            firstName = state.firstName.trim(),
-            className = state.className.trim(),
-            ppsGoals = state.ppsGoals.trim(),
-        )
+        val student =
+            Student(
+                id = studentId ?: 0L,
+                firstName = state.firstName.trim(),
+                className = state.className.trim(),
+                ppsGoals = state.ppsGoals.trim(),
+            )
         viewModelScope.launch {
             if (studentId == null) {
                 studentRepository.addStudent(student)

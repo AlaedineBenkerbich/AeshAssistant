@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.repository.ScheduleScannerRepository
 import fr.alaedine.aesh.domain.scanner.ScheduleTextParser
-import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Drives the "scan a physical schedule" flow: runs on-device OCR on a
@@ -21,7 +21,6 @@ import kotlinx.coroutines.launch
 class ScheduleScannerViewModel(
     private val scheduleScannerRepository: ScheduleScannerRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(ScheduleScannerUiState())
     val uiState: StateFlow<ScheduleScannerUiState> = _uiState.asStateFlow()
 
@@ -33,7 +32,8 @@ class ScheduleScannerViewModel(
     fun onPhotoCaptured(imageFile: File) {
         _uiState.update { it.copy(isProcessing = true, error = null) }
         viewModelScope.launch {
-            scheduleScannerRepository.recognizeText(imageFile)
+            scheduleScannerRepository
+                .recognizeText(imageFile)
                 .onSuccess { text ->
                     val parsed = ScheduleTextParser.parse(text)
                     _uiState.update {
@@ -43,8 +43,7 @@ class ScheduleScannerViewModel(
                             it.copy(isProcessing = false, parsedScheduleSlot = parsed)
                         }
                     }
-                }
-                .onFailure {
+                }.onFailure {
                     _uiState.update {
                         it.copy(isProcessing = false, error = ScheduleScannerError.RecognitionFailed)
                     }

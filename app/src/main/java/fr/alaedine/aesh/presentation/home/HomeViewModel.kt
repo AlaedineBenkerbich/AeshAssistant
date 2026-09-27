@@ -28,7 +28,6 @@ class HomeViewModel(
     private val dailyReportRepository: DailyReportRepository,
     private val scheduleSlotRepository: ScheduleSlotRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -39,15 +38,17 @@ class HomeViewModel(
             dailyReportRepository.observeReports(),
             scheduleSlotRepository.observeScheduleSlots(),
         ) { students, reports, scheduleSlots ->
-            val studentIdsWithReportToday = reports
-                .filter { it.date == today }
-                .mapTo(mutableSetOf()) { it.studentId }
-            val statuses = students.map { student ->
-                StudentReportStatus(
-                    student = student,
-                    hasReportToday = student.id in studentIdsWithReportToday,
-                )
-            }
+            val studentIdsWithReportToday =
+                reports
+                    .filter { it.date == today }
+                    .mapTo(mutableSetOf()) { it.studentId }
+            val statuses =
+                students.map { student ->
+                    StudentReportStatus(
+                        student = student,
+                        hasReportToday = student.id in studentIdsWithReportToday,
+                    )
+                }
             val daysWithScheduledClasses = scheduleSlots.mapTo(mutableSetOf()) { it.dayOfWeek }
             statuses to daysWithScheduledClasses
         }.onEach { (statuses, daysWithScheduledClasses) ->

@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 /** Data Access Object for CRUD operations on [ScheduleSlotEntity] rows. */
 @Dao
 interface ScheduleSlotDao {
-
     /** Ordered by [ScheduleSlotEntity.dayOfWeek] (Monday first) then start time, matching how a weekly schedule reads. */
     @Query("SELECT * FROM schedule_slots ORDER BY dayOfWeek ASC, startTime ASC")
     fun observeAll(): Flow<List<ScheduleSlotEntity>>

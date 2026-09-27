@@ -25,17 +25,19 @@ private const val DATABASE_NAME = "aesh.db"
  * [BackupRepository] (the `domain`-facing interfaces) without knowing Room
  * is the underlying implementation.
  */
-val dataModule = module {
-    single {
-        Room.databaseBuilder(androidContext(), AeshDatabase::class.java, DATABASE_NAME)
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-            .build()
+val dataModule =
+    module {
+        single {
+            Room
+                .databaseBuilder(androidContext(), AeshDatabase::class.java, DATABASE_NAME)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .build()
+        }
+        single { get<AeshDatabase>().studentDao() }
+        single { get<AeshDatabase>().dailyReportDao() }
+        single { get<AeshDatabase>().scheduleSlotDao() }
+        single<StudentRepository> { StudentRepositoryImpl(get()) }
+        single<DailyReportRepository> { DailyReportRepositoryImpl(get()) }
+        single<ScheduleSlotRepository> { ScheduleSlotRepositoryImpl(get()) }
+        single<BackupRepository> { BackupRepositoryImpl(get(), get(), get(), get()) }
     }
-    single { get<AeshDatabase>().studentDao() }
-    single { get<AeshDatabase>().dailyReportDao() }
-    single { get<AeshDatabase>().scheduleSlotDao() }
-    single<StudentRepository> { StudentRepositoryImpl(get()) }
-    single<DailyReportRepository> { DailyReportRepositoryImpl(get()) }
-    single<ScheduleSlotRepository> { ScheduleSlotRepositoryImpl(get()) }
-    single<BackupRepository> { BackupRepositoryImpl(get(), get(), get(), get()) }
-}

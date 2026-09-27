@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.Flow
  * intact.
  */
 interface StudentRepository {
-
     /** Emits the current list of students every time the underlying data changes. */
     fun observeStudents(): Flow<List<Student>>
 

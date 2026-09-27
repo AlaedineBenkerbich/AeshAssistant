@@ -22,7 +22,6 @@ import kotlin.test.assertNull
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class StudentListViewModelTest {
-
     @BeforeTest
     fun setMainDispatcher() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -34,69 +33,74 @@ class StudentListViewModelTest {
     }
 
     @Test
-    fun `should expose the repository students when the view model is initialized`() = runTest {
-        // Given
-        val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+    fun `should expose the repository students when the view model is initialized`() =
+        runTest {
+            // Given
+            val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
 
-        // When
-        val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
+            // When
+            val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
 
-        // Then
-        assertEquals(listOf(alice), viewModel.uiState.value.students)
-    }
-
-    @Test
-    fun `should stage the student for deletion when deletion is requested`() = runTest {
-        // Given
-        val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
-        val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
-
-        // When
-        viewModel.onDeleteRequested(alice)
-
-        // Then
-        assertEquals(alice, viewModel.uiState.value.pendingDeletion)
-    }
+            // Then
+            assertEquals(listOf(alice), viewModel.uiState.value.students)
+        }
 
     @Test
-    fun `should clear the pending deletion when deletion is cancelled`() = runTest {
-        // Given
-        val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
-        val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
-        viewModel.onDeleteRequested(alice)
+    fun `should stage the student for deletion when deletion is requested`() =
+        runTest {
+            // Given
+            val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+            val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
 
-        // When
-        viewModel.onDeleteCancelled()
+            // When
+            viewModel.onDeleteRequested(alice)
 
-        // Then
-        assertNull(viewModel.uiState.value.pendingDeletion)
-    }
-
-    @Test
-    fun `should remove the student and clear the pending deletion when deletion is confirmed`() = runTest {
-        // Given
-        val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
-        val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
-        viewModel.onDeleteRequested(alice)
-
-        // When
-        viewModel.onDeleteConfirmed()
-
-        // Then
-        assertEquals(emptyList(), viewModel.uiState.value.students)
-        assertNull(viewModel.uiState.value.pendingDeletion)
-    }
+            // Then
+            assertEquals(alice, viewModel.uiState.value.pendingDeletion)
+        }
 
     @Test
-    fun `should leave state unchanged when deletion is confirmed without a pending student`() = runTest {
-        // Given
-        val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
-        val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
+    fun `should clear the pending deletion when deletion is cancelled`() =
+        runTest {
+            // Given
+            val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+            val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
+            viewModel.onDeleteRequested(alice)
 
-        // When
-        viewModel.onDeleteConfirmed()
+            // When
+            viewModel.onDeleteCancelled()
 
-        // Then
-        assertEquals(listOf(alice), viewModel.uiState.value.students)
-    }
+            // Then
+            assertNull(viewModel.uiState.value.pendingDeletion)
+        }
+
+    @Test
+    fun `should remove the student and clear the pending deletion when deletion is confirmed`() =
+        runTest {
+            // Given
+            val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+            val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
+            viewModel.onDeleteRequested(alice)
+
+            // When
+            viewModel.onDeleteConfirmed()
+
+            // Then
+            assertEquals(emptyList(), viewModel.uiState.value.students)
+            assertNull(viewModel.uiState.value.pendingDeletion)
+        }
+
+    @Test
+    fun `should leave state unchanged when deletion is confirmed without a pending student`() =
+        runTest {
+            // Given
+            val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+            val viewModel = StudentListViewModel(FakeStudentRepository(initialStudents = listOf(alice)))
+
+            // When
+            viewModel.onDeleteConfirmed()
+
+            // Then
+            assertEquals(listOf(alice), viewModel.uiState.value.students)
+        }
 }

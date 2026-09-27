@@ -10,7 +10,6 @@ import java.io.File
  * [ScheduleSlotRepository] since it never touches persistence, only OCR.
  */
 interface ScheduleScannerRepository {
-
     /**
      * Runs on-device text recognition on the photo at [imageFile].
      *

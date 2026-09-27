@@ -1,8 +1,8 @@
 package fr.alaedine.aesh.domain.repository
 
 import fr.alaedine.aesh.domain.model.DailyReport
-import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 /**
  * Framework-agnostic contract for persisting and retrieving [DailyReport]s.
@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
  * inward) intact.
  */
 interface DailyReportRepository {
-
     /** Emits the current list of reports every time the underlying data changes. */
     fun observeReports(): Flow<List<DailyReport>>
 
@@ -25,7 +24,10 @@ interface DailyReportRepository {
     suspend fun getReportById(id: Long): DailyReport?
 
     /** Returns the report filled out for [studentId] on [date], or `null` if none exists. */
-    suspend fun getReportByDateAndStudent(date: LocalDate, studentId: Long): DailyReport?
+    suspend fun getReportByDateAndStudent(
+        date: LocalDate,
+        studentId: Long,
+    ): DailyReport?
 
     /** Persists a new [report] and returns its generated id. */
     suspend fun addReport(report: DailyReport): Long

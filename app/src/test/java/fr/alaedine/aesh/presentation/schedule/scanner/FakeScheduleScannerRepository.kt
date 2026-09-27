@@ -11,7 +11,6 @@ import java.io.File
 class FakeScheduleScannerRepository(
     private val result: Result<String> = Result.success(""),
 ) : ScheduleScannerRepository {
-
     var lastRecognizedFile: File? = null
         private set
 

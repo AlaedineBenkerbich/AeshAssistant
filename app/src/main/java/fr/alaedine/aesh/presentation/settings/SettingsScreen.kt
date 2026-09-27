@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
-import java.time.LocalDate
 import org.koin.androidx.compose.koinViewModel
+import java.time.LocalDate
 
 private const val BACKUP_MIME_TYPE = "application/json"
 
@@ -59,29 +59,31 @@ fun SettingsRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val destination = runCatching { context.contentResolver.openOutputStream(uri) }.getOrNull()
-        if (destination == null) {
-            viewModel.onExportFailedToOpenFile()
-        } else {
-            viewModel.onExportRequested(destination)
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE),
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val destination = runCatching { context.contentResolver.openOutputStream(uri) }.getOrNull()
+            if (destination == null) {
+                viewModel.onExportFailedToOpenFile()
+            } else {
+                viewModel.onExportRequested(destination)
+            }
         }
-    }
 
-    val restoreLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val source = runCatching { context.contentResolver.openInputStream(uri) }.getOrNull()
-        if (source == null) {
-            viewModel.onRestoreFailedToOpenFile()
-        } else {
-            viewModel.onRestoreFileSelected(source)
+    val restoreLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val source = runCatching { context.contentResolver.openInputStream(uri) }.getOrNull()
+            if (source == null) {
+                viewModel.onRestoreFailedToOpenFile()
+            } else {
+                viewModel.onRestoreFileSelected(source)
+            }
         }
-    }
 
     SettingsScreen(
         uiState = uiState,
@@ -140,10 +142,11 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(text = stringResource(R.string.settings_section_data_backup), style = MaterialTheme.typography.titleMedium)
@@ -178,17 +181,21 @@ fun SettingsScreen(
 
 /** Resolves a one-shot [SettingsStatusMessage] to its localized Snackbar text. */
 @Composable
-private fun resolvedStatusMessage(message: SettingsStatusMessage): String = when (message) {
-    is SettingsStatusMessage.ExportSuccess -> stringResource(R.string.settings_export_success)
-    is SettingsStatusMessage.ExportFailed -> stringResource(R.string.settings_export_failed, message.reason)
-    is SettingsStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
-    is SettingsStatusMessage.RestoreSuccess -> stringResource(R.string.settings_restore_success)
-    is SettingsStatusMessage.RestoreFailed -> stringResource(R.string.settings_restore_failed, message.reason)
-    is SettingsStatusMessage.RestoreFileOpenFailed -> stringResource(R.string.settings_restore_file_open_failed)
-}
+private fun resolvedStatusMessage(message: SettingsStatusMessage): String =
+    when (message) {
+        is SettingsStatusMessage.ExportSuccess -> stringResource(R.string.settings_export_success)
+        is SettingsStatusMessage.ExportFailed -> stringResource(R.string.settings_export_failed, message.reason)
+        is SettingsStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
+        is SettingsStatusMessage.RestoreSuccess -> stringResource(R.string.settings_restore_success)
+        is SettingsStatusMessage.RestoreFailed -> stringResource(R.string.settings_restore_failed, message.reason)
+        is SettingsStatusMessage.RestoreFileOpenFailed -> stringResource(R.string.settings_restore_file_open_failed)
+    }
 
 @Composable
-private fun RestoreConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun RestoreConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(R.string.settings_restore_confirm_title)) },

@@ -11,7 +11,6 @@ import kotlinx.serialization.Serializable
  * of being encoded as raw strings.
  */
 sealed interface AeshDestination {
-
     /** App landing screen (see `HomeRoute`). */
     @Serializable
     data object Dashboard : AeshDestination
@@ -30,7 +29,9 @@ sealed interface AeshDestination {
 
     /** Form to edit the existing student identified by [studentId] (see `StudentFormRoute`). */
     @Serializable
-    data class EditStudent(val studentId: Long) : AeshDestination
+    data class EditStudent(
+        val studentId: Long,
+    ) : AeshDestination
 
     /** Daily observation form; the student is picked from within the form (see `DailyReportFormRoute`). */
     @Serializable
@@ -69,7 +70,9 @@ sealed interface AeshDestination {
 
     /** Form to edit the existing schedule slot identified by [scheduleSlotId] (see `ScheduleFormRoute`). */
     @Serializable
-    data class EditScheduleSlot(val scheduleSlotId: Long) : AeshDestination
+    data class EditScheduleSlot(
+        val scheduleSlotId: Long,
+    ) : AeshDestination
 
     /**
      * Camera + on-device OCR scanner that pre-fills a new schedule slot

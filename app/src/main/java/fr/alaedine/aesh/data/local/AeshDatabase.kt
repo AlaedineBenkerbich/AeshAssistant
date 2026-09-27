@@ -22,6 +22,8 @@ import fr.alaedine.aesh.data.local.entity.StudentEntity
 @TypeConverters(Converters::class)
 abstract class AeshDatabase : RoomDatabase() {
     abstract fun studentDao(): StudentDao
+
     abstract fun dailyReportDao(): DailyReportDao
+
     abstract fun scheduleSlotDao(): ScheduleSlotDao
 }

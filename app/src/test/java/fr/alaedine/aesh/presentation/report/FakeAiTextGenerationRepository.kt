@@ -11,7 +11,6 @@ import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
 class FakeAiTextGenerationRepository(
     private val result: Result<String> = Result.success("Generated report text."),
 ) : AiTextGenerationRepository {
-
     var lastPrompt: String? = null
         private set
 

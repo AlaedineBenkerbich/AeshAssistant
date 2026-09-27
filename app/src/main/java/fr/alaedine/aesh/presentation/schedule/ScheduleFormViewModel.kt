@@ -5,13 +5,13 @@ import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.repository.ScheduleSlotRepository
-import java.time.DayOfWeek
-import java.time.LocalTime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 /**
  * Presentation-layer state holder for the add/edit schedule slot form.
@@ -32,10 +32,10 @@ class ScheduleFormViewModel(
     private val scheduleSlotId: Long?,
     prefill: ParsedScheduleSlot? = null,
 ) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(
-        ScheduleFormUiState(scheduleSlotId = scheduleSlotId).withPrefill(prefill),
-    )
+    private val _uiState =
+        MutableStateFlow(
+            ScheduleFormUiState(scheduleSlotId = scheduleSlotId).withPrefill(prefill),
+        )
     val uiState: StateFlow<ScheduleFormUiState> = _uiState.asStateFlow()
 
     init {
@@ -88,14 +88,15 @@ class ScheduleFormViewModel(
     fun onSaveClicked() {
         val state = _uiState.value
         if (!state.canSave) return
-        val scheduleSlot = ScheduleSlot(
-            id = scheduleSlotId ?: 0L,
-            dayOfWeek = state.dayOfWeek,
-            startTime = state.startTime,
-            endTime = state.endTime,
-            subject = state.subject.trim(),
-            room = state.room.trim(),
-        )
+        val scheduleSlot =
+            ScheduleSlot(
+                id = scheduleSlotId ?: 0L,
+                dayOfWeek = state.dayOfWeek,
+                startTime = state.startTime,
+                endTime = state.endTime,
+                subject = state.subject.trim(),
+                room = state.room.trim(),
+            )
         viewModelScope.launch {
             if (scheduleSlotId == null) {
                 scheduleSlotRepository.addScheduleSlot(scheduleSlot)

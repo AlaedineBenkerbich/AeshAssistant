@@ -21,9 +21,10 @@ import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
  * `fr.alaedine.aesh.data.reminder`) needs on API 33+.
  */
 class MainActivity : ComponentActivity() {
-
     private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* No-op either way: the reminder worker re-checks the permission before posting. */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            // No-op either way: the reminder worker re-checks the permission before posting.
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,13 +39,13 @@ class MainActivity : ComponentActivity() {
 
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val alreadyGranted = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
+        val alreadyGranted =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
         if (!alreadyGranted) {
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }
-

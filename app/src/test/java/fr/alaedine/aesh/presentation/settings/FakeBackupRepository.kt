@@ -17,7 +17,6 @@ class FakeBackupRepository(
     private val exportError: Throwable? = null,
     private val importError: Throwable? = null,
 ) : BackupRepository {
-
     var exportedTo: OutputStream? = null
         private set
     var importedFrom: InputStream? = null

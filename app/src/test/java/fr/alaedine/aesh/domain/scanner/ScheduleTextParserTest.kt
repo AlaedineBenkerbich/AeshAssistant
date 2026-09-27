@@ -8,7 +8,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ScheduleTextParserTest {
-
     @Test
     fun `should recognize every field from a multi-line French schedule`() {
         // Given
