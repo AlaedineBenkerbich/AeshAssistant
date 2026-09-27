@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +59,7 @@ fun ScheduleListRoute(
     onAddScheduleSlot: () -> Unit,
     onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
+    onOpenDailyReportForm: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScheduleListViewModel = koinViewModel(),
@@ -66,6 +70,7 @@ fun ScheduleListRoute(
         onAddScheduleSlot = onAddScheduleSlot,
         onScanScheduleSlot = onScanScheduleSlot,
         onEditScheduleSlot = onEditScheduleSlot,
+        onOpenDailyReportForm = onOpenDailyReportForm,
         onNavigateBack = onNavigateBack,
         onDeleteRequested = viewModel::onDeleteRequested,
         onDeleteCancelled = viewModel::onDeleteCancelled,
@@ -81,6 +86,7 @@ fun ScheduleListScreen(
     onAddScheduleSlot: () -> Unit,
     onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
+    onOpenDailyReportForm: () -> Unit,
     onNavigateBack: () -> Unit,
     onDeleteRequested: (ScheduleSlot) -> Unit,
     onDeleteCancelled: () -> Unit,
@@ -149,7 +155,8 @@ fun ScheduleListScreen(
                     items(items = scheduleSlots, key = { it.id }) { scheduleSlot ->
                         ScheduleSlotRow(
                             scheduleSlot = scheduleSlot,
-                            onClick = { onEditScheduleSlot(scheduleSlot.id) },
+                            onClick = onOpenDailyReportForm,
+                            onEditClick = { onEditScheduleSlot(scheduleSlot.id) },
                             onDeleteClick = { onDeleteRequested(scheduleSlot) },
                         )
                     }
@@ -168,9 +175,28 @@ fun ScheduleListScreen(
     }
 }
 
+/**
+ * A single schedule slot's card. Tapping the card itself jumps straight into
+ * today's [fr.alaedine.aesh.presentation.report.DailyReportFormScreen] (the
+ * "observation form") via [onClick], since logging an observation right
+ * after a class is the far more common action; editing the slot's own
+ * day/time/subject/room is tucked behind the pencil icon ([onEditClick]) so
+ * it stays reachable without hijacking the primary tap target.
+ */
 @Composable
-private fun ScheduleSlotRow(scheduleSlot: ScheduleSlot, onClick: () -> Unit, onDeleteClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+private fun ScheduleSlotRow(
+    scheduleSlot: ScheduleSlot,
+    onClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+) {
+    val openDailyReportLabel = stringResource(R.string.cd_open_daily_report_for_schedule_slot, scheduleSlot.subject)
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = openDailyReportLabel },
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -182,11 +208,19 @@ private fun ScheduleSlotRow(scheduleSlot: ScheduleSlot, onClick: () -> Unit, onD
                 Text(text = scheduleSlot.subject, style = MaterialTheme.typography.titleMedium)
                 Text(text = scheduleSlot.formattedSubtitle(), style = MaterialTheme.typography.bodyMedium)
             }
-            IconButton(onClick = onDeleteClick) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.cd_delete_schedule_slot, scheduleSlot.subject),
-                )
+            Row {
+                IconButton(onClick = onEditClick) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.cd_edit_schedule_slot, scheduleSlot.subject),
+                    )
+                }
+                IconButton(onClick = onDeleteClick) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.cd_delete_schedule_slot, scheduleSlot.subject),
+                    )
+                }
             }
         }
     }
@@ -255,6 +289,7 @@ private fun ScheduleListScreenPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
+            onOpenDailyReportForm = {},
             onNavigateBack = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
@@ -272,6 +307,7 @@ private fun ScheduleListScreenEmptyPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
+            onOpenDailyReportForm = {},
             onNavigateBack = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
@@ -301,6 +337,7 @@ private fun ScheduleListScreenDeleteConfirmationPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
+            onOpenDailyReportForm = {},
             onNavigateBack = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
