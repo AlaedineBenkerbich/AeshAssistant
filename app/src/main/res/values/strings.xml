@@ -18,10 +18,11 @@
 
     <!-- Dashboard (HomeScreen) -->
     <string name="home_title">Dashboard</string>
-    <string name="cd_nav_students">Students</string>
-    <string name="cd_nav_schedule">Schedule</string>
-    <string name="cd_nav_ess_report">ESS report</string>
-    <string name="cd_nav_settings">Settings</string>
+    <!-- Bottom navigation bar: visible label under each icon (see HomeScreen's NavigationBar). -->
+    <string name="nav_label_students">Students</string>
+    <string name="nav_label_schedule">Schedule</string>
+    <string name="nav_label_ess_report">ESS report</string>
+    <string name="nav_label_settings">Settings</string>
     <string name="cd_new_daily_report">New daily report</string>
     <string name="cd_open_daily_report_for_student">Fill out observation for %1$s</string>
     <string name="home_empty_schedule_today">No classes scheduled for today. Tap + to log an observation manually.</string>
