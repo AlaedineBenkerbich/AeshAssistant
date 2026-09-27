@@ -50,7 +50,7 @@ class ScheduleScannerViewModelTest {
         assertFalse(state.isProcessing)
         assertTrue(state.isReviewing)
         assertEquals("Mathématiques", state.parsedScheduleSlot?.subject)
-        assertNull(state.errorMessage)
+        assertNull(state.error)
     }
 
     @Test
@@ -66,7 +66,7 @@ class ScheduleScannerViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isProcessing)
         assertFalse(state.isReviewing)
-        assertNotNull(state.errorMessage)
+        assertEquals(ScheduleScannerError.NoTextRecognized, state.error)
     }
 
     @Test
@@ -82,7 +82,7 @@ class ScheduleScannerViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isProcessing)
         assertFalse(state.isReviewing)
-        assertNotNull(state.errorMessage)
+        assertEquals(ScheduleScannerError.RecognitionFailed, state.error)
     }
 
     @Test
@@ -114,7 +114,7 @@ class ScheduleScannerViewModelTest {
         // Then
         val state = viewModel.uiState.value
         assertFalse(state.isReviewing)
-        assertNull(state.errorMessage)
+        assertNull(state.error)
     }
 
     @Test
@@ -123,12 +123,12 @@ class ScheduleScannerViewModelTest {
         val repository = FakeScheduleScannerRepository(Result.failure(RuntimeException("boom")))
         val viewModel = ScheduleScannerViewModel(repository)
         viewModel.onPhotoCaptured(File.createTempFile("schedule_scan_test", ".jpg"))
-        assertNotNull(viewModel.uiState.value.errorMessage)
+        assertNotNull(viewModel.uiState.value.error)
 
         // When
         viewModel.onErrorDismissed()
 
         // Then
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.error)
     }
 }

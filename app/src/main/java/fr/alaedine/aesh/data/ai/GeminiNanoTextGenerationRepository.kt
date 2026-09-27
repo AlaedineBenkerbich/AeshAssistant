@@ -3,6 +3,7 @@ package fr.alaedine.aesh.data.ai
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
+import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
 import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
 
 /**
@@ -22,7 +23,7 @@ class GeminiNanoTextGenerationRepository : AiTextGenerationRepository {
 
     override suspend fun generate(prompt: String): Result<String> = runCatching {
         when (generativeModel.checkStatus()) {
-            FeatureStatus.UNAVAILABLE -> error("On-device AI isn't available on this device.")
+            FeatureStatus.UNAVAILABLE -> throw AiFeatureUnavailableException()
             FeatureStatus.AVAILABLE -> Unit
             // DOWNLOADABLE or DOWNLOADING: either way, awaiting the download
             // flow below suspends until the model is ready to run.

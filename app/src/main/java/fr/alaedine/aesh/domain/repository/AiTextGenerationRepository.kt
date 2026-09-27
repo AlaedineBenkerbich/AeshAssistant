@@ -27,3 +27,6 @@ interface AiTextGenerationRepository {
      */
     suspend fun generate(prompt: String): Result<String>
 }
+
+/** Thrown by [AiTextGenerationRepository.generate] when the on-device generative model isn't supported on this device. */
+class AiFeatureUnavailableException : Exception("On-device AI isn't available on this device.")

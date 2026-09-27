@@ -45,9 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.time.Instant
@@ -78,6 +80,12 @@ fun EssReportRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val pdfTitle = stringResource(
+        R.string.ess_report_pdf_title,
+        uiState.selectedStudent?.firstName.orEmpty(),
+        uiState.startDate.toString(),
+        uiState.endDate.toString(),
+    )
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(PDF_MIME_TYPE),
@@ -87,7 +95,7 @@ fun EssReportRoute(
         if (destination == null) {
             viewModel.onExportFailedToOpenFile()
         } else {
-            viewModel.onExportRequested(destination)
+            viewModel.onExportRequested(destination, pdfTitle)
         }
     }
 
@@ -125,9 +133,10 @@ fun EssReportScreen(
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val statusMessageText = uiState.statusMessage?.let { resolvedStatusMessage(it) }
 
     LaunchedEffect(uiState.statusMessage) {
-        val message = uiState.statusMessage ?: return@LaunchedEffect
+        val message = statusMessageText ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(message)
         onStatusMessageShown()
     }
@@ -136,10 +145,13 @@ fun EssReportScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "ESS report") },
+                title = { Text(text = stringResource(R.string.ess_report_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -155,13 +167,13 @@ fun EssReportScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Summarize a student's daily notes into a professional ESS report, entirely on-device.",
+                text = stringResource(R.string.ess_report_description),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             if (uiState.students.isEmpty() && !uiState.isLoadingStudents) {
                 Text(
-                    text = "No students yet. Add one before generating a report.",
+                    text = stringResource(R.string.ess_report_empty_students),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             } else {
@@ -177,13 +189,13 @@ fun EssReportScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 DateField(
-                    label = "From",
+                    label = stringResource(R.string.ess_report_from),
                     date = uiState.startDate,
                     onDateSelected = onStartDateSelected,
                     modifier = Modifier.weight(1f),
                 )
                 DateField(
-                    label = "To",
+                    label = stringResource(R.string.ess_report_to),
                     date = uiState.endDate,
                     onDateSelected = onEndDateSelected,
                     modifier = Modifier.weight(1f),
@@ -192,7 +204,7 @@ fun EssReportScreen(
 
             if (uiState.isDateRangeInvalid) {
                 Text(
-                    text = "The start date must be on or before the end date.",
+                    text = stringResource(R.string.ess_report_invalid_date_range),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -203,7 +215,11 @@ fun EssReportScreen(
                 enabled = uiState.canGenerate,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = if (uiState.generatedText == null) "Generate report" else "Regenerate report")
+                Text(
+                    text = stringResource(
+                        if (uiState.generatedText == null) R.string.ess_report_generate else R.string.ess_report_regenerate,
+                    ),
+                )
             }
 
             if (uiState.isGenerating) {
@@ -215,17 +231,30 @@ fun EssReportScreen(
                 OutlinedTextField(
                     value = generatedText,
                     onValueChange = onReportTextChanged,
-                    label = { Text(text = "Report") },
+                    label = { Text(text = stringResource(R.string.ess_report_label)) },
                     minLines = 8,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
                 Button(onClick = onExportClicked, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = "Export as PDF")
+                    Text(text = stringResource(R.string.ess_report_export_pdf))
                 }
             }
         }
     }
+}
+
+/** Resolves a one-shot [EssReportStatusMessage] to its localized Snackbar text. */
+@Composable
+private fun resolvedStatusMessage(message: EssReportStatusMessage): String = when (message) {
+    is EssReportStatusMessage.NoReportsInRange ->
+        stringResource(R.string.ess_report_no_reports_in_range, message.studentFirstName)
+    is EssReportStatusMessage.AiFeatureUnavailable -> stringResource(R.string.ess_report_ai_unavailable)
+    is EssReportStatusMessage.GenerationFailed ->
+        message.reason ?: stringResource(R.string.ess_report_generation_failed_fallback)
+    is EssReportStatusMessage.ExportSuccess -> stringResource(R.string.ess_report_export_success)
+    is EssReportStatusMessage.ExportFailed -> stringResource(R.string.ess_report_export_failed, message.reason)
+    is EssReportStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
 }
 
 @Composable
@@ -237,7 +266,7 @@ private fun GeneratingIndicator(modifier: Modifier = Modifier) {
     ) {
         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
         Text(
-            text = "Generating report… the on-device AI model may need to download the first time.",
+            text = stringResource(R.string.ess_report_generating),
             style = MaterialTheme.typography.bodySmall,
         )
     }
@@ -256,11 +285,11 @@ private fun StudentDropdown(
         onExpandedChange = { isExpanded = it },
     ) {
         OutlinedTextField(
-            value = selectedStudent?.let { "${it.firstName} — ${it.className}" } ?: "",
+            value = selectedStudent?.let { stringResource(R.string.student_display_name, it.firstName, it.className) } ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text(text = "Student") },
-            placeholder = { Text(text = "Select a student") },
+            label = { Text(text = stringResource(R.string.label_student)) },
+            placeholder = { Text(text = stringResource(R.string.placeholder_select_student)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -272,7 +301,7 @@ private fun StudentDropdown(
         ) {
             students.forEach { student ->
                 DropdownMenuItem(
-                    text = { Text(text = "${student.firstName} — ${student.className}") },
+                    text = { Text(text = stringResource(R.string.student_display_name, student.firstName, student.className)) },
                     onClick = {
                         onStudentSelected(student)
                         isExpanded = false
@@ -318,12 +347,12 @@ private fun DateField(
                     pickerState.selectedDateMillis?.let { onDateSelected(it.toUtcLocalDate()) }
                     isPickerVisible = false
                 }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isPickerVisible = false }) {
-                    Text(text = "Cancel")
+                    Text(text = stringResource(R.string.action_cancel))
                 }
             },
         ) {

@@ -34,9 +34,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import java.time.DayOfWeek
@@ -103,10 +105,19 @@ fun ScheduleFormScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = if (uiState.isEditing) "Edit class" else "Add class") },
+                title = {
+                    Text(
+                        text = stringResource(
+                            if (uiState.isEditing) R.string.schedule_form_title_edit else R.string.schedule_form_title_add,
+                        ),
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                        )
                     }
                 },
             )
@@ -125,26 +136,26 @@ fun ScheduleFormScreen(
                 onDayOfWeekSelected = onDayOfWeekChanged,
             )
             TimeField(
-                label = "Start time",
+                label = stringResource(R.string.schedule_field_start_time),
                 time = uiState.startTime,
                 onTimeSelected = onStartTimeChanged,
             )
             TimeField(
-                label = "End time",
+                label = stringResource(R.string.schedule_field_end_time),
                 time = uiState.endTime,
                 onTimeSelected = onEndTimeChanged,
             )
             OutlinedTextField(
                 value = uiState.subject,
                 onValueChange = onSubjectChanged,
-                label = { Text(text = "Subject") },
+                label = { Text(text = stringResource(R.string.schedule_field_subject)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = uiState.room,
                 onValueChange = onRoomChanged,
-                label = { Text(text = "Room") },
+                label = { Text(text = stringResource(R.string.schedule_field_room)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -153,7 +164,7 @@ fun ScheduleFormScreen(
                 enabled = uiState.canSave,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "Save")
+                Text(text = stringResource(R.string.action_save))
             }
         }
     }
@@ -174,7 +185,7 @@ private fun DayOfWeekDropdown(
             value = selectedDayOfWeek.displayName(),
             onValueChange = {},
             readOnly = true,
-            label = { Text(text = "Day") },
+            label = { Text(text = stringResource(R.string.schedule_field_day)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -237,12 +248,12 @@ private fun TimeField(label: String, time: LocalTime, onTimeSelected: (LocalTime
                         isDialogVisible = false
                     },
                 ) {
-                    Text(text = "OK")
+                    Text(text = stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isDialogVisible = false }) {
-                    Text(text = "Cancel")
+                    Text(text = stringResource(R.string.action_cancel))
                 }
             },
             title = { Text(text = label) },
