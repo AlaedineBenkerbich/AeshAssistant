@@ -5,6 +5,7 @@ import fr.alaedine.aesh.data.local.AeshDatabase
 import fr.alaedine.aesh.data.local.MIGRATION_1_2
 import fr.alaedine.aesh.data.local.MIGRATION_2_3
 import fr.alaedine.aesh.data.local.MIGRATION_3_4
+import fr.alaedine.aesh.data.local.MIGRATION_4_5
 import fr.alaedine.aesh.data.repository.BackupRepositoryImpl
 import fr.alaedine.aesh.data.repository.DailyReportRepositoryImpl
 import fr.alaedine.aesh.data.repository.ScheduleSlotRepositoryImpl
@@ -31,7 +32,7 @@ val dataModule =
         single {
             Room
                 .databaseBuilder(androidContext(), AeshDatabase::class.java, DATABASE_NAME)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
         }
         single { get<AeshDatabase>().studentDao() }

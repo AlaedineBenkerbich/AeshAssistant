@@ -76,7 +76,10 @@ class GenerateEssReportUseCase(
 
     private fun DailyReport.toPromptSection(): String =
         "Date: ${date.format(DATE_FORMATTER)}\n" +
-            "Mood: $moodLevel/5 · Focus: $focusLevel/5 · Social interactions: $socialInteractions/5\n" +
+            "Mood: $moodLevel/5 · Focus: $focusLevel/5 · Social interactions: $socialInteractions/5 · " +
+            "Autonomy: $autonomyLevel/5\n" +
+            "Obstacles encountered: ${obstacles.ifBlank { "(none)" }}\n" +
+            "Support/strategies that helped: ${supportStrategies.ifBlank { "(none)" }}\n" +
             "Notes: ${freeNotes.ifBlank { "(none)" }}"
 
     private companion object {

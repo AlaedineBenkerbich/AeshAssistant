@@ -6,7 +6,8 @@ assistants) manage their daily work:
 
 - 🗓️ Weekly schedule management, with an optional on-device AI feature to
   pre-fill the schedule from a photo
-- 📝 Daily student observation logging (mood, focus, social interactions, notes)
+- 📝 Daily student observation logging (mood, focus, social interactions,
+  autonomy, obstacles encountered, support strategies that helped, notes)
 - 🔔 Local reminders to fill out daily reports
 - 📄 AI-assisted **ESS** (*Équipe de Suivi de Scolarisation*) report generation,
   fully offline, with PDF export

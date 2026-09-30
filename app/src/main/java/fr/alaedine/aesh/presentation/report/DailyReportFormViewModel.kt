@@ -84,6 +84,9 @@ class DailyReportFormViewModel(
                 moodLevel = NEUTRAL_LEVEL,
                 focusLevel = NEUTRAL_LEVEL,
                 socialInteractions = NEUTRAL_LEVEL,
+                autonomyLevel = NEUTRAL_LEVEL,
+                obstacles = "",
+                supportStrategies = "",
                 freeNotes = "",
             )
         }
@@ -107,6 +110,9 @@ class DailyReportFormViewModel(
                 moodLevel = NEUTRAL_LEVEL,
                 focusLevel = NEUTRAL_LEVEL,
                 socialInteractions = NEUTRAL_LEVEL,
+                autonomyLevel = NEUTRAL_LEVEL,
+                obstacles = "",
+                supportStrategies = "",
                 freeNotes = "",
             )
         }
@@ -132,6 +138,9 @@ class DailyReportFormViewModel(
                     moodLevel = existingReport.moodLevel,
                     focusLevel = existingReport.focusLevel,
                     socialInteractions = existingReport.socialInteractions,
+                    autonomyLevel = existingReport.autonomyLevel,
+                    obstacles = existingReport.obstacles,
+                    supportStrategies = existingReport.supportStrategies,
                     freeNotes = existingReport.freeNotes,
                 )
             }
@@ -150,6 +159,18 @@ class DailyReportFormViewModel(
         _uiState.update { it.copy(socialInteractions = socialInteractions) }
     }
 
+    fun onAutonomyLevelChanged(autonomyLevel: Int) {
+        _uiState.update { it.copy(autonomyLevel = autonomyLevel) }
+    }
+
+    fun onObstaclesChanged(obstacles: String) {
+        _uiState.update { it.copy(obstacles = obstacles) }
+    }
+
+    fun onSupportStrategiesChanged(supportStrategies: String) {
+        _uiState.update { it.copy(supportStrategies = supportStrategies) }
+    }
+
     fun onFreeNotesChanged(freeNotes: String) {
         _uiState.update { it.copy(freeNotes = freeNotes) }
     }
@@ -166,6 +187,9 @@ class DailyReportFormViewModel(
                 moodLevel = state.moodLevel,
                 focusLevel = state.focusLevel,
                 socialInteractions = state.socialInteractions,
+                autonomyLevel = state.autonomyLevel,
+                obstacles = state.obstacles.trim(),
+                supportStrategies = state.supportStrategies.trim(),
                 freeNotes = state.freeNotes.trim(),
             )
         viewModelScope.launch {

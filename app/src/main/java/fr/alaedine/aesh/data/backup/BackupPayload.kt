@@ -27,7 +27,7 @@ data class BackupPayload(
     val scheduleSlotStudentCrossRefs: List<BackupScheduleSlotStudentCrossRef> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA_VERSION = 2
+        const val SCHEMA_VERSION = 3
     }
 }
 
@@ -50,6 +50,9 @@ data class BackupDailyReport(
     val moodLevel: Int,
     val focusLevel: Int,
     val socialInteractions: Int,
+    val autonomyLevel: Int = 3,
+    val obstacles: String = "",
+    val supportStrategies: String = "",
     val freeNotes: String,
 )
 

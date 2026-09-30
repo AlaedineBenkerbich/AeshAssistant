@@ -117,6 +117,9 @@
     <string name="daily_report_mood">Humeur</string>
     <string name="daily_report_focus">Concentration</string>
     <string name="daily_report_social_interactions">Interactions sociales</string>
+    <string name="daily_report_autonomy">Autonomie</string>
+    <string name="daily_report_obstacles">Difficultés rencontrées</string>
+    <string name="daily_report_support_strategies">Ce qui a aidé</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Rapport enregistré</string>
 

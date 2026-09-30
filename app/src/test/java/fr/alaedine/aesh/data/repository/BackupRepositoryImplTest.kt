@@ -78,6 +78,9 @@ class BackupRepositoryImplTest {
                     moodLevel = 4,
                     focusLevel = 3,
                     socialInteractions = 5,
+                    autonomyLevel = 2,
+                    obstacles = "Needed help starting the exercise",
+                    supportStrategies = "A worked example helped",
                     freeNotes = "Great day",
                 ),
             )
@@ -104,6 +107,8 @@ class BackupRepositoryImplTest {
             assertEquals(BackupPayload.SCHEMA_VERSION, payload.schemaVersion)
             assertEquals(listOf("Alice"), payload.students.map { it.firstName })
             assertEquals(listOf("Great day"), payload.dailyReports.map { it.freeNotes })
+            assertEquals(listOf(2), payload.dailyReports.map { it.autonomyLevel })
+            assertEquals(listOf("A worked example helped"), payload.dailyReports.map { it.supportStrategies })
             assertEquals(listOf("Mathématiques"), payload.scheduleSlots.map { it.subject })
             assertEquals(
                 listOf(scheduleSlotId to studentId),
@@ -123,6 +128,9 @@ class BackupRepositoryImplTest {
                     moodLevel = 4,
                     focusLevel = 3,
                     socialInteractions = 5,
+                    autonomyLevel = 2,
+                    obstacles = "Needed help starting the exercise",
+                    supportStrategies = "A worked example helped",
                     freeNotes = "Great day",
                 ),
             )
@@ -152,6 +160,9 @@ class BackupRepositoryImplTest {
             val restoredReport = dailyReportDao.observeAll().first().single()
             assertEquals("Great day", restoredReport.freeNotes)
             assertEquals(studentId, restoredReport.studentId)
+            assertEquals(2, restoredReport.autonomyLevel)
+            assertEquals("Needed help starting the exercise", restoredReport.obstacles)
+            assertEquals("A worked example helped", restoredReport.supportStrategies)
             val restoredSlot = scheduleSlotDao.observeAll().first().single()
             assertEquals("Mathématiques", restoredSlot.subject)
             val restoredCrossRef = scheduleSlotDao.getAllStudentCrossRefs().single()

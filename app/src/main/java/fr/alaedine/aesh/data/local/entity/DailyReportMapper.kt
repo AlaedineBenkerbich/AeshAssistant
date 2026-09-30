@@ -11,6 +11,9 @@ fun DailyReportEntity.toDomain(): DailyReport =
         moodLevel = moodLevel,
         focusLevel = focusLevel,
         socialInteractions = socialInteractions,
+        autonomyLevel = autonomyLevel,
+        obstacles = obstacles,
+        supportStrategies = supportStrategies,
         freeNotes = freeNotes,
     )
 
@@ -23,5 +26,8 @@ fun DailyReport.toEntity(): DailyReportEntity =
         moodLevel = moodLevel,
         focusLevel = focusLevel,
         socialInteractions = socialInteractions,
+        autonomyLevel = autonomyLevel,
+        obstacles = obstacles,
+        supportStrategies = supportStrategies,
         freeNotes = freeNotes,
     )

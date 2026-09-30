@@ -81,6 +81,32 @@ class DailyReportRepositoryImplTest {
         }
 
     @Test
+    fun `should persist autonomy level, obstacles and support strategies`() =
+        runTest {
+            // Given
+            val report =
+                DailyReport(
+                    date = LocalDate.of(2026, 9, 26),
+                    studentId = studentId,
+                    moodLevel = 4,
+                    focusLevel = 3,
+                    socialInteractions = 5,
+                    autonomyLevel = 2,
+                    obstacles = "Needed help starting the exercise",
+                    supportStrategies = "A worked example helped",
+                )
+
+            // When
+            val id = repository.addReport(report)
+
+            // Then
+            val saved = repository.getReportById(id)
+            assertEquals(2, saved?.autonomyLevel)
+            assertEquals("Needed help starting the exercise", saved?.obstacles)
+            assertEquals("A worked example helped", saved?.supportStrategies)
+        }
+
+    @Test
     fun `should return null when no report exists for the given id`() =
         runTest {
             // Given / When

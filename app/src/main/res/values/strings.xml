@@ -116,6 +116,9 @@
     <string name="daily_report_mood">Mood</string>
     <string name="daily_report_focus">Focus</string>
     <string name="daily_report_social_interactions">Social interactions</string>
+    <string name="daily_report_autonomy">Autonomy</string>
+    <string name="daily_report_obstacles">Obstacles encountered</string>
+    <string name="daily_report_support_strategies">What helped</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Report saved</string>
 

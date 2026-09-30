@@ -35,6 +35,9 @@ fun DailyReportEntity.toBackup(): BackupDailyReport =
         moodLevel = moodLevel,
         focusLevel = focusLevel,
         socialInteractions = socialInteractions,
+        autonomyLevel = autonomyLevel,
+        obstacles = obstacles,
+        supportStrategies = supportStrategies,
         freeNotes = freeNotes,
     )
 
@@ -47,6 +50,9 @@ fun BackupDailyReport.toEntity(): DailyReportEntity =
         moodLevel = moodLevel,
         focusLevel = focusLevel,
         socialInteractions = socialInteractions,
+        autonomyLevel = autonomyLevel,
+        obstacles = obstacles,
+        supportStrategies = supportStrategies,
         freeNotes = freeNotes,
     )
 
