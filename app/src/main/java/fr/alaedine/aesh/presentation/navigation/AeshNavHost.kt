@@ -2,6 +2,7 @@ package fr.alaedine.aesh.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -29,6 +30,22 @@ import java.time.LocalTime
 @Composable
 fun AeshNavHost(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
+
+    // Shared by every top-level tab screen's bottom navigation bar: tabs are
+    // siblings at the root of the back stack rather than screens pushed on
+    // top of one another, so switching tabs never shows a back button and
+    // popping back to a previously visited tab restores its scroll/state
+    // (saveState/restoreState) instead of recreating it from scratch.
+    val onTabSelected: (AeshBottomNavTab) -> Unit = { tab ->
+        navController.navigate(tab.toDestination()) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = AeshDestination.Dashboard,
@@ -36,25 +53,22 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
     ) {
         composable<AeshDestination.Dashboard> {
             HomeRoute(
-                onNavigateToStudents = { navController.navigate(AeshDestination.StudentList) },
+                onTabSelected = onTabSelected,
                 onNavigateToDailyReport = { studentId, date ->
                     navController.navigate(AeshDestination.DailyReportForm(studentId = studentId, date = date?.toString()))
                 },
-                onNavigateToSchedule = { navController.navigate(AeshDestination.ScheduleList) },
-                onNavigateToEssReport = { navController.navigate(AeshDestination.EssReportForm) },
-                onNavigateToSettings = { navController.navigate(AeshDestination.Settings) },
             )
         }
         composable<AeshDestination.Settings> {
             SettingsRoute(
-                onNavigateBack = { navController.popBackStack() },
+                onTabSelected = onTabSelected,
             )
         }
         composable<AeshDestination.StudentList> {
             StudentListRoute(
                 onAddStudent = { navController.navigate(AeshDestination.AddStudent) },
                 onEditStudent = { studentId -> navController.navigate(AeshDestination.EditStudent(studentId)) },
-                onNavigateBack = { navController.popBackStack() },
+                onTabSelected = onTabSelected,
             )
         }
         composable<AeshDestination.AddStudent> {
@@ -80,7 +94,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         }
         composable<AeshDestination.EssReportForm> {
             EssReportRoute(
-                onNavigateBack = { navController.popBackStack() },
+                onTabSelected = onTabSelected,
             )
         }
         composable<AeshDestination.ScheduleList> {
@@ -90,7 +104,7 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                 onEditScheduleSlot = { scheduleSlotId ->
                     navController.navigate(AeshDestination.EditScheduleSlot(scheduleSlotId))
                 },
-                onNavigateBack = { navController.popBackStack() },
+                onTabSelected = onTabSelected,
             )
         }
         composable<AeshDestination.AddScheduleSlot> { backStackEntry ->
@@ -123,6 +137,16 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** Resolves a bottom navigation tab to the root [AeshDestination] it navigates to. */
+private fun AeshBottomNavTab.toDestination(): AeshDestination =
+    when (this) {
+        AeshBottomNavTab.Dashboard -> AeshDestination.Dashboard
+        AeshBottomNavTab.Students -> AeshDestination.StudentList
+        AeshBottomNavTab.Schedule -> AeshDestination.ScheduleList
+        AeshBottomNavTab.EssReport -> AeshDestination.EssReportForm
+        AeshBottomNavTab.Settings -> AeshDestination.Settings
+    }
 
 /** Converts recognized OCR fields into the primitive-typed nav arguments [AeshDestination.AddScheduleSlot] carries. */
 private fun ParsedScheduleSlot.toAddScheduleSlotDestination(): AeshDestination.AddScheduleSlot =

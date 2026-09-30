@@ -20,9 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,8 +30,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLocale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -63,6 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import java.time.DayOfWeek
@@ -83,22 +79,16 @@ private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
  */
 @Composable
 fun HomeRoute(
-    onNavigateToStudents: () -> Unit,
     onNavigateToDailyReport: (Long?, LocalDate?) -> Unit,
-    onNavigateToSchedule: () -> Unit,
-    onNavigateToEssReport: () -> Unit,
-    onNavigateToSettings: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     HomeScreen(
         uiState = uiState,
-        onNavigateToStudents = onNavigateToStudents,
         onNavigateToDailyReport = onNavigateToDailyReport,
-        onNavigateToSchedule = onNavigateToSchedule,
-        onNavigateToEssReport = onNavigateToEssReport,
-        onNavigateToSettings = onNavigateToSettings,
+        onTabSelected = onTabSelected,
         onDateSelected = viewModel::onDateSelected,
         onPreviousWeekClicked = viewModel::onPreviousWeekClicked,
         onNextWeekClicked = viewModel::onNextWeekClicked,
@@ -130,11 +120,8 @@ fun HomeRoute(
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
-    onNavigateToStudents: () -> Unit,
     onNavigateToDailyReport: (Long?, LocalDate?) -> Unit,
-    onNavigateToSchedule: () -> Unit,
-    onNavigateToEssReport: () -> Unit,
-    onNavigateToSettings: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onPreviousWeekClicked: () -> Unit,
     onNextWeekClicked: () -> Unit,
@@ -148,11 +135,9 @@ fun HomeScreen(
             )
         },
         bottomBar = {
-            HomeNavigationBar(
-                onNavigateToStudents = onNavigateToStudents,
-                onNavigateToSchedule = onNavigateToSchedule,
-                onNavigateToEssReport = onNavigateToEssReport,
-                onNavigateToSettings = onNavigateToSettings,
+            AeshBottomNavigationBar(
+                currentTab = AeshBottomNavTab.Dashboard,
+                onTabSelected = onTabSelected,
             )
         },
         floatingActionButton = {
@@ -215,55 +200,6 @@ fun HomeScreen(
                 }
             }
         }
-    }
-}
-
-/**
- * Dashboard bottom navigation bar: one labeled icon per top-level section
- * reachable from the home screen (students, schedule, ESS report,
- * settings). Replaces the previous row of unlabeled [TopAppBar] icon
- * actions with a standard Material navigation bar so every destination
- * reads clearly instead of relying solely on icon shape recognition.
- *
- * None of the items are ever shown [NavigationBarItem]'s `selected` state:
- * tapping one navigates away from the dashboard to a separate stacked
- * screen (with its own back arrow) rather than swapping content in place,
- * so there is no "currently active tab" to highlight — the dashboard
- * itself has no entry in this bar since it's already the screen being
- * viewed.
- */
-@Composable
-private fun HomeNavigationBar(
-    onNavigateToStudents: () -> Unit,
-    onNavigateToSchedule: () -> Unit,
-    onNavigateToEssReport: () -> Unit,
-    onNavigateToSettings: () -> Unit,
-) {
-    NavigationBar {
-        NavigationBarItem(
-            selected = false,
-            onClick = onNavigateToStudents,
-            icon = { Icon(imageVector = Icons.Default.Person, contentDescription = null) },
-            label = { Text(text = stringResource(R.string.nav_label_students)) },
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = onNavigateToSchedule,
-            icon = { Icon(painter = painterResource(id = R.drawable.ic_schedule), contentDescription = null) },
-            label = { Text(text = stringResource(R.string.nav_label_schedule)) },
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = onNavigateToEssReport,
-            icon = { Icon(imageVector = Icons.Default.Create, contentDescription = null) },
-            label = { Text(text = stringResource(R.string.nav_label_ess_report)) },
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = onNavigateToSettings,
-            icon = { Icon(imageVector = Icons.Default.Settings, contentDescription = null) },
-            label = { Text(text = stringResource(R.string.nav_label_settings)) },
-        )
     }
 }
 
@@ -667,11 +603,8 @@ private fun HomeScreenPreview() {
                     daysWithScheduledClasses = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
                     isLoading = false,
                 ),
-            onNavigateToStudents = {},
             onNavigateToDailyReport = { _, _ -> },
-            onNavigateToSchedule = {},
-            onNavigateToEssReport = {},
-            onNavigateToSettings = {},
+            onTabSelected = {},
             onDateSelected = {},
             onPreviousWeekClicked = {},
             onNextWeekClicked = {},
@@ -705,11 +638,8 @@ private fun HomeScreenAllReportedPreview() {
                         ),
                     isLoading = false,
                 ),
-            onNavigateToStudents = {},
             onNavigateToDailyReport = { _, _ -> },
-            onNavigateToSchedule = {},
-            onNavigateToEssReport = {},
-            onNavigateToSettings = {},
+            onTabSelected = {},
             onDateSelected = {},
             onPreviousWeekClicked = {},
             onNextWeekClicked = {},
@@ -723,11 +653,8 @@ private fun HomeScreenEmptyPreview() {
     AeshAssistantTheme {
         HomeScreen(
             uiState = HomeUiState(lessonBlocks = emptyList(), isLoading = false),
-            onNavigateToStudents = {},
             onNavigateToDailyReport = { _, _ -> },
-            onNavigateToSchedule = {},
-            onNavigateToEssReport = {},
-            onNavigateToSettings = {},
+            onTabSelected = {},
             onDateSelected = {},
             onPreviousWeekClicked = {},
             onNextWeekClicked = {},

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,7 +25,6 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -51,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import java.time.Instant
@@ -74,7 +74,7 @@ private const val PDF_MIME_TYPE = "application/pdf"
  */
 @Composable
 fun EssReportRoute(
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: EssReportViewModel = koinViewModel(),
 ) {
@@ -110,7 +110,7 @@ fun EssReportRoute(
         onReportTextChanged = viewModel::onReportTextChanged,
         onExportClicked = { exportLauncher.launch(uiState.suggestedPdfFileName) },
         onStatusMessageShown = viewModel::onStatusMessageShown,
-        onNavigateBack = onNavigateBack,
+        onTabSelected = onTabSelected,
         modifier = modifier,
     )
 }
@@ -131,7 +131,7 @@ fun EssReportScreen(
     onReportTextChanged: (String) -> Unit,
     onExportClicked: () -> Unit,
     onStatusMessageShown: () -> Unit,
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -148,14 +148,12 @@ fun EssReportScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.ess_report_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_back),
-                        )
-                    }
-                },
+            )
+        },
+        bottomBar = {
+            AeshBottomNavigationBar(
+                currentTab = AeshBottomNavTab.EssReport,
+                onTabSelected = onTabSelected,
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -396,7 +394,7 @@ private fun EssReportScreenPreview() {
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},
-            onNavigateBack = {},
+            onTabSelected = {},
         )
     }
 }
@@ -421,7 +419,7 @@ private fun EssReportScreenGeneratingPreview() {
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},
-            onNavigateBack = {},
+            onTabSelected = {},
         )
     }
 }
@@ -449,7 +447,7 @@ private fun EssReportScreenWithReportPreview() {
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},
-            onNavigateBack = {},
+            onTabSelected = {},
         )
     }
 }
@@ -467,7 +465,7 @@ private fun EssReportScreenNoStudentsPreview() {
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},
-            onNavigateBack = {},
+            onTabSelected = {},
         )
     }
 }

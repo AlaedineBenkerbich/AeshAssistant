@@ -17,7 +17,8 @@
 
     <!-- Dashboard (HomeScreen) -->
     <string name="home_title">Tableau de bord</string>
-    <!-- Bottom navigation bar: visible label under each icon (see HomeScreen's NavigationBar). -->
+    <!-- Bottom navigation bar: visible label under each icon (see AeshBottomNavigationBar). -->
+    <string name="nav_label_dashboard">Tableau de bord</string>
     <string name="nav_label_students">Élèves</string>
     <string name="nav_label_schedule">Emploi du temps</string>
     <string name="nav_label_ess_report">Rapport ESS</string>

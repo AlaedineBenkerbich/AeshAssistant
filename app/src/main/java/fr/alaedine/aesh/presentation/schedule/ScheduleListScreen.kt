@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -59,6 +58,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import java.time.DayOfWeek
@@ -99,7 +100,7 @@ fun ScheduleListRoute(
     onAddScheduleSlot: () -> Unit,
     onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScheduleListViewModel = koinViewModel(),
 ) {
@@ -109,7 +110,7 @@ fun ScheduleListRoute(
         onAddScheduleSlot = onAddScheduleSlot,
         onScanScheduleSlot = onScanScheduleSlot,
         onEditScheduleSlot = onEditScheduleSlot,
-        onNavigateBack = onNavigateBack,
+        onTabSelected = onTabSelected,
         onDeleteRequested = viewModel::onDeleteRequested,
         onDeleteCancelled = viewModel::onDeleteCancelled,
         onDeleteConfirmed = viewModel::onDeleteConfirmed,
@@ -124,7 +125,7 @@ fun ScheduleListScreen(
     onAddScheduleSlot: () -> Unit,
     onScanScheduleSlot: () -> Unit,
     onEditScheduleSlot: (Long) -> Unit,
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     onDeleteRequested: (ScheduleSlot) -> Unit,
     onDeleteCancelled: () -> Unit,
     onDeleteConfirmed: () -> Unit,
@@ -135,14 +136,6 @@ fun ScheduleListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.schedule_list_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_back),
-                        )
-                    }
-                },
                 actions = {
                     IconButton(onClick = onScanScheduleSlot) {
                         Icon(
@@ -151,6 +144,12 @@ fun ScheduleListScreen(
                         )
                     }
                 },
+            )
+        },
+        bottomBar = {
+            AeshBottomNavigationBar(
+                currentTab = AeshBottomNavTab.Schedule,
+                onTabSelected = onTabSelected,
             )
         },
         floatingActionButton = {
@@ -602,7 +601,7 @@ private fun ScheduleListScreenPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onNavigateBack = {},
+            onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
             onDeleteConfirmed = {},
@@ -657,7 +656,7 @@ private fun ScheduleListScreenFullWeekPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onNavigateBack = {},
+            onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
             onDeleteConfirmed = {},
@@ -674,7 +673,7 @@ private fun ScheduleListScreenEmptyPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onNavigateBack = {},
+            onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
             onDeleteConfirmed = {},
@@ -705,7 +704,7 @@ private fun ScheduleListScreenDeleteConfirmationPreview() {
             onAddScheduleSlot = {},
             onScanScheduleSlot = {},
             onEditScheduleSlot = {},
-            onNavigateBack = {},
+            onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
             onDeleteConfirmed = {},

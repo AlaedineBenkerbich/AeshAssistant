@@ -7,13 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,6 +30,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
@@ -52,7 +50,7 @@ private const val BACKUP_MIME_TYPE = "application/json"
  */
 @Composable
 fun SettingsRoute(
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -87,7 +85,7 @@ fun SettingsRoute(
 
     SettingsScreen(
         uiState = uiState,
-        onNavigateBack = onNavigateBack,
+        onTabSelected = onTabSelected,
         onExportClicked = { exportLauncher.launch(defaultBackupFileName()) },
         onRestoreClicked = viewModel::onRestoreClicked,
         onRestoreCancelled = viewModel::onRestoreCancelled,
@@ -107,7 +105,7 @@ private fun defaultBackupFileName(): String = "aesh-backup-${LocalDate.now()}.js
 @Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     onExportClicked: () -> Unit,
     onRestoreClicked: () -> Unit,
     onRestoreCancelled: () -> Unit,
@@ -129,14 +127,12 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_back),
-                        )
-                    }
-                },
+            )
+        },
+        bottomBar = {
+            AeshBottomNavigationBar(
+                currentTab = AeshBottomNavTab.Settings,
+                onTabSelected = onTabSelected,
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -221,7 +217,7 @@ private fun SettingsScreenPreview() {
     AeshAssistantTheme {
         SettingsScreen(
             uiState = SettingsUiState(),
-            onNavigateBack = {},
+            onTabSelected = {},
             onExportClicked = {},
             onRestoreClicked = {},
             onRestoreCancelled = {},
@@ -237,7 +233,7 @@ private fun SettingsScreenProcessingPreview() {
     AeshAssistantTheme {
         SettingsScreen(
             uiState = SettingsUiState(isProcessing = true),
-            onNavigateBack = {},
+            onTabSelected = {},
             onExportClicked = {},
             onRestoreClicked = {},
             onRestoreCancelled = {},
@@ -253,7 +249,7 @@ private fun SettingsScreenRestoreConfirmationPreview() {
     AeshAssistantTheme {
         SettingsScreen(
             uiState = SettingsUiState(isRestoreConfirmationVisible = true),
-            onNavigateBack = {},
+            onTabSelected = {},
             onExportClicked = {},
             onRestoreClicked = {},
             onRestoreCancelled = {},

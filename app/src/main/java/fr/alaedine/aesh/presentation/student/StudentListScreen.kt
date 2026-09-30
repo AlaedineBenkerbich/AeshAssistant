@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -35,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
+import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import org.koin.androidx.compose.koinViewModel
 
@@ -47,7 +48,7 @@ import org.koin.androidx.compose.koinViewModel
 fun StudentListRoute(
     onAddStudent: () -> Unit,
     onEditStudent: (Long) -> Unit,
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: StudentListViewModel = koinViewModel(),
 ) {
@@ -56,7 +57,7 @@ fun StudentListRoute(
         uiState = uiState,
         onAddStudent = onAddStudent,
         onEditStudent = onEditStudent,
-        onNavigateBack = onNavigateBack,
+        onTabSelected = onTabSelected,
         onDeleteRequested = viewModel::onDeleteRequested,
         onDeleteCancelled = viewModel::onDeleteCancelled,
         onDeleteConfirmed = viewModel::onDeleteConfirmed,
@@ -70,7 +71,7 @@ fun StudentListScreen(
     uiState: StudentListUiState,
     onAddStudent: () -> Unit,
     onEditStudent: (Long) -> Unit,
-    onNavigateBack: () -> Unit,
+    onTabSelected: (AeshBottomNavTab) -> Unit,
     onDeleteRequested: (Student) -> Unit,
     onDeleteCancelled: () -> Unit,
     onDeleteConfirmed: () -> Unit,
@@ -81,14 +82,12 @@ fun StudentListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.student_list_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_back),
-                        )
-                    }
-                },
+            )
+        },
+        bottomBar = {
+            AeshBottomNavigationBar(
+                currentTab = AeshBottomNavTab.Students,
+                onTabSelected = onTabSelected,
             )
         },
         floatingActionButton = {
@@ -208,7 +207,7 @@ private fun StudentListScreenPreview() {
                 ),
             onAddStudent = {},
             onEditStudent = {},
-            onNavigateBack = {},
+            onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
             onDeleteConfirmed = {},
@@ -224,7 +223,7 @@ private fun StudentListScreenEmptyPreview() {
             uiState = StudentListUiState(students = emptyList(), isLoading = false),
             onAddStudent = {},
             onEditStudent = {},
-            onNavigateBack = {},
+            onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
             onDeleteConfirmed = {},
@@ -245,7 +244,7 @@ private fun StudentListScreenDeleteConfirmationPreview() {
                 ),
             onAddStudent = {},
             onEditStudent = {},
-            onNavigateBack = {},
+            onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
             onDeleteConfirmed = {},
