@@ -132,6 +132,7 @@
     <string name="ess_report_export_pdf">Export as PDF</string>
     <string name="ess_report_no_reports_in_range">No daily reports found for %1$s in the selected period.</string>
     <string name="ess_report_ai_unavailable">On-device AI isn\'t available on this device.</string>
+    <string name="ess_report_generation_timeout">Report generation timed out. The on-device AI model may still be downloading — check your connection and try again.</string>
     <string name="ess_report_generation_failed_fallback">Couldn\'t generate the report. Please try again.</string>
     <string name="ess_report_export_success">PDF exported successfully.</string>
     <string name="ess_report_export_failed">Export failed: %1$s</string>

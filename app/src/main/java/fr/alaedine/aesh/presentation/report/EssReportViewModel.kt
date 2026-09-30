@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
+import fr.alaedine.aesh.domain.repository.AiGenerationTimeoutException
 import fr.alaedine.aesh.domain.repository.PdfExportRepository
 import fr.alaedine.aesh.domain.repository.StudentRepository
 import fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase
@@ -70,6 +71,7 @@ class EssReportViewModel(
                         when (error) {
                             is NoReportsInRangeException -> EssReportStatusMessage.NoReportsInRange(error.studentFirstName)
                             is AiFeatureUnavailableException -> EssReportStatusMessage.AiFeatureUnavailable
+                            is AiGenerationTimeoutException -> EssReportStatusMessage.GenerationTimeout
                             else -> EssReportStatusMessage.GenerationFailed(error.message)
                         }
                     _uiState.update { it.copy(isGenerating = false, statusMessage = message) }

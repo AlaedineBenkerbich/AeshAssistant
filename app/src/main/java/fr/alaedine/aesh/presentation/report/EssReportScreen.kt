@@ -255,6 +255,7 @@ private fun resolvedStatusMessage(message: EssReportStatusMessage): String =
         is EssReportStatusMessage.NoReportsInRange ->
             stringResource(R.string.ess_report_no_reports_in_range, message.studentFirstName)
         is EssReportStatusMessage.AiFeatureUnavailable -> stringResource(R.string.ess_report_ai_unavailable)
+        is EssReportStatusMessage.GenerationTimeout -> stringResource(R.string.ess_report_generation_timeout)
         is EssReportStatusMessage.GenerationFailed ->
             message.reason ?: stringResource(R.string.ess_report_generation_failed_fallback)
         is EssReportStatusMessage.ExportSuccess -> stringResource(R.string.ess_report_export_success)

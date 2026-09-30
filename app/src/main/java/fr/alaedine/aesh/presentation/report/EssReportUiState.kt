@@ -66,6 +66,9 @@ sealed interface EssReportStatusMessage {
     /** The on-device generative model isn't supported on this device. */
     data object AiFeatureUnavailable : EssReportStatusMessage
 
+    /** Generation didn't finish (status check, model download, or inference) within a reasonable time. */
+    data object GenerationTimeout : EssReportStatusMessage
+
     /**
      * Generation failed for an unexpected reason; [reason] is the
      * underlying (untranslated) error message when available, falling back
