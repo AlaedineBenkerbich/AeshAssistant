@@ -122,6 +122,19 @@
     <string name="daily_report_support_strategies">Ce qui a aidé</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Rapport enregistré</string>
+    <string name="notes_import_title">Remplir à la voix ou en photo</string>
+    <string name="notes_import_description">Dictez, ou prenez en photo vos notes manuscrites, et les champs ci-dessous sont remplis pour vous — entièrement sur l\'appareil. Relisez toujours avant d\'enregistrer.</string>
+    <string name="notes_import_dictate">Dicter</string>
+    <string name="notes_import_stop_dictation">Arrêter</string>
+    <string name="notes_import_take_photo">Prendre une photo</string>
+    <string name="notes_import_choose_photos">Photos</string>
+    <string name="notes_import_listening">Écoute en cours…</string>
+    <string name="notes_import_processing">Lecture de vos notes… le modèle d\'IA sur l\'appareil est peut-être en cours de téléchargement.</string>
+    <string name="notes_import_no_speech">Rien n\'a été compris. Veuillez réessayer.</string>
+    <string name="notes_import_speech_failed">La dictée a échoué. Veuillez réessayer.</string>
+    <string name="notes_import_no_text">Aucun texte trouvé. Réessayez avec un meilleur éclairage ou une écriture plus nette.</string>
+    <string name="notes_import_filled">Champs remplis — pensez à les relire.</string>
+    <string name="notes_import_filled_unsorted">Impossible de trier le texte automatiquement, il a été ajouté tel quel aux Notes.</string>
 
     <!-- ESS report -->
     <string name="ess_report_title">Rapport ESS</string>

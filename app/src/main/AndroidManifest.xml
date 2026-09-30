@@ -18,6 +18,21 @@
         android:name="android.hardware.camera.any"
         android:required="false" />
 
+    <!-- Required to dictate observation notes (see
+         fr.alaedine.aesh.presentation.report.NotesImportViewModel). Only ever
+         used with Android's on-device speech recognizer: audio never leaves
+         the device. Optional, like the camera. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".AeshApplication"
         android:allowBackup="true"
@@ -28,6 +43,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AESHAssistant">
+
+        <!-- Lets the camera app save a photo of written notes into our cache
+             dir (see DailyReportFormRoute); never exposes anything else. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <activity
             android:name=".presentation.MainActivity"

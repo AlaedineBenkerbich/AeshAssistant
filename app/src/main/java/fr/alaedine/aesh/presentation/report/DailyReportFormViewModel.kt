@@ -3,6 +3,7 @@ package fr.alaedine.aesh.presentation.report
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.model.DailyReport
+import fr.alaedine.aesh.domain.model.ExtractedObservationNotes
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
 import fr.alaedine.aesh.domain.repository.StudentRepository
@@ -174,6 +175,29 @@ class DailyReportFormViewModel(
     fun onFreeNotesChanged(freeNotes: String) {
         _uiState.update { it.copy(freeNotes = freeNotes) }
     }
+
+    /**
+     * Merges notes imported by voice or photo (see [NotesImportViewModel])
+     * into the free-text fields. Appends on a new line to anything already
+     * typed rather than overwriting it, since the user may have partially
+     * filled the form or be importing several photos in a row.
+     */
+    fun onNotesImported(notes: ExtractedObservationNotes) {
+        _uiState.update {
+            it.copy(
+                obstacles = it.obstacles.appendNotes(notes.obstacles),
+                supportStrategies = it.supportStrategies.appendNotes(notes.supportStrategies),
+                freeNotes = it.freeNotes.appendNotes(notes.freeNotes),
+            )
+        }
+    }
+
+    private fun String.appendNotes(addition: String): String =
+        when {
+            addition.isBlank() -> this
+            isBlank() -> addition
+            else -> "${trimEnd()}\n$addition"
+        }
 
     /** Persists the current field values, adding a new report or updating the selected date's existing one. */
     fun onSaveClicked() {

@@ -9,6 +9,8 @@ assistants) manage their daily work:
 - 📝 Daily student observation logging (mood, focus, social interactions,
   autonomy, obstacles encountered, support strategies that helped, notes)
 - 🔔 Local reminders to fill out daily reports
+- 🎙️ Fill the observation's free-text fields by **voice dictation** or from
+  **photos of handwritten notes**, sorted into the right fields by on-device AI
 - 📄 AI-assisted **ESS** (*Équipe de Suivi de Scolarisation*) report generation,
   fully offline, with PDF export
 - 💾 Local-only storage (Room) with manual backup/restore — **no backend, no
@@ -20,7 +22,9 @@ assistants) manage their daily work:
 - Dependency Injection ([Koin](https://insert-koin.io/))
 - Room (local persistence)
 - WorkManager (daily reminder notifications)
-- CameraX + ML Kit Text Recognition (on-device schedule scanning)
+- CameraX + ML Kit Text Recognition (on-device schedule scanning, handwritten
+  note OCR)
+- Android on-device `SpeechRecognizer` (API 33+, observation dictation)
 - ML Kit GenAI Prompt API — Gemini Nano via Android's AICore system service
   (on-device ESS report generation)
 
@@ -113,4 +117,5 @@ apksigner verify --print-certs AeshAssistant-<version>.apk
 
 All data stays on-device. No network backend is used; the optional AI
 features rely exclusively on on-device models (ML Kit, Gemini Nano / AICore) —
-nothing is ever sent to a server.
+nothing is ever sent to a server. Voice dictation is only offered when Android
+provides an on-device speech recognizer, so audio is never streamed to the cloud.

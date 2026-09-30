@@ -4,6 +4,7 @@ import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.home.HomeViewModel
 import fr.alaedine.aesh.presentation.report.DailyReportFormViewModel
 import fr.alaedine.aesh.presentation.report.EssReportViewModel
+import fr.alaedine.aesh.presentation.report.NotesImportViewModel
 import fr.alaedine.aesh.presentation.schedule.ScheduleFormViewModel
 import fr.alaedine.aesh.presentation.schedule.ScheduleListViewModel
 import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerViewModel
@@ -37,6 +38,7 @@ val presentationModule =
         // dashboard's selected date rides along the same way, resolved by
         // Koin's type-based matching (see `ScheduleFormViewModel` below).
         viewModel { params -> DailyReportFormViewModel(get(), get(), params.getOrNull<Long>(), params.getOrNull<LocalDate>()) }
+        viewModel { NotesImportViewModel(get(), get()) }
         viewModel { EssReportViewModel(get(), get(), get()) }
         viewModel { ScheduleListViewModel(get(), get()) }
         // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`

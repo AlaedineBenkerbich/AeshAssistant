@@ -1,9 +1,17 @@
 package fr.alaedine.aesh.presentation.report
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,6 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -25,6 +35,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
@@ -38,19 +49,28 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+import java.io.File
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -58,6 +78,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
+
+/** Most photos of written notes that can be picked at once. */
+private const val MAX_PICKED_PHOTOS = 5
 
 /** How long the success state stays visible before [DailyReportFormRoute] navigates back. */
 private val SAVED_STATE_DISPLAY_DURATION = 900.milliseconds
@@ -84,8 +107,12 @@ fun DailyReportFormRoute(
     modifier: Modifier = Modifier,
     date: LocalDate? = null,
     viewModel: DailyReportFormViewModel = koinViewModel(parameters = { parametersOf(studentId, date) }),
+    notesImportViewModel: NotesImportViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val notesImportState by notesImportViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -96,8 +123,37 @@ fun DailyReportFormRoute(
         }
     }
 
+    LaunchedEffect(notesImportViewModel) {
+        notesImportViewModel.extractedNotes.collect(viewModel::onNotesImported)
+    }
+
+    val microphonePermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) notesImportViewModel.onDictateClicked()
+        }
+    val choosePhotosLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(MAX_PICKED_PHOTOS)) { uris ->
+            if (uris.isEmpty()) return@rememberLauncherForActivityResult
+            scope.launch {
+                val files = withContext(Dispatchers.IO) { uris.mapNotNull { context.copyToCache(it) } }
+                notesImportViewModel.onPhotosSelected(files)
+            }
+        }
+    var pendingCameraFile by rememberSaveable { mutableStateOf<String?>(null) }
+    val takePhotoLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { isSaved ->
+            val file = pendingCameraFile?.let(::File)
+            pendingCameraFile = null
+            when {
+                file == null -> Unit
+                isSaved -> notesImportViewModel.onPhotosSelected(listOf(file))
+                else -> file.delete()
+            }
+        }
+
     DailyReportFormScreen(
         uiState = uiState,
+        notesImportState = notesImportState,
         onDateSelected = viewModel::onDateSelected,
         onStudentSelected = viewModel::onStudentSelected,
         onMoodLevelChanged = viewModel::onMoodLevelChanged,
@@ -107,16 +163,46 @@ fun DailyReportFormRoute(
         onObstaclesChanged = viewModel::onObstaclesChanged,
         onSupportStrategiesChanged = viewModel::onSupportStrategiesChanged,
         onFreeNotesChanged = viewModel::onFreeNotesChanged,
+        onDictateClicked = {
+            val hasPermission =
+                ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+            if (hasPermission) {
+                notesImportViewModel.onDictateClicked()
+            } else {
+                microphonePermissionLauncher.launch(
+                    Manifest.permission.RECORD_AUDIO,
+                )
+            }
+        },
+        onStopDictationClicked = notesImportViewModel::onStopDictationClicked,
+        onTakePhotoClicked = {
+            val photoFile = File(context.cacheDir, "observation_note_${System.currentTimeMillis()}.jpg")
+            pendingCameraFile = photoFile.absolutePath
+            takePhotoLauncher.launch(FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile))
+        },
+        onChoosePhotosClicked = {
+            choosePhotosLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        },
+        onNotesImportMessageDismissed = notesImportViewModel::onMessageDismissed,
         onSaveClicked = viewModel::onSaveClicked,
         onNavigateBack = onNavigateBack,
         modifier = modifier,
     )
 }
 
+/** Copies the picked image at [uri] to a temporary cache file for OCR, or `null` if it can't be read. */
+private fun Context.copyToCache(uri: Uri): File? =
+    runCatching {
+        val file = File(cacheDir, "observation_note_${System.nanoTime()}.jpg")
+        contentResolver.openInputStream(uri)?.use { input -> file.outputStream().use { input.copyTo(it) } } ?: return null
+        file
+    }.getOrNull()
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DailyReportFormScreen(
     uiState: DailyReportFormUiState,
+    notesImportState: NotesImportUiState,
     onDateSelected: (LocalDate) -> Unit,
     onStudentSelected: (Student) -> Unit,
     onMoodLevelChanged: (Int) -> Unit,
@@ -126,6 +212,11 @@ fun DailyReportFormScreen(
     onObstaclesChanged: (String) -> Unit,
     onSupportStrategiesChanged: (String) -> Unit,
     onFreeNotesChanged: (String) -> Unit,
+    onDictateClicked: () -> Unit,
+    onStopDictationClicked: () -> Unit,
+    onTakePhotoClicked: () -> Unit,
+    onChoosePhotosClicked: () -> Unit,
+    onNotesImportMessageDismissed: () -> Unit,
     onSaveClicked: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -151,6 +242,7 @@ fun DailyReportFormScreen(
         } else {
             DailyReportForm(
                 uiState = uiState,
+                notesImportState = notesImportState,
                 onDateSelected = onDateSelected,
                 onStudentSelected = onStudentSelected,
                 onMoodLevelChanged = onMoodLevelChanged,
@@ -160,6 +252,11 @@ fun DailyReportFormScreen(
                 onObstaclesChanged = onObstaclesChanged,
                 onSupportStrategiesChanged = onSupportStrategiesChanged,
                 onFreeNotesChanged = onFreeNotesChanged,
+                onDictateClicked = onDictateClicked,
+                onStopDictationClicked = onStopDictationClicked,
+                onTakePhotoClicked = onTakePhotoClicked,
+                onChoosePhotosClicked = onChoosePhotosClicked,
+                onNotesImportMessageDismissed = onNotesImportMessageDismissed,
                 onSaveClicked = onSaveClicked,
                 modifier = Modifier.padding(contentPadding),
             )
@@ -171,6 +268,7 @@ fun DailyReportFormScreen(
 @Composable
 private fun DailyReportForm(
     uiState: DailyReportFormUiState,
+    notesImportState: NotesImportUiState,
     onDateSelected: (LocalDate) -> Unit,
     onStudentSelected: (Student) -> Unit,
     onMoodLevelChanged: (Int) -> Unit,
@@ -180,6 +278,11 @@ private fun DailyReportForm(
     onObstaclesChanged: (String) -> Unit,
     onSupportStrategiesChanged: (String) -> Unit,
     onFreeNotesChanged: (String) -> Unit,
+    onDictateClicked: () -> Unit,
+    onStopDictationClicked: () -> Unit,
+    onTakePhotoClicked: () -> Unit,
+    onChoosePhotosClicked: () -> Unit,
+    onNotesImportMessageDismissed: () -> Unit,
     onSaveClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -227,6 +330,14 @@ private fun DailyReportForm(
                 level = uiState.autonomyLevel,
                 onLevelChanged = onAutonomyLevelChanged,
             )
+            NotesImportSection(
+                state = notesImportState,
+                onDictateClicked = onDictateClicked,
+                onStopDictationClicked = onStopDictationClicked,
+                onTakePhotoClicked = onTakePhotoClicked,
+                onChoosePhotosClicked = onChoosePhotosClicked,
+                onMessageDismissed = onNotesImportMessageDismissed,
+            )
             OutlinedTextField(
                 value = uiState.obstacles,
                 onValueChange = onObstaclesChanged,
@@ -259,6 +370,77 @@ private fun DailyReportForm(
         }
     }
 }
+
+/**
+ * Lets the user fill the free-text fields below by dictating (only offered
+ * when on-device speech recognition exists) or from one or more photos of
+ * handwritten notes; imported text is appended to, never replaces, what's
+ * already typed.
+ */
+@Composable
+private fun NotesImportSection(
+    state: NotesImportUiState,
+    onDictateClicked: () -> Unit,
+    onStopDictationClicked: () -> Unit,
+    onTakePhotoClicked: () -> Unit,
+    onChoosePhotosClicked: () -> Unit,
+    onMessageDismissed: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text = stringResource(R.string.notes_import_title), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.notes_import_description), style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                if (state.isListening) {
+                    Button(onClick = onStopDictationClicked, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.notes_import_stop_dictation))
+                    }
+                } else if (state.isDictationAvailable) {
+                    OutlinedButton(onClick = onDictateClicked, enabled = !state.isBusy, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.notes_import_dictate))
+                    }
+                }
+                OutlinedButton(onClick = onTakePhotoClicked, enabled = !state.isBusy, modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(R.string.notes_import_take_photo))
+                }
+                OutlinedButton(onClick = onChoosePhotosClicked, enabled = !state.isBusy, modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(R.string.notes_import_choose_photos))
+                }
+            }
+            when {
+                state.isListening ->
+                    Text(
+                        text = stringResource(R.string.notes_import_listening),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                state.isProcessing ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Text(text = stringResource(R.string.notes_import_processing), style = MaterialTheme.typography.bodyMedium)
+                    }
+                state.message != null ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(state.message.textRes()),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = onMessageDismissed) { Text(text = stringResource(R.string.action_ok)) }
+                    }
+            }
+        }
+    }
+}
+
+private fun NotesImportMessage.textRes(): Int =
+    when (this) {
+        NotesImportMessage.NoSpeechDetected -> R.string.notes_import_no_speech
+        NotesImportMessage.SpeechFailed -> R.string.notes_import_speech_failed
+        NotesImportMessage.NoTextFound -> R.string.notes_import_no_text
+        NotesImportMessage.Filled -> R.string.notes_import_filled
+        NotesImportMessage.FilledWithoutSorting -> R.string.notes_import_filled_unsorted
+    }
 
 /**
  * A read-only field that opens a [DatePickerDialog] on tap, since a plain
@@ -421,6 +603,7 @@ private fun formattedDate(date: LocalDate): String = date.format(DateTimeFormatt
 private fun DailyReportFormScreenPreview() {
     AeshAssistantTheme {
         DailyReportFormScreen(
+            notesImportState = NotesImportUiState(isDictationAvailable = true),
             uiState =
                 DailyReportFormUiState(
                     students =
@@ -439,6 +622,11 @@ private fun DailyReportFormScreenPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onStopDictationClicked = {},
+            onTakePhotoClicked = {},
+            onChoosePhotosClicked = {},
+            onNotesImportMessageDismissed = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )
@@ -451,6 +639,7 @@ private fun DailyReportFormScreenFilledPreview() {
     AeshAssistantTheme {
         val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
         DailyReportFormScreen(
+            notesImportState = NotesImportUiState(isDictationAvailable = true),
             uiState =
                 DailyReportFormUiState(
                     students = listOf(alice),
@@ -473,6 +662,11 @@ private fun DailyReportFormScreenFilledPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onStopDictationClicked = {},
+            onTakePhotoClicked = {},
+            onChoosePhotosClicked = {},
+            onNotesImportMessageDismissed = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )
@@ -484,6 +678,7 @@ private fun DailyReportFormScreenFilledPreview() {
 private fun DailyReportFormScreenNoStudentsPreview() {
     AeshAssistantTheme {
         DailyReportFormScreen(
+            notesImportState = NotesImportUiState(isDictationAvailable = true),
             uiState = DailyReportFormUiState(students = emptyList(), isLoading = false),
             onDateSelected = {},
             onStudentSelected = {},
@@ -494,6 +689,11 @@ private fun DailyReportFormScreenNoStudentsPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onStopDictationClicked = {},
+            onTakePhotoClicked = {},
+            onChoosePhotosClicked = {},
+            onNotesImportMessageDismissed = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )
@@ -505,6 +705,7 @@ private fun DailyReportFormScreenNoStudentsPreview() {
 private fun DailyReportFormScreenSavedPreview() {
     AeshAssistantTheme {
         DailyReportFormScreen(
+            notesImportState = NotesImportUiState(isDictationAvailable = true),
             uiState = DailyReportFormUiState(isLoading = false, isSaved = true),
             onDateSelected = {},
             onStudentSelected = {},
@@ -515,6 +716,11 @@ private fun DailyReportFormScreenSavedPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onStopDictationClicked = {},
+            onTakePhotoClicked = {},
+            onChoosePhotosClicked = {},
+            onNotesImportMessageDismissed = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )

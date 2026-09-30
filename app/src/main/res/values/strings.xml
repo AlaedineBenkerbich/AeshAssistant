@@ -121,6 +121,19 @@
     <string name="daily_report_support_strategies">What helped</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Report saved</string>
+    <string name="notes_import_title">Fill in from voice or photos</string>
+    <string name="notes_import_description">Dictate, or snap photos of handwritten notes, and the text below is filled in for you — entirely on-device. Always review it before saving.</string>
+    <string name="notes_import_dictate">Dictate</string>
+    <string name="notes_import_stop_dictation">Stop</string>
+    <string name="notes_import_take_photo">Take photo</string>
+    <string name="notes_import_choose_photos">Photos</string>
+    <string name="notes_import_listening">Listening…</string>
+    <string name="notes_import_processing">Reading your notes… the on-device AI model may need to download the first time.</string>
+    <string name="notes_import_no_speech">Didn\'t catch anything. Please try again.</string>
+    <string name="notes_import_speech_failed">Dictation failed. Please try again.</string>
+    <string name="notes_import_no_text">No text found. Try again with better lighting, or clearer writing.</string>
+    <string name="notes_import_filled">Fields filled in — please review them.</string>
+    <string name="notes_import_filled_unsorted">Couldn\'t sort the text automatically, so it was added to Notes as-is.</string>
 
     <!-- ESS report -->
     <string name="ess_report_title">ESS report</string>

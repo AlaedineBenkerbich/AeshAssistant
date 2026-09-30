@@ -1,6 +1,7 @@
 package fr.alaedine.aesh.presentation.report
 
 import fr.alaedine.aesh.domain.model.DailyReport
+import fr.alaedine.aesh.domain.model.ExtractedObservationNotes
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.student.FakeStudentRepository
 import kotlinx.coroutines.Dispatchers
@@ -522,5 +523,27 @@ class DailyReportFormViewModelTest {
 
             // Then
             assertEquals(today, viewModel.uiState.value.date)
+        }
+
+    @Test
+    fun `should append imported notes to the existing free-text fields without overwriting them`() =
+        runTest {
+            // Given
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+            viewModel.onStudentSelected(alice)
+            viewModel.onFreeNotesChanged("Typed note")
+
+            // When
+            viewModel.onNotesImported(ExtractedObservationNotes(obstacles = "Agitated", freeNotes = "Imported note"))
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals("Agitated", state.obstacles)
+            assertEquals("", state.supportStrategies)
+            assertEquals("Typed note\nImported note", state.freeNotes)
         }
 }
