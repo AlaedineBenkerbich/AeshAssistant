@@ -3,9 +3,16 @@ package fr.alaedine.aesh.presentation.report
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.alaedine.aesh.domain.model.DailyReport
+import fr.alaedine.aesh.domain.model.ObservationNotes
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
+import fr.alaedine.aesh.domain.repository.AiGenerationTimeoutException
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
 import fr.alaedine.aesh.domain.repository.StudentRepository
+import fr.alaedine.aesh.domain.usecase.NotesSortingResult
+import fr.alaedine.aesh.domain.usecase.SortObservationNotesUseCase
+import fr.alaedine.aesh.presentation.report.notes.DictationError
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +34,10 @@ import java.time.LocalDate
  * student/day edits that existing report instead of violating the
  * constraint with a duplicate insert.
  *
+ * Also fills the free-text fields from notes that were dictated or
+ * photographed instead of typed: [onRawNotesReceived] sorts them with
+ * [sortObservationNotes] (on-device AI) and adds them to the fields.
+ *
  * @param preselectedStudentId When non-null, the matching student is
  * selected automatically the first time [studentRepository]'s student list
  * loads (see [preselectInitialStudentIfNeeded]) — supplied as a Koin
@@ -46,12 +57,16 @@ import java.time.LocalDate
 class DailyReportFormViewModel(
     private val dailyReportRepository: DailyReportRepository,
     private val studentRepository: StudentRepository,
+    private val sortObservationNotes: SortObservationNotesUseCase,
     private val preselectedStudentId: Long? = null,
     prefilledDate: LocalDate? = null,
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(DailyReportFormUiState(date = (prefilledDate ?: LocalDate.now()).coerceAtMost(LocalDate.now())))
     val uiState: StateFlow<DailyReportFormUiState> = _uiState.asStateFlow()
+
+    private var sortingJob: Job? = null
+    private var notesBeingSorted = ""
 
     init {
         studentRepository
@@ -77,6 +92,7 @@ class DailyReportFormViewModel(
 
     /** Picks [student] as the subject of this report, loading the currently selected date's existing report for them, if any. */
     fun onStudentSelected(student: Student) {
+        abandonSortingNotes()
         _uiState.update {
             it.copy(
                 selectedStudent = student,
@@ -103,6 +119,7 @@ class DailyReportFormViewModel(
      */
     fun onDateSelected(date: LocalDate) {
         if (date.isAfter(LocalDate.now())) return
+        abandonSortingNotes()
         _uiState.update {
             it.copy(
                 date = date,
@@ -175,9 +192,105 @@ class DailyReportFormViewModel(
         _uiState.update { it.copy(freeNotes = freeNotes) }
     }
 
-    /** Persists the current field values, adding a new report or updating the selected date's existing one. */
+    /**
+     * Fills the free-text fields from [rawNotes] that were dictated or
+     * recognized from photos: the on-device AI model sorts them into
+     * obstacles / what helped / notes, and each part is *added after* what
+     * the field already holds, so nothing the user typed is overwritten.
+     * When sorting isn't possible the notes are added to the free notes
+     * field as they are (see [NotesSortingResult.Unsorted]).
+     *
+     * Ignored without a selected student, for blank notes, or while another
+     * batch is being sorted.
+     */
+    fun onRawNotesReceived(rawNotes: String) {
+        val notes = rawNotes.trim()
+        val state = _uiState.value
+        if (notes.isEmpty() || state.selectedStudent == null || state.isSortingNotes) return
+
+        notesBeingSorted = notes
+        _uiState.update { it.copy(isSortingNotes = true) }
+        sortingJob =
+            viewModelScope.launch {
+                when (val result = sortObservationNotes(notes)) {
+                    is NotesSortingResult.Sorted -> addNotes(result.notes, DailyReportStatusMessage.NotesFilledIn)
+                    is NotesSortingResult.Unsorted ->
+                        addNotes(
+                            result.notes,
+                            DailyReportStatusMessage.NotesAddedUnsorted(result.cause.toUnsortedNotesReason()),
+                        )
+                }
+            }
+    }
+
+    /** Stops waiting for the AI model and adds the notes being sorted to the free notes field as they are. */
+    fun onSkipSortingClicked() {
+        if (!_uiState.value.isSortingNotes) return
+        sortingJob?.cancel()
+        sortingJob = null
+        addNotes(
+            ObservationNotes.unsorted(notesBeingSorted),
+            DailyReportStatusMessage.NotesAddedUnsorted(UnsortedNotesReason.Skipped),
+        )
+    }
+
+    /** Reports that dictation couldn't produce any notes, for [error]. */
+    fun onDictationFailed(error: DictationError) {
+        _uiState.update { it.copy(statusMessage = DailyReportStatusMessage.DictationFailed(error)) }
+    }
+
+    /** Clears the one-shot [DailyReportFormUiState.statusMessage] once [DailyReportFormScreen] has shown it. */
+    fun onStatusMessageShown() {
+        _uiState.update { it.copy(statusMessage = null) }
+    }
+
+    private fun addNotes(
+        notes: ObservationNotes,
+        message: DailyReportStatusMessage,
+    ) {
+        _uiState.update {
+            it.copy(
+                obstacles = it.obstacles.withAppended(notes.obstacles),
+                supportStrategies = it.supportStrategies.withAppended(notes.supportStrategies),
+                freeNotes = it.freeNotes.withAppended(notes.freeNotes),
+                isSortingNotes = false,
+                statusMessage = message,
+            )
+        }
+    }
+
+    /**
+     * Drops the notes being sorted, if any, when the form switches to another
+     * student or day: they were meant for the report being left, and adding
+     * them to the next one would put a child's notes in someone else's report.
+     */
+    private fun abandonSortingNotes() {
+        sortingJob?.cancel()
+        sortingJob = null
+        _uiState.update { it.copy(isSortingNotes = false) }
+    }
+
+    private fun Throwable.toUnsortedNotesReason(): UnsortedNotesReason =
+        when (this) {
+            is AiFeatureUnavailableException -> UnsortedNotesReason.AiUnavailable
+            is AiGenerationTimeoutException -> UnsortedNotesReason.Timeout
+            else -> UnsortedNotesReason.Failed
+        }
+
+    private fun String.withAppended(addition: String): String =
+        when {
+            addition.isBlank() -> this
+            isBlank() -> addition
+            else -> "${trimEnd()}\n$addition"
+        }
+
+    /**
+     * Persists the current field values, adding a new report or updating the selected date's existing one.
+     * Ignored while notes are being sorted, since they would otherwise be added after the report was saved.
+     */
     fun onSaveClicked() {
         val state = _uiState.value
+        if (state.isSortingNotes) return
         val student = state.selectedStudent ?: return
         val report =
             DailyReport(

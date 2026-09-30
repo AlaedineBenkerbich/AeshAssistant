@@ -101,4 +101,16 @@ sealed interface AeshDestination {
      */
     @Serializable
     data object ScheduleScanner : AeshDestination
+
+    /**
+     * Camera + on-device OCR scanner that reads photos of handwritten
+     * observation notes, to fill in the daily observation form's free-text
+     * fields (see `NotesScannerRoute`). Unlike [ScheduleScanner] it doesn't
+     * navigate forward on success: it goes back to the [DailyReportForm] it
+     * was opened from and hands the recognized text over through that
+     * entry's saved state, since the form must keep everything the user
+     * already entered.
+     */
+    @Serializable
+    data object NotesScanner : AeshDestination
 }

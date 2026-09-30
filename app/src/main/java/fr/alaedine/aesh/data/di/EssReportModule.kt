@@ -12,7 +12,8 @@ import org.koin.dsl.module
  * text generator, the PDF export repository, and the
  * [GenerateEssReportUseCase] business rule built on top of both. Kept
  * separate from [dataModule] since neither touches Room/local persistence —
- * same rationale as [scannerModule].
+ * same rationale as [scannerModule]. The text generator is shared with
+ * [observationNotesModule], which uses it to sort dictated or scanned notes.
  */
 val essReportModule =
     module {

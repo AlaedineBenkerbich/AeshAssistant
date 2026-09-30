@@ -18,6 +18,17 @@
         android:name="android.hardware.camera.any"
         android:required="false" />
 
+    <!-- Required to dictate daily observation notes (see
+         fr.alaedine.aesh.data.speech); requested at runtime by
+         DailyReportFormRoute. The audio is only ever handed to Android's
+         on-device speech recognizer and never leaves the device. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Dictation is an optional AI feature (see README), so the app must
+         remain installable on microphone-less devices. -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+
     <application
         android:name=".AeshApplication"
         android:allowBackup="true"

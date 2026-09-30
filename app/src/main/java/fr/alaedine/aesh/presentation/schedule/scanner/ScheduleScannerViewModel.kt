@@ -2,7 +2,7 @@ package fr.alaedine.aesh.presentation.schedule.scanner
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import fr.alaedine.aesh.domain.repository.ScheduleScannerRepository
+import fr.alaedine.aesh.domain.repository.TextRecognitionRepository
 import fr.alaedine.aesh.domain.scanner.ScheduleTextParser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,13 +13,13 @@ import java.io.File
 
 /**
  * Drives the "scan a physical schedule" flow: runs on-device OCR on a
- * captured photo (via [scheduleScannerRepository]), parses the recognized
+ * captured photo (via [textRecognitionRepository]), parses the recognized
  * text with [ScheduleTextParser], and exposes the result for the user to
  * review before [ScheduleScannerRoute] hands it off to pre-fill
  * [fr.alaedine.aesh.presentation.schedule.ScheduleFormScreen].
  */
 class ScheduleScannerViewModel(
-    private val scheduleScannerRepository: ScheduleScannerRepository,
+    private val textRecognitionRepository: TextRecognitionRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScheduleScannerUiState())
     val uiState: StateFlow<ScheduleScannerUiState> = _uiState.asStateFlow()
@@ -32,7 +32,7 @@ class ScheduleScannerViewModel(
     fun onPhotoCaptured(imageFile: File) {
         _uiState.update { it.copy(isProcessing = true, error = null) }
         viewModelScope.launch {
-            scheduleScannerRepository
+            textRecognitionRepository
                 .recognizeText(imageFile)
                 .onSuccess { text ->
                     val parsed = ScheduleTextParser.parse(text)

@@ -15,6 +15,7 @@
     <string name="placeholder_select_student">Select a student</string>
     <string name="confirm_delete_title">Delete %1$s?</string>
     <string name="error_export_file_open_failed">Export failed: couldn\'t open the selected file.</string>
+    <string name="cd_take_photo">Take photo</string>
 
     <!-- Dashboard (HomeScreen) -->
     <string name="home_title">Dashboard</string>
@@ -121,6 +122,42 @@
     <string name="daily_report_support_strategies">What helped</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Report saved</string>
+
+    <!-- Daily observation form: filling the free-text fields from dictated or photographed notes -->
+    <string name="notes_assistant_title">Fill in from your notes</string>
+    <string name="notes_assistant_description">Dictate what happened or photograph your handwritten notes, and the fields below are filled in for you. Everything is processed on your device.</string>
+    <string name="notes_assistant_dictate">Dictate</string>
+    <string name="notes_assistant_scan">Scan notes</string>
+    <string name="notes_dictation_title">Listening…</string>
+    <string name="notes_dictation_hint">Describe the day: what was difficult, what helped, anything else worth noting.</string>
+    <string name="notes_dictation_stop">Done</string>
+    <string name="notes_sorting_title">Sorting your notes…</string>
+    <string name="notes_sorting_description">The on-device AI model may need to download the first time.</string>
+    <string name="notes_sorting_skip">Add without sorting</string>
+    <string name="notes_filled_in">Notes added to the fields below. Please check them before saving.</string>
+    <string name="notes_added_unsorted_ai_unavailable">On-device AI isn\'t available on this device, so your notes were added to Notes without being sorted.</string>
+    <string name="notes_added_unsorted_timeout">Sorting took too long (the on-device AI model may still be downloading), so your notes were added to Notes without being sorted.</string>
+    <string name="notes_added_unsorted_failed">Couldn\'t sort your notes automatically, so they were added to Notes as they are.</string>
+    <string name="notes_added_unsorted_skipped">Your notes were added to Notes without being sorted.</string>
+    <string name="notes_dictation_unavailable">On-device speech recognition isn\'t available on this device.</string>
+    <string name="notes_dictation_language_not_installed">The on-device speech model for your language isn\'t installed. Download it in your device\'s speech recognition settings, then try again.</string>
+    <string name="notes_dictation_no_speech">Didn\'t catch anything. Tap Dictate and try again.</string>
+    <string name="notes_dictation_permission_denied">Microphone access is needed to dictate notes.</string>
+    <string name="notes_dictation_failed">Couldn\'t understand the recording. Please try again.</string>
+
+    <!-- Observation notes scanner -->
+    <string name="notes_scanner_title">Scan notes</string>
+    <string name="notes_scanner_camera_rationale">Camera access is needed to photograph your notes.</string>
+    <string name="notes_scanner_grant_access">Grant camera access</string>
+    <string name="notes_scanner_hint">Photograph each page of your notes, then tap Done.</string>
+    <plurals name="notes_scanner_photo_count">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <string name="notes_scanner_remove_last">Remove last</string>
+    <string name="notes_scanner_done">Done</string>
+    <string name="notes_scanner_no_text_recognized">No text recognized. Try again with better lighting or focus.</string>
+    <string name="notes_scanner_read_failed">Couldn\'t read the photos. Please try again.</string>
 
     <!-- ESS report -->
     <string name="ess_report_title">ESS report</string>

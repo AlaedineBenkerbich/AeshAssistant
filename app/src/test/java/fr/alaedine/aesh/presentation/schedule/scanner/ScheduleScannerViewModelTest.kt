@@ -39,7 +39,7 @@ class ScheduleScannerViewModelTest {
     fun `should expose the parsed fields when recognition finds usable text`() =
         runTest {
             // Given
-            val repository = FakeScheduleScannerRepository(Result.success("Lundi 08:00 - 09:00 Mathématiques"))
+            val repository = FakeTextRecognitionRepository(Result.success("Lundi 08:00 - 09:00 Mathématiques"))
             val viewModel = ScheduleScannerViewModel(repository)
 
             // When
@@ -57,7 +57,7 @@ class ScheduleScannerViewModelTest {
     fun `should surface an error when no text is recognized`() =
         runTest {
             // Given
-            val repository = FakeScheduleScannerRepository(Result.success("   "))
+            val repository = FakeTextRecognitionRepository(Result.success("   "))
             val viewModel = ScheduleScannerViewModel(repository)
 
             // When
@@ -74,7 +74,7 @@ class ScheduleScannerViewModelTest {
     fun `should surface an error when recognition fails`() =
         runTest {
             // Given
-            val repository = FakeScheduleScannerRepository(Result.failure(RuntimeException("boom")))
+            val repository = FakeTextRecognitionRepository(Result.failure(RuntimeException("boom")))
             val viewModel = ScheduleScannerViewModel(repository)
 
             // When
@@ -91,7 +91,7 @@ class ScheduleScannerViewModelTest {
     fun `should delete the temporary photo file once recognition completes`() =
         runTest {
             // Given
-            val repository = FakeScheduleScannerRepository(Result.success("Mathématiques"))
+            val repository = FakeTextRecognitionRepository(Result.success("Mathématiques"))
             val viewModel = ScheduleScannerViewModel(repository)
             val photoFile = File.createTempFile("schedule_scan_test", ".jpg")
             assertTrue(photoFile.exists())
@@ -107,7 +107,7 @@ class ScheduleScannerViewModelTest {
     fun `should discard the result and clear errors when retaking`() =
         runTest {
             // Given
-            val repository = FakeScheduleScannerRepository(Result.success("Mathématiques"))
+            val repository = FakeTextRecognitionRepository(Result.success("Mathématiques"))
             val viewModel = ScheduleScannerViewModel(repository)
             viewModel.onPhotoCaptured(File.createTempFile("schedule_scan_test", ".jpg"))
             assertTrue(viewModel.uiState.value.isReviewing)
@@ -125,7 +125,7 @@ class ScheduleScannerViewModelTest {
     fun `should dismiss the error message`() =
         runTest {
             // Given
-            val repository = FakeScheduleScannerRepository(Result.failure(RuntimeException("boom")))
+            val repository = FakeTextRecognitionRepository(Result.failure(RuntimeException("boom")))
             val viewModel = ScheduleScannerViewModel(repository)
             viewModel.onPhotoCaptured(File.createTempFile("schedule_scan_test", ".jpg"))
             assertNotNull(viewModel.uiState.value.error)
