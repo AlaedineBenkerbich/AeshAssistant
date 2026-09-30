@@ -18,7 +18,7 @@ import kotlin.time.Duration.Companion.minutes
  *
  * The underlying model client is lazily created and reused for the
  * lifetime of the process, mirroring how
- * [fr.alaedine.aesh.data.scanner.MlKitScheduleScannerRepository] reuses its
+ * [fr.alaedine.aesh.data.scanner.MlKitTextRecognitionRepository] reuses its
  * ML Kit recognizer.
  */
 class GeminiNanoTextGenerationRepository : AiTextGenerationRepository {

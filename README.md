@@ -7,7 +7,9 @@ assistants) manage their daily work:
 - 🗓️ Weekly schedule management, with an optional on-device AI feature to
   pre-fill the schedule from a photo
 - 📝 Daily student observation logging (mood, focus, social interactions,
-  autonomy, obstacles encountered, support strategies that helped, notes)
+  autonomy, obstacles encountered, support strategies that helped, notes),
+  whose free-text fields can be filled in **by voice** or **from photos of
+  handwritten notes**, sorted into the right fields by on-device AI
 - 🔔 Local reminders to fill out daily reports
 - 📄 AI-assisted **ESS** (*Équipe de Suivi de Scolarisation*) report generation,
   fully offline, with PDF export
@@ -20,9 +22,12 @@ assistants) manage their daily work:
 - Dependency Injection ([Koin](https://insert-koin.io/))
 - Room (local persistence)
 - WorkManager (daily reminder notifications)
-- CameraX + ML Kit Text Recognition (on-device schedule scanning)
+- CameraX + ML Kit Text Recognition (on-device schedule and handwritten
+  notes scanning)
+- Android's on-device `SpeechRecognizer` (API 31+) for voice dictation
 - ML Kit GenAI Prompt API — Gemini Nano via Android's AICore system service
-  (on-device ESS report generation)
+  (on-device ESS report generation, and sorting of dictated or scanned
+  notes into the observation form's fields)
 
 ## Architecture
 
@@ -112,5 +117,18 @@ apksigner verify --print-certs AeshAssistant-<version>.apk
 ## Privacy
 
 All data stays on-device. No network backend is used; the optional AI
-features rely exclusively on on-device models (ML Kit, Gemini Nano / AICore) —
-nothing is ever sent to a server.
+features rely exclusively on on-device models (ML Kit, Gemini Nano / AICore,
+Android's on-device speech recognizer) — nothing is ever sent to a server.
+
+Two details worth knowing about the observation form's voice and photo input:
+
+- **Dictation uses Android's on-device speech recognizer only** (Android 12 /
+  API 31 and up, with its speech model for your language installed). The app
+  never falls back to the default, possibly cloud-based recognizer: on a
+  device without an on-device one, dictation is simply reported as
+  unavailable.
+- **Photos of notes are never kept.** They are temporary cache files, deleted
+  as soon as their text has been read, when you remove them, or when you leave
+  the scanner. Gemini Nano only ever *classifies* the lines of your notes into
+  the form's fields — it never rewrites them — and when it isn't available the
+  notes are added to the free notes field exactly as dictated or scanned.

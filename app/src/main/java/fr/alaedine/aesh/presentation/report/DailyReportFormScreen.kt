@@ -1,5 +1,6 @@
 package fr.alaedine.aesh.presentation.report
 
+import android.Manifest
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -47,6 +50,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.permission.rememberPermissionState
+import fr.alaedine.aesh.presentation.report.notes.DictationDialog
+import fr.alaedine.aesh.presentation.report.notes.DictationError
+import fr.alaedine.aesh.presentation.report.notes.DictationViewModel
+import fr.alaedine.aesh.presentation.report.notes.NotesAssistantCard
+import fr.alaedine.aesh.presentation.report.notes.NotesSortingDialog
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -68,6 +77,11 @@ private val SAVED_STATE_DISPLAY_DURATION = 900.milliseconds
  * Android/ViewModel dependencies and stays trivially previewable and
  * testable.
  *
+ * Also wires in filling the free-text fields from dictated or photographed
+ * notes: it owns the `RECORD_AUDIO` runtime permission dictation needs (tied
+ * to the Android platform, like the scanners' camera permission) and hands
+ * the text of both sources to [DailyReportFormViewModel.onRawNotesReceived].
+ *
  * @param studentId `null` when reached from the dashboard's "new report"
  * FAB (the student is picked from within the form), or the id of the
  * student to preselect when reached by tapping their row on the dashboard.
@@ -76,16 +90,30 @@ private val SAVED_STATE_DISPLAY_DURATION = 900.milliseconds
  * observation opens the form already on the right day; `null` when
  * reached from the "new report" FAB, in which case the form defaults to
  * today (see [DailyReportFormViewModel]).
+ * @param onScanNotes Opens the scanner that photographs handwritten notes;
+ * its text comes back as [scannedNotes].
+ * @param scannedNotes The text the scanner read from the user's photos, handed
+ * back through the navigation back stack once they are done, or `null`.
+ * Sorted into the form's fields, then cleared with [onScannedNotesConsumed].
  */
 @Composable
 fun DailyReportFormRoute(
     studentId: Long?,
     onNavigateBack: () -> Unit,
+    onScanNotes: () -> Unit,
+    scannedNotes: String?,
+    onScannedNotesConsumed: () -> Unit,
     modifier: Modifier = Modifier,
     date: LocalDate? = null,
     viewModel: DailyReportFormViewModel = koinViewModel(parameters = { parametersOf(studentId, date) }),
+    dictationViewModel: DictationViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val dictationState by dictationViewModel.uiState.collectAsStateWithLifecycle()
+    val microphonePermission =
+        rememberPermissionState(Manifest.permission.RECORD_AUDIO) { isGranted ->
+            if (isGranted) dictationViewModel.onStartClicked() else dictationViewModel.onMicrophonePermissionDenied()
+        }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -94,6 +122,23 @@ fun DailyReportFormRoute(
             delay(SAVED_STATE_DISPLAY_DURATION)
             onNavigateBack()
         }
+    }
+
+    // Both sources of notes (the scanner's photos, the dictated transcript) end up in the form the same way.
+    LaunchedEffect(scannedNotes) {
+        val notes = scannedNotes ?: return@LaunchedEffect
+        onScannedNotesConsumed()
+        viewModel.onRawNotesReceived(notes)
+    }
+    LaunchedEffect(dictationState.transcript) {
+        val transcript = dictationState.transcript ?: return@LaunchedEffect
+        dictationViewModel.onTranscriptConsumed()
+        viewModel.onRawNotesReceived(transcript)
+    }
+    LaunchedEffect(dictationState.error) {
+        val error = dictationState.error ?: return@LaunchedEffect
+        dictationViewModel.onErrorShown()
+        viewModel.onDictationFailed(error)
     }
 
     DailyReportFormScreen(
@@ -107,10 +152,29 @@ fun DailyReportFormRoute(
         onObstaclesChanged = viewModel::onObstaclesChanged,
         onSupportStrategiesChanged = viewModel::onSupportStrategiesChanged,
         onFreeNotesChanged = viewModel::onFreeNotesChanged,
+        onDictateClicked = {
+            // Without an on-device recognizer, starting just reports why: no point asking for the microphone first.
+            if (microphonePermission.isGranted || !dictationState.isAvailable) {
+                dictationViewModel.onStartClicked()
+            } else {
+                microphonePermission.request()
+            }
+        },
+        onScanNotesClicked = onScanNotes,
+        onSkipSortingClicked = viewModel::onSkipSortingClicked,
+        onStatusMessageShown = viewModel::onStatusMessageShown,
         onSaveClicked = viewModel::onSaveClicked,
         onNavigateBack = onNavigateBack,
         modifier = modifier,
     )
+
+    if (dictationState.isListening) {
+        DictationDialog(
+            partialTranscript = dictationState.partialTranscript,
+            onStopClicked = dictationViewModel::onStopClicked,
+            onCancelClicked = dictationViewModel::onCancelled,
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -126,10 +190,23 @@ fun DailyReportFormScreen(
     onObstaclesChanged: (String) -> Unit,
     onSupportStrategiesChanged: (String) -> Unit,
     onFreeNotesChanged: (String) -> Unit,
+    onDictateClicked: () -> Unit,
+    onScanNotesClicked: () -> Unit,
+    onSkipSortingClicked: () -> Unit,
+    onStatusMessageShown: () -> Unit,
     onSaveClicked: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val statusMessageText = uiState.statusMessage?.let { resolvedStatusMessage(it) }
+
+    LaunchedEffect(uiState.statusMessage) {
+        val message = statusMessageText ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        onStatusMessageShown()
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -145,6 +222,7 @@ fun DailyReportFormScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
         if (uiState.isSaved) {
             SavedConfirmation(modifier = Modifier.padding(contentPadding))
@@ -160,12 +238,44 @@ fun DailyReportFormScreen(
                 onObstaclesChanged = onObstaclesChanged,
                 onSupportStrategiesChanged = onSupportStrategiesChanged,
                 onFreeNotesChanged = onFreeNotesChanged,
+                onDictateClicked = onDictateClicked,
+                onScanNotesClicked = onScanNotesClicked,
                 onSaveClicked = onSaveClicked,
                 modifier = Modifier.padding(contentPadding),
             )
         }
     }
+
+    if (uiState.isSortingNotes) {
+        NotesSortingDialog(onSkipClicked = onSkipSortingClicked)
+    }
 }
+
+/** Resolves a one-shot [DailyReportStatusMessage] to its localized Snackbar text. */
+@Composable
+private fun resolvedStatusMessage(message: DailyReportStatusMessage): String =
+    when (message) {
+        is DailyReportStatusMessage.NotesFilledIn -> stringResource(R.string.notes_filled_in)
+        is DailyReportStatusMessage.NotesAddedUnsorted ->
+            stringResource(
+                when (message.reason) {
+                    UnsortedNotesReason.AiUnavailable -> R.string.notes_added_unsorted_ai_unavailable
+                    UnsortedNotesReason.Timeout -> R.string.notes_added_unsorted_timeout
+                    UnsortedNotesReason.Failed -> R.string.notes_added_unsorted_failed
+                    UnsortedNotesReason.Skipped -> R.string.notes_added_unsorted_skipped
+                },
+            )
+        is DailyReportStatusMessage.DictationFailed ->
+            stringResource(
+                when (message.error) {
+                    DictationError.Unavailable -> R.string.notes_dictation_unavailable
+                    DictationError.LanguageNotInstalled -> R.string.notes_dictation_language_not_installed
+                    DictationError.NoSpeechDetected -> R.string.notes_dictation_no_speech
+                    DictationError.MicrophonePermissionDenied -> R.string.notes_dictation_permission_denied
+                    DictationError.Failed -> R.string.notes_dictation_failed
+                },
+            )
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,6 +290,8 @@ private fun DailyReportForm(
     onObstaclesChanged: (String) -> Unit,
     onSupportStrategiesChanged: (String) -> Unit,
     onFreeNotesChanged: (String) -> Unit,
+    onDictateClicked: () -> Unit,
+    onScanNotesClicked: () -> Unit,
     onSaveClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -226,6 +338,10 @@ private fun DailyReportForm(
                 label = stringResource(R.string.daily_report_autonomy),
                 level = uiState.autonomyLevel,
                 onLevelChanged = onAutonomyLevelChanged,
+            )
+            NotesAssistantCard(
+                onDictateClicked = onDictateClicked,
+                onScanNotesClicked = onScanNotesClicked,
             )
             OutlinedTextField(
                 value = uiState.obstacles,
@@ -439,6 +555,10 @@ private fun DailyReportFormScreenPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onScanNotesClicked = {},
+            onSkipSortingClicked = {},
+            onStatusMessageShown = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )
@@ -473,6 +593,10 @@ private fun DailyReportFormScreenFilledPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onScanNotesClicked = {},
+            onSkipSortingClicked = {},
+            onStatusMessageShown = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )
@@ -494,6 +618,10 @@ private fun DailyReportFormScreenNoStudentsPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onScanNotesClicked = {},
+            onSkipSortingClicked = {},
+            onStatusMessageShown = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )
@@ -515,6 +643,10 @@ private fun DailyReportFormScreenSavedPreview() {
             onObstaclesChanged = {},
             onSupportStrategiesChanged = {},
             onFreeNotesChanged = {},
+            onDictateClicked = {},
+            onScanNotesClicked = {},
+            onSkipSortingClicked = {},
+            onStatusMessageShown = {},
             onSaveClicked = {},
             onNavigateBack = {},
         )

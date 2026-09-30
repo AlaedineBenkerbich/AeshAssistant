@@ -4,6 +4,8 @@ import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.home.HomeViewModel
 import fr.alaedine.aesh.presentation.report.DailyReportFormViewModel
 import fr.alaedine.aesh.presentation.report.EssReportViewModel
+import fr.alaedine.aesh.presentation.report.notes.DictationViewModel
+import fr.alaedine.aesh.presentation.report.notes.NotesScannerViewModel
 import fr.alaedine.aesh.presentation.schedule.ScheduleFormViewModel
 import fr.alaedine.aesh.presentation.schedule.ScheduleListViewModel
 import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerViewModel
@@ -36,7 +38,11 @@ val presentationModule =
         // a student row on the dashboard, see `DailyReportFormRoute`. The
         // dashboard's selected date rides along the same way, resolved by
         // Koin's type-based matching (see `ScheduleFormViewModel` below).
-        viewModel { params -> DailyReportFormViewModel(get(), get(), params.getOrNull<Long>(), params.getOrNull<LocalDate>()) }
+        viewModel { params -> DailyReportFormViewModel(get(), get(), get(), params.getOrNull<Long>(), params.getOrNull<LocalDate>()) }
+        // Both fill the observation form's free-text fields from dictated or photographed notes;
+        // see `DailyReportFormRoute` and `NotesScannerRoute`.
+        viewModel { DictationViewModel(get()) }
+        viewModel { NotesScannerViewModel(get()) }
         viewModel { EssReportViewModel(get(), get(), get()) }
         viewModel { ScheduleListViewModel(get(), get()) }
         // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`

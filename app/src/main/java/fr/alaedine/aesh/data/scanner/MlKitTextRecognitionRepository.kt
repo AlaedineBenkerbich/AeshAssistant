@@ -5,20 +5,20 @@ import android.net.Uri
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import fr.alaedine.aesh.domain.repository.ScheduleScannerRepository
+import fr.alaedine.aesh.domain.repository.TextRecognitionRepository
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import kotlin.coroutines.resume
 
 /**
- * [ScheduleScannerRepository] backed by ML Kit's on-device Text Recognition
- * (Latin script model), so schedule photos never leave the device — see
- * the project README's privacy section. The underlying recognizer is
- * lazily initialized on first use and reused for every subsequent scan.
+ * [TextRecognitionRepository] backed by ML Kit's on-device Text Recognition
+ * (Latin script model), so photos never leave the device — see the project
+ * README's privacy section. The underlying recognizer is lazily initialized
+ * on first use and reused for every subsequent scan.
  */
-class MlKitScheduleScannerRepository(
+class MlKitTextRecognitionRepository(
     private val context: Context,
-) : ScheduleScannerRepository {
+) : TextRecognitionRepository {
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
     override suspend fun recognizeText(imageFile: File): Result<String> =

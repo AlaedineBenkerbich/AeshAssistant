@@ -14,6 +14,7 @@
     <string name="placeholder_select_student">Sélectionner un élève</string>
     <string name="confirm_delete_title">Supprimer %1$s ?</string>
     <string name="error_export_file_open_failed">Échec de l\'exportation : impossible d\'ouvrir le fichier sélectionné.</string>
+    <string name="cd_take_photo">Prendre la photo</string>
 
     <!-- Dashboard (HomeScreen) -->
     <string name="home_title">Tableau de bord</string>
@@ -122,6 +123,43 @@
     <string name="daily_report_support_strategies">Ce qui a aidé</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Rapport enregistré</string>
+
+    <!-- Daily observation form: filling the free-text fields from dictated or photographed notes -->
+    <string name="notes_assistant_title">Remplir à partir de vos notes</string>
+    <string name="notes_assistant_description">Dictez ce qui s\'est passé ou photographiez vos notes manuscrites, et les champs ci-dessous sont remplis pour vous. Tout est traité sur votre appareil.</string>
+    <string name="notes_assistant_dictate">Dicter</string>
+    <string name="notes_assistant_scan">Scanner</string>
+    <string name="notes_dictation_title">Écoute en cours…</string>
+    <string name="notes_dictation_hint">Décrivez la journée : ce qui a été difficile, ce qui a aidé, tout autre point à noter.</string>
+    <string name="notes_dictation_stop">Terminer</string>
+    <string name="notes_sorting_title">Tri de vos notes…</string>
+    <string name="notes_sorting_description">Le modèle d\'IA sur l\'appareil peut nécessiter un téléchargement la première fois.</string>
+    <string name="notes_sorting_skip">Ajouter sans trier</string>
+    <string name="notes_filled_in">Notes ajoutées aux champs ci-dessous. Vérifiez-les avant d\'enregistrer.</string>
+    <string name="notes_added_unsorted_ai_unavailable">L\'IA sur l\'appareil n\'est pas disponible sur cet appareil : vos notes ont été ajoutées à Notes sans être triées.</string>
+    <string name="notes_added_unsorted_timeout">Le tri a pris trop de temps (le modèle d\'IA sur l\'appareil est peut-être encore en cours de téléchargement) : vos notes ont été ajoutées à Notes sans être triées.</string>
+    <string name="notes_added_unsorted_failed">Impossible de trier vos notes automatiquement : elles ont été ajoutées à Notes telles quelles.</string>
+    <string name="notes_added_unsorted_skipped">Vos notes ont été ajoutées à Notes sans être triées.</string>
+    <string name="notes_dictation_unavailable">La reconnaissance vocale sur l\'appareil n\'est pas disponible sur cet appareil.</string>
+    <string name="notes_dictation_language_not_installed">Le modèle de reconnaissance vocale sur l\'appareil n\'est pas installé pour votre langue. Téléchargez-le dans les paramètres de reconnaissance vocale de votre appareil, puis réessayez.</string>
+    <string name="notes_dictation_no_speech">Je n\'ai rien entendu. Appuyez sur Dicter et réessayez.</string>
+    <string name="notes_dictation_permission_denied">L\'accès au microphone est nécessaire pour dicter des notes.</string>
+    <string name="notes_dictation_failed">Impossible de comprendre l\'enregistrement. Veuillez réessayer.</string>
+
+    <!-- Observation notes scanner -->
+    <string name="notes_scanner_title">Scanner des notes</string>
+    <string name="notes_scanner_camera_rationale">L\'accès à l\'appareil photo est nécessaire pour photographier vos notes.</string>
+    <string name="notes_scanner_grant_access">Autoriser l\'accès à l\'appareil photo</string>
+    <string name="notes_scanner_hint">Photographiez chaque page de vos notes, puis appuyez sur Terminer.</string>
+    <plurals name="notes_scanner_photo_count">
+        <item quantity="one">%d photo</item>
+        <item quantity="many">%d photos</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <string name="notes_scanner_remove_last">Retirer la dernière</string>
+    <string name="notes_scanner_done">Terminer</string>
+    <string name="notes_scanner_no_text_recognized">Aucun texte reconnu. Réessayez avec un meilleur éclairage ou une meilleure mise au point.</string>
+    <string name="notes_scanner_read_failed">Impossible de lire les photos. Veuillez réessayer.</string>
 
     <!-- ESS report -->
     <string name="ess_report_title">Rapport ESS</string>

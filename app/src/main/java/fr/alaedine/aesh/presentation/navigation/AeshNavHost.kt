@@ -1,7 +1,9 @@
 package fr.alaedine.aesh.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,6 +13,7 @@ import fr.alaedine.aesh.domain.model.ParsedScheduleSlot
 import fr.alaedine.aesh.presentation.home.HomeRoute
 import fr.alaedine.aesh.presentation.report.DailyReportFormRoute
 import fr.alaedine.aesh.presentation.report.EssReportRoute
+import fr.alaedine.aesh.presentation.report.notes.NotesScannerRoute
 import fr.alaedine.aesh.presentation.schedule.ScheduleFormRoute
 import fr.alaedine.aesh.presentation.schedule.ScheduleListRoute
 import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerRoute
@@ -20,6 +23,12 @@ import fr.alaedine.aesh.presentation.student.StudentListRoute
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+
+/**
+ * Key under which [AeshDestination.NotesScanner] hands the text it read back
+ * to the [AeshDestination.DailyReportForm] entry beneath it.
+ */
+private const val SCANNED_NOTES_RESULT_KEY = "scanned_notes"
 
 /**
  * Hosts every screen behind a single [androidx.navigation.NavController],
@@ -86,10 +95,18 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
         }
         composable<AeshDestination.DailyReportForm> { backStackEntry ->
             val destination = backStackEntry.toRoute<AeshDestination.DailyReportForm>()
+            val scannedNotes by backStackEntry.savedStateHandle
+                .getStateFlow<String?>(SCANNED_NOTES_RESULT_KEY, null)
+                .collectAsStateWithLifecycle()
             DailyReportFormRoute(
                 studentId = destination.studentId,
                 date = destination.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
                 onNavigateBack = { navController.popBackStack() },
+                // Single top: a double tap mustn't stack a second scanner, which would hand its result to the first
+                // scanner instead of this form, losing the scanned notes.
+                onScanNotes = { navController.navigate(AeshDestination.NotesScanner) { launchSingleTop = true } },
+                scannedNotes = scannedNotes,
+                onScannedNotesConsumed = { backStackEntry.savedStateHandle.remove<String>(SCANNED_NOTES_RESULT_KEY) },
             )
         }
         composable<AeshDestination.EssReportForm> {
@@ -131,6 +148,15 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                         // form returns straight to the schedule list.
                         popUpTo(AeshDestination.ScheduleScanner) { inclusive = true }
                     }
+                },
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<AeshDestination.NotesScanner> {
+            NotesScannerRoute(
+                onNotesScanned = { notes ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set(SCANNED_NOTES_RESULT_KEY, notes)
+                    navController.popBackStack()
                 },
                 onNavigateBack = { navController.popBackStack() },
             )

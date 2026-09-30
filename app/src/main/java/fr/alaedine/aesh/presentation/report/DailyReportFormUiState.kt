@@ -1,6 +1,7 @@
 package fr.alaedine.aesh.presentation.report
 
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.report.notes.DictationError
 import java.time.LocalDate
 
 /** Slider position for mood/focus/social interactions before the user picks a value. */
@@ -43,6 +44,13 @@ const val NEUTRAL_LEVEL = 3
  * @property isSaved Whether the current fields have just been persisted,
  * signalling [DailyReportFormScreen] to show a success state and
  * [DailyReportFormRoute] to navigate back.
+ * @property isSortingNotes Whether dictated or photographed notes are
+ * currently being sorted into the free-text fields by the on-device AI
+ * model. The form is held back meanwhile (see [canSave]) so the sorted notes
+ * can't land in the wrong report or after it was saved.
+ * @property statusMessage A one-shot user-facing message — how dictated or
+ * photographed notes ended up in the fields, or why dictation failed —
+ * `null` once shown.
  */
 data class DailyReportFormUiState(
     val reportId: Long? = null,
@@ -58,10 +66,50 @@ data class DailyReportFormUiState(
     val freeNotes: String = "",
     val isLoading: Boolean = true,
     val isSaved: Boolean = false,
+    val isSortingNotes: Boolean = false,
+    val statusMessage: DailyReportStatusMessage? = null,
 ) {
     /** Whether this state represents editing an existing report for [date] rather than adding a new one. */
     val isEditing: Boolean get() = reportId != null
 
     /** Whether a student has been picked and the form can be submitted. */
-    val canSave: Boolean get() = selectedStudent != null
+    val canSave: Boolean get() = selectedStudent != null && !isSortingNotes
+}
+
+/**
+ * One-shot result of filling the form from dictated or photographed notes.
+ *
+ * Kept as a semantic type rather than a raw `String` so
+ * [DailyReportFormViewModel] stays free of Android resources/`Context`;
+ * [DailyReportFormScreen] maps each variant to localized text via
+ * `stringResource`.
+ */
+sealed interface DailyReportStatusMessage {
+    /** The notes were sorted into the free-text fields, to be checked by the user before saving. */
+    data object NotesFilledIn : DailyReportStatusMessage
+
+    /** The notes were added to the free notes field as they are; [reason] says why they weren't sorted. */
+    data class NotesAddedUnsorted(
+        val reason: UnsortedNotesReason,
+    ) : DailyReportStatusMessage
+
+    /** Dictation couldn't produce any notes, because of [error]. */
+    data class DictationFailed(
+        val error: DictationError,
+    ) : DailyReportStatusMessage
+}
+
+/** Why dictated or photographed notes were added to the form without being sorted into its fields. */
+enum class UnsortedNotesReason {
+    /** The on-device AI model isn't supported on this device. */
+    AiUnavailable,
+
+    /** Sorting didn't finish within a reasonable time. */
+    Timeout,
+
+    /** Sorting failed for any other reason. */
+    Failed,
+
+    /** The user chose to skip sorting. */
+    Skipped,
 }

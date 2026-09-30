@@ -10,10 +10,11 @@ package fr.alaedine.aesh.domain.repository
  * Every prompt and generated response stays entirely on-device — nothing is
  * ever sent to a server, see the project README's privacy section. Kept
  * generic (raw prompt in, raw text out) rather than ESS-specific, mirroring
- * how [ScheduleScannerRepository] only recognizes raw text and leaves
+ * how [TextRecognitionRepository] only recognizes raw text and leaves
  * business-specific parsing to [fr.alaedine.aesh.domain.scanner.ScheduleTextParser];
  * here, the specialized prompt engineering lives in
- * [fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase].
+ * [fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase] and
+ * [fr.alaedine.aesh.domain.usecase.SortObservationNotesUseCase].
  */
 interface AiTextGenerationRepository {
     /**

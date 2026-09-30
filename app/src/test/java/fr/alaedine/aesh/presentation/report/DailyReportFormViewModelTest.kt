@@ -2,11 +2,18 @@ package fr.alaedine.aesh.presentation.report
 
 import fr.alaedine.aesh.domain.model.DailyReport
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
+import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
+import fr.alaedine.aesh.domain.usecase.SortObservationNotesUseCase
+import fr.alaedine.aesh.presentation.report.notes.DictationError
 import fr.alaedine.aesh.presentation.student.FakeStudentRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -16,6 +23,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -31,6 +39,24 @@ import kotlin.test.assertTrue
 class DailyReportFormViewModelTest {
     private val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
     private val today = LocalDate.now()
+    private val bob = Student(id = 2L, firstName = "Bob", className = "CM2")
+    private val defaultSortObservationNotes = SortObservationNotesUseCase(FakeAiTextGenerationRepository())
+    private val threeLineNotes =
+        """
+        Lina had trouble staying seated.
+        The visual timer helped her.
+        Great mood all morning.
+        """.trimIndent()
+    private val threeLineAnswer = "OBSTACLES: 1\nHELPED: 2\nNOTES: 3"
+
+    private fun viewModelSortingWith(
+        aiTextGenerationRepository: AiTextGenerationRepository,
+        students: List<Student> = listOf(alice),
+    ) = DailyReportFormViewModel(
+        dailyReportRepository = FakeDailyReportRepository(),
+        studentRepository = FakeStudentRepository(initialStudents = students),
+        sortObservationNotes = SortObservationNotesUseCase(aiTextGenerationRepository),
+    )
 
     @BeforeTest
     fun setMainDispatcher() {
@@ -50,6 +76,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // Then
@@ -65,6 +92,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // Then
@@ -79,6 +107,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // When
@@ -96,6 +125,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // When
@@ -121,6 +151,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
             viewModel.onStudentSelected(alice)
 
@@ -157,6 +188,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(existingReport)),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // When
@@ -184,6 +216,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = dailyReportRepository,
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
             viewModel.onStudentSelected(alice)
             viewModel.onMoodLevelChanged(5)
@@ -231,6 +264,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = dailyReportRepository,
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
             viewModel.onStudentSelected(alice)
 
@@ -255,6 +289,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = dailyReportRepository,
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // When
@@ -273,6 +308,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // Then
@@ -287,6 +323,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
             val previousDay = today.minusDays(1)
 
@@ -305,6 +342,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
 
             // When
@@ -336,6 +374,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(existingReport)),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
             viewModel.onStudentSelected(alice)
 
@@ -376,6 +415,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(existingReport)),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
             viewModel.onStudentSelected(alice)
 
@@ -404,6 +444,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = dailyReportRepository,
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                 )
             val previousDay = today.minusDays(2)
             viewModel.onStudentSelected(alice)
@@ -430,6 +471,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                     preselectedStudentId = alice.id,
                     prefilledDate = today,
                 )
@@ -449,6 +491,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                     prefilledDate = previousDay,
                 )
 
@@ -467,6 +510,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                     prefilledDate = nextWeek,
                 )
 
@@ -495,6 +539,7 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(existingReport)),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                     preselectedStudentId = alice.id,
                     prefilledDate = previousDay,
                 )
@@ -517,10 +562,334 @@ class DailyReportFormViewModelTest {
                 DailyReportFormViewModel(
                     dailyReportRepository = FakeDailyReportRepository(),
                     studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = defaultSortObservationNotes,
                     prefilledDate = null,
                 )
 
             // Then
             assertEquals(today, viewModel.uiState.value.date)
         }
+
+    @Test
+    fun `should add the sorted notes to their fields when raw notes are received`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository(Result.success(threeLineAnswer)))
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals("Lina had trouble staying seated.", state.obstacles)
+            assertEquals("The visual timer helped her.", state.supportStrategies)
+            assertEquals("Great mood all morning.", state.freeNotes)
+            assertFalse(state.isSortingNotes)
+            assertEquals(DailyReportStatusMessage.NotesFilledIn, state.statusMessage)
+        }
+
+    @Test
+    fun `should add the sorted notes after the existing content when the fields are not empty`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository(Result.success("OBSTACLES: 1\nHELPED: none\nNOTES: 2, 3")))
+            viewModel.onStudentSelected(alice)
+            viewModel.onObstaclesChanged("Typed earlier")
+            viewModel.onSupportStrategiesChanged("Also typed earlier")
+            viewModel.onFreeNotesChanged("Trailing newline kept out\n")
+
+            // When
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals("Typed earlier\nLina had trouble staying seated.", state.obstacles)
+            assertEquals("Also typed earlier", state.supportStrategies)
+            assertEquals("Trailing newline kept out\nThe visual timer helped her.\nGreat mood all morning.", state.freeNotes)
+        }
+
+    @Test
+    fun `should add the raw notes to the free notes when the on-device AI is unavailable`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository(Result.failure(AiFeatureUnavailableException())))
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals("", state.obstacles)
+            assertEquals("", state.supportStrategies)
+            assertEquals(threeLineNotes, state.freeNotes)
+            assertEquals(DailyReportStatusMessage.NotesAddedUnsorted(UnsortedNotesReason.AiUnavailable), state.statusMessage)
+        }
+
+    @Test
+    fun `should add the raw notes to the free notes and report a timeout when sorting takes too long`() =
+        runTest {
+            // Given
+            val neverAnswering =
+                object : AiTextGenerationRepository {
+                    override suspend fun generate(prompt: String): Result<String> = awaitCancellation()
+                }
+            val viewModel = viewModelSortingWith(neverAnswering)
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onRawNotesReceived(threeLineNotes)
+            advanceUntilIdle()
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals(threeLineNotes, state.freeNotes)
+            assertFalse(state.isSortingNotes)
+            assertEquals(DailyReportStatusMessage.NotesAddedUnsorted(UnsortedNotesReason.Timeout), state.statusMessage)
+        }
+
+    @Test
+    fun `should add the raw notes to the free notes and report a failure when sorting fails unexpectedly`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository(Result.failure(RuntimeException("boom"))))
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals(threeLineNotes, state.freeNotes)
+            assertEquals(DailyReportStatusMessage.NotesAddedUnsorted(UnsortedNotesReason.Failed), state.statusMessage)
+        }
+
+    @Test
+    fun `should hold the form back when notes are being sorted`() =
+        runTest {
+            // Given
+            val suspendedAi = SuspendedAiTextGenerationRepository()
+            val dailyReportRepository = FakeDailyReportRepository()
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = dailyReportRepository,
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = SortObservationNotesUseCase(suspendedAi),
+                )
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onRawNotesReceived(threeLineNotes)
+            viewModel.onSaveClicked()
+
+            // Then
+            val state = viewModel.uiState.value
+            assertTrue(state.isSortingNotes)
+            assertFalse(state.canSave)
+            assertFalse(state.isSaved)
+            assertEquals(emptyList(), dailyReportRepository.observeReports().first())
+
+            // When the model finally answers
+            suspendedAi.answerWith(Result.success(threeLineAnswer))
+
+            // Then
+            assertFalse(viewModel.uiState.value.isSortingNotes)
+            assertTrue(viewModel.uiState.value.canSave)
+        }
+
+    @Test
+    fun `should add the notes being sorted to the free notes as they are when sorting is skipped`() =
+        runTest {
+            // Given
+            val suspendedAi = SuspendedAiTextGenerationRepository()
+            val viewModel = viewModelSortingWith(suspendedAi)
+            viewModel.onStudentSelected(alice)
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // When
+            viewModel.onSkipSortingClicked()
+            suspendedAi.answerWith(Result.success(threeLineAnswer))
+
+            // Then the late answer doesn't sort the notes a second time
+            val state = viewModel.uiState.value
+            assertEquals("", state.obstacles)
+            assertEquals("", state.supportStrategies)
+            assertEquals(threeLineNotes, state.freeNotes)
+            assertFalse(state.isSortingNotes)
+            assertEquals(DailyReportStatusMessage.NotesAddedUnsorted(UnsortedNotesReason.Skipped), state.statusMessage)
+        }
+
+    @Test
+    fun `should ignore skipping when no notes are being sorted`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository())
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onSkipSortingClicked()
+
+            // Then
+            assertEquals("", viewModel.uiState.value.freeNotes)
+            assertNull(viewModel.uiState.value.statusMessage)
+        }
+
+    @Test
+    fun `should ignore raw notes when no student is selected`() =
+        runTest {
+            // Given
+            val generator = FakeAiTextGenerationRepository()
+            val viewModel = viewModelSortingWith(generator)
+
+            // When
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // Then
+            assertFalse(viewModel.uiState.value.isSortingNotes)
+            assertNull(viewModel.uiState.value.statusMessage)
+            assertNull(generator.lastPrompt)
+        }
+
+    @Test
+    fun `should ignore raw notes when they are blank`() =
+        runTest {
+            // Given
+            val generator = FakeAiTextGenerationRepository()
+            val viewModel = viewModelSortingWith(generator)
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onRawNotesReceived("  \n ")
+
+            // Then
+            assertNull(viewModel.uiState.value.statusMessage)
+            assertNull(generator.lastPrompt)
+        }
+
+    @Test
+    fun `should ignore a second batch of raw notes when one is being sorted`() =
+        runTest {
+            // Given
+            val suspendedAi = SuspendedAiTextGenerationRepository()
+            val viewModel = viewModelSortingWith(suspendedAi)
+            viewModel.onStudentSelected(alice)
+            viewModel.onRawNotesReceived("First batch.")
+
+            // When
+            viewModel.onRawNotesReceived("Second batch.")
+            suspendedAi.answerWith(Result.success("OBSTACLES: none\nHELPED: none\nNOTES: 1"))
+
+            // Then
+            assertEquals("First batch.", viewModel.uiState.value.freeNotes)
+        }
+
+    @Test
+    fun `should drop the notes being sorted when another student is selected meanwhile`() =
+        runTest {
+            // Given
+            val suspendedAi = SuspendedAiTextGenerationRepository()
+            val viewModel = viewModelSortingWith(suspendedAi, students = listOf(alice, bob))
+            viewModel.onStudentSelected(alice)
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // When
+            viewModel.onStudentSelected(bob)
+            suspendedAi.answerWith(Result.success(threeLineAnswer))
+
+            // Then a child's notes never end up in another child's report
+            val state = viewModel.uiState.value
+            assertEquals(bob, state.selectedStudent)
+            assertEquals("", state.obstacles)
+            assertEquals("", state.supportStrategies)
+            assertEquals("", state.freeNotes)
+            assertFalse(state.isSortingNotes)
+            assertNull(state.statusMessage)
+        }
+
+    @Test
+    fun `should drop the notes being sorted when another date is selected meanwhile`() =
+        runTest {
+            // Given
+            val suspendedAi = SuspendedAiTextGenerationRepository()
+            val viewModel = viewModelSortingWith(suspendedAi)
+            viewModel.onStudentSelected(alice)
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // When
+            viewModel.onDateSelected(today.minusDays(1))
+            suspendedAi.answerWith(Result.success(threeLineAnswer))
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals("", state.freeNotes)
+            assertFalse(state.isSortingNotes)
+        }
+
+    @Test
+    fun `should save the sorted notes when saving after raw notes were received`() =
+        runTest {
+            // Given
+            val dailyReportRepository = FakeDailyReportRepository()
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = dailyReportRepository,
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                    sortObservationNotes = SortObservationNotesUseCase(FakeAiTextGenerationRepository(Result.success(threeLineAnswer))),
+                )
+            viewModel.onStudentSelected(alice)
+            viewModel.onRawNotesReceived(threeLineNotes)
+
+            // When
+            viewModel.onSaveClicked()
+
+            // Then
+            val saved = dailyReportRepository.observeReports().first().single()
+            assertEquals("Lina had trouble staying seated.", saved.obstacles)
+            assertEquals("The visual timer helped her.", saved.supportStrategies)
+            assertEquals("Great mood all morning.", saved.freeNotes)
+        }
+
+    @Test
+    fun `should report why dictation failed when it does`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository())
+
+            // When
+            viewModel.onDictationFailed(DictationError.NoSpeechDetected)
+
+            // Then
+            val message = assertIs<DailyReportStatusMessage.DictationFailed>(viewModel.uiState.value.statusMessage)
+            assertEquals(DictationError.NoSpeechDetected, message.error)
+        }
+
+    @Test
+    fun `should clear the status message when it has been shown`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository())
+            viewModel.onDictationFailed(DictationError.Failed)
+
+            // When
+            viewModel.onStatusMessageShown()
+
+            // Then
+            assertNull(viewModel.uiState.value.statusMessage)
+        }
+}
+
+/**
+ * An [AiTextGenerationRepository] that holds its answer back until the test
+ * hands it over with [answerWith], to observe the form while notes are
+ * still being sorted.
+ */
+private class SuspendedAiTextGenerationRepository : AiTextGenerationRepository {
+    private val answer = CompletableDeferred<Result<String>>()
+
+    override suspend fun generate(prompt: String): Result<String> = answer.await()
+
+    fun answerWith(result: Result<String>) {
+        answer.complete(result)
+    }
 }

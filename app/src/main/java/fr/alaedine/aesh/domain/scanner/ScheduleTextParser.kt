@@ -6,7 +6,7 @@ import java.time.LocalTime
 
 /**
  * Best-effort parser turning the raw text recognized (by
- * [fr.alaedine.aesh.domain.repository.ScheduleScannerRepository]) from a
+ * [fr.alaedine.aesh.domain.repository.TextRecognitionRepository]) from a
  * photo of a physical schedule into [ParsedScheduleSlot] fields.
  *
  * Physical schedules come in wildly different layouts (grids, lists,
