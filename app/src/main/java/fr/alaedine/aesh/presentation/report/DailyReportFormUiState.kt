@@ -28,6 +28,13 @@ const val NEUTRAL_LEVEL = 3
  * 5 (highest) scale.
  * @property socialInteractions The quality of the student's social
  * interactions, on a 1 (lowest) to 5 (highest) scale.
+ * @property autonomyLevel How independently the student completed today's
+ * tasks/activities, on a 1 (needed constant help) to 5 (fully autonomous)
+ * scale.
+ * @property obstacles Free-text notes on difficulties/obstacles encountered
+ * by the student today.
+ * @property supportStrategies Free-text notes on support or strategies that
+ * helped the student today.
  * @property freeNotes Free-text notes for anything the level scores don't
  * capture.
  * @property isLoading Whether the student list is still being loaded; avoids
@@ -45,6 +52,9 @@ data class DailyReportFormUiState(
     val moodLevel: Int = NEUTRAL_LEVEL,
     val focusLevel: Int = NEUTRAL_LEVEL,
     val socialInteractions: Int = NEUTRAL_LEVEL,
+    val autonomyLevel: Int = NEUTRAL_LEVEL,
+    val obstacles: String = "",
+    val supportStrategies: String = "",
     val freeNotes: String = "",
     val isLoading: Boolean = true,
     val isSaved: Boolean = false,

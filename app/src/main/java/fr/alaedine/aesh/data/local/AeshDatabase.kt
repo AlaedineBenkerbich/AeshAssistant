@@ -22,7 +22,7 @@ import fr.alaedine.aesh.data.local.entity.StudentEntity
         ScheduleSlotEntity::class,
         ScheduleSlotStudentCrossRef::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

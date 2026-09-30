@@ -20,6 +20,9 @@ class GenerateEssReportUseCaseTest {
     private fun report(
         date: LocalDate,
         notes: String,
+        autonomyLevel: Int = 3,
+        obstacles: String = "",
+        supportStrategies: String = "",
     ) = DailyReport(
         id = date.toEpochDay(),
         date = date,
@@ -27,6 +30,9 @@ class GenerateEssReportUseCaseTest {
         moodLevel = 4,
         focusLevel = 3,
         socialInteractions = 5,
+        autonomyLevel = autonomyLevel,
+        obstacles = obstacles,
+        supportStrategies = supportStrategies,
         freeNotes = notes,
     )
 
@@ -67,6 +73,32 @@ class GenerateEssReportUseCaseTest {
             val prompt = requireNotNull(generator.lastPrompt)
             assertContains(prompt, "Great focus today")
             assertFalse(prompt.contains("Should not appear"))
+        }
+
+    @Test
+    fun `should include autonomy level, obstacles and support strategies in the prompt`() =
+        runTest {
+            // Given
+            val reportWithContext =
+                report(
+                    date = today,
+                    notes = "Some notes",
+                    autonomyLevel = 2,
+                    obstacles = "Needed constant redirection during the math exercise",
+                    supportStrategies = "A visual checklist helped her stay on task",
+                )
+            val dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(reportWithContext))
+            val generator = FakeAiTextGenerationRepository()
+            val useCase = GenerateEssReportUseCase(dailyReportRepository, generator)
+
+            // When
+            useCase(alice, today, today)
+
+            // Then
+            val prompt = requireNotNull(generator.lastPrompt)
+            assertContains(prompt, "Autonomy: 2/5")
+            assertContains(prompt, "Needed constant redirection during the math exercise")
+            assertContains(prompt, "A visual checklist helped her stay on task")
         }
 
     @Test

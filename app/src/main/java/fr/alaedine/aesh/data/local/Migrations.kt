@@ -87,3 +87,21 @@ val MIGRATION_3_4: Migration =
             )
         }
     }
+
+/**
+ * Adds the `autonomyLevel`, `obstacles` and `supportStrategies` columns to
+ * `daily_reports` (see [fr.alaedine.aesh.data.local.entity.DailyReportEntity]),
+ * inspired by the autonomy rating and obstacles/points d'appui sections of
+ * the official ESS ("Équipe de Suivi de Scolarisation") preparation form.
+ * Existing rows default to a neutral autonomy level (3) and empty text,
+ * matching [fr.alaedine.aesh.domain.model.DailyReport]'s defaults, so
+ * upgrading preserves any reports already saved on-device.
+ */
+val MIGRATION_4_5: Migration =
+    object : Migration(startVersion = 4, endVersion = 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `daily_reports` ADD COLUMN `autonomyLevel` INTEGER NOT NULL DEFAULT 3")
+            db.execSQL("ALTER TABLE `daily_reports` ADD COLUMN `obstacles` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `daily_reports` ADD COLUMN `supportStrategies` TEXT NOT NULL DEFAULT ''")
+        }
+    }

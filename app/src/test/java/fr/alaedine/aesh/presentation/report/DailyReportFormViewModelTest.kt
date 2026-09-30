@@ -106,8 +106,34 @@ class DailyReportFormViewModelTest {
             assertEquals(NEUTRAL_LEVEL, state.moodLevel)
             assertEquals(NEUTRAL_LEVEL, state.focusLevel)
             assertEquals(NEUTRAL_LEVEL, state.socialInteractions)
+            assertEquals(NEUTRAL_LEVEL, state.autonomyLevel)
+            assertEquals("", state.obstacles)
+            assertEquals("", state.supportStrategies)
             assertEquals("", state.freeNotes)
             assertFalse(state.isEditing)
+        }
+
+    @Test
+    fun `should update autonomy level, obstacles and support strategies when changed`() =
+        runTest {
+            // Given
+            val viewModel =
+                DailyReportFormViewModel(
+                    dailyReportRepository = FakeDailyReportRepository(),
+                    studentRepository = FakeStudentRepository(initialStudents = listOf(alice)),
+                )
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onAutonomyLevelChanged(5)
+            viewModel.onObstaclesChanged("Got distracted during group work")
+            viewModel.onSupportStrategiesChanged("Seating her near the front helped")
+
+            // Then
+            val state = viewModel.uiState.value
+            assertEquals(5, state.autonomyLevel)
+            assertEquals("Got distracted during group work", state.obstacles)
+            assertEquals("Seating her near the front helped", state.supportStrategies)
         }
 
     @Test
@@ -122,6 +148,9 @@ class DailyReportFormViewModelTest {
                     moodLevel = 5,
                     focusLevel = 1,
                     socialInteractions = 4,
+                    autonomyLevel = 2,
+                    obstacles = "Needed help reading the instructions",
+                    supportStrategies = "Reading the instructions aloud helped",
                     freeNotes = "Rough morning",
                 )
             val viewModel =
@@ -140,6 +169,9 @@ class DailyReportFormViewModelTest {
             assertEquals(existingReport.moodLevel, state.moodLevel)
             assertEquals(existingReport.focusLevel, state.focusLevel)
             assertEquals(existingReport.socialInteractions, state.socialInteractions)
+            assertEquals(existingReport.autonomyLevel, state.autonomyLevel)
+            assertEquals(existingReport.obstacles, state.obstacles)
+            assertEquals(existingReport.supportStrategies, state.supportStrategies)
             assertEquals(existingReport.freeNotes, state.freeNotes)
         }
 
@@ -157,6 +189,9 @@ class DailyReportFormViewModelTest {
             viewModel.onMoodLevelChanged(5)
             viewModel.onFocusLevelChanged(1)
             viewModel.onSocialInteractionsChanged(4)
+            viewModel.onAutonomyLevelChanged(2)
+            viewModel.onObstaclesChanged("  Struggled with transitions  ")
+            viewModel.onSupportStrategiesChanged("  A visual schedule helped  ")
             viewModel.onFreeNotesChanged("  Great day overall  ")
 
             // When
@@ -171,6 +206,9 @@ class DailyReportFormViewModelTest {
             assertEquals(5, saved.moodLevel)
             assertEquals(1, saved.focusLevel)
             assertEquals(4, saved.socialInteractions)
+            assertEquals(2, saved.autonomyLevel)
+            assertEquals("Struggled with transitions", saved.obstacles)
+            assertEquals("A visual schedule helped", saved.supportStrategies)
             assertEquals("Great day overall", saved.freeNotes)
             assertTrue(viewModel.uiState.value.isSaved)
         }
@@ -289,6 +327,9 @@ class DailyReportFormViewModelTest {
                     moodLevel = 2,
                     focusLevel = 4,
                     socialInteractions = 1,
+                    autonomyLevel = 3,
+                    obstacles = "Needed one-on-one support for the whole activity",
+                    supportStrategies = "Breaking the task into smaller steps helped",
                     freeNotes = "Backfilled after forgetting to log it on the day",
                 )
             val viewModel =
@@ -308,6 +349,9 @@ class DailyReportFormViewModelTest {
             assertEquals(existingReport.moodLevel, state.moodLevel)
             assertEquals(existingReport.focusLevel, state.focusLevel)
             assertEquals(existingReport.socialInteractions, state.socialInteractions)
+            assertEquals(existingReport.autonomyLevel, state.autonomyLevel)
+            assertEquals(existingReport.obstacles, state.obstacles)
+            assertEquals(existingReport.supportStrategies, state.supportStrategies)
             assertEquals(existingReport.freeNotes, state.freeNotes)
         }
 
@@ -323,6 +367,9 @@ class DailyReportFormViewModelTest {
                     moodLevel = 5,
                     focusLevel = 1,
                     socialInteractions = 4,
+                    autonomyLevel = 2,
+                    obstacles = "Needed help reading the instructions",
+                    supportStrategies = "Reading the instructions aloud helped",
                     freeNotes = "Rough morning",
                 )
             val viewModel =
@@ -342,6 +389,9 @@ class DailyReportFormViewModelTest {
             assertEquals(NEUTRAL_LEVEL, state.moodLevel)
             assertEquals(NEUTRAL_LEVEL, state.focusLevel)
             assertEquals(NEUTRAL_LEVEL, state.socialInteractions)
+            assertEquals(NEUTRAL_LEVEL, state.autonomyLevel)
+            assertEquals("", state.obstacles)
+            assertEquals("", state.supportStrategies)
             assertEquals("", state.freeNotes)
         }
 

@@ -39,5 +39,8 @@ data class DailyReportEntity(
     val moodLevel: Int,
     val focusLevel: Int,
     val socialInteractions: Int,
+    val autonomyLevel: Int = 3,
+    val obstacles: String = "",
+    val supportStrategies: String = "",
     val freeNotes: String = "",
 )
