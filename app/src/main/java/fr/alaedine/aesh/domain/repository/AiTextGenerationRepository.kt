@@ -29,3 +29,12 @@ interface AiTextGenerationRepository {
 
 /** Thrown by [AiTextGenerationRepository.generate] when the on-device generative model isn't supported on this device. */
 class AiFeatureUnavailableException : Exception("On-device AI isn't available on this device.")
+
+/**
+ * Thrown by [AiTextGenerationRepository.generate] when the on-device model
+ * doesn't become ready (status check, download, or inference) within a
+ * reasonable time, instead of leaving the caller suspended indefinitely —
+ * see [fr.alaedine.aesh.data.ai.GeminiNanoTextGenerationRepository] for why
+ * this can otherwise hang forever on some devices.
+ */
+class AiGenerationTimeoutException : Exception("On-device AI generation timed out.")

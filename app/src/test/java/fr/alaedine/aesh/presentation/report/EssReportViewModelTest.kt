@@ -3,6 +3,7 @@ package fr.alaedine.aesh.presentation.report
 import fr.alaedine.aesh.domain.model.DailyReport
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
+import fr.alaedine.aesh.domain.repository.AiGenerationTimeoutException
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
 import fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase
 import fr.alaedine.aesh.presentation.student.FakeStudentRepository
@@ -183,6 +184,27 @@ class EssReportViewModelTest {
             assertFalse(state.isGenerating)
             assertNull(state.generatedText)
             assertEquals(EssReportStatusMessage.AiFeatureUnavailable, state.statusMessage)
+        }
+
+    @Test
+    fun `should show a timeout message when generation doesn't complete in time`() =
+        runTest {
+            // Given
+            val viewModel =
+                viewModel(
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(report())),
+                    aiTextGenerationRepository = FakeAiTextGenerationRepository(Result.failure(AiGenerationTimeoutException())),
+                )
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onGenerateClicked()
+
+            // Then
+            val state = viewModel.uiState.value
+            assertFalse(state.isGenerating)
+            assertNull(state.generatedText)
+            assertEquals(EssReportStatusMessage.GenerationTimeout, state.statusMessage)
         }
 
     @Test
