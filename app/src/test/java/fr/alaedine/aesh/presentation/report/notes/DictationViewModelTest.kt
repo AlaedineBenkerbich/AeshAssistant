@@ -348,6 +348,61 @@ class DictationViewModelTest {
             viewModel.onStartClicked()
 
             // Then a failed session doesn't leave the view model stuck listening
-            assertEquals(2, repository.listenCallCount)
+            assertFalse(viewModel.uiState.value.isListening)
+            assertTrue(repository.listenCallCount > 1)
+        }
+
+    @Test
+    fun `should keep listening and keep the text when the user pauses to think`() =
+        runTest {
+            // Given the recognizer ends its first session at the pause, then the user carries on
+            val repository =
+                FakeSpeechRecognitionRepository(
+                    transcripts = listOf(partial("il a eu"), final("il a eu du mal"), final("")),
+                    laterSessions = listOf(listOf(partial("à lire"))),
+                )
+            val viewModel = DictationViewModel(repository)
+
+            // When
+            viewModel.onStartClicked()
+
+            // Then the first part is kept, followed by the new words
+            assertEquals("il a eu du mal à lire", viewModel.uiState.value.transcript)
+        }
+
+    @Test
+    fun `should not erase what was heard when the recognizer emits a blank result`() =
+        runTest {
+            // Given
+            val viewModel =
+                DictationViewModel(
+                    FakeSpeechRecognitionRepository(transcripts = listOf(partial("il a souri"), partial(""), final(""))),
+                )
+
+            // When
+            viewModel.onStartClicked()
+
+            // Then
+            assertEquals("il a souri", viewModel.uiState.value.transcript)
+            assertNull(viewModel.uiState.value.error)
+        }
+
+    @Test
+    fun `should join what was said before and after a pause into one transcript`() =
+        runTest {
+            // Given
+            val viewModel =
+                DictationViewModel(
+                    FakeSpeechRecognitionRepository(
+                        transcripts = listOf(final("il a souri")),
+                        laterSessions = listOf(listOf(final("puis il a lu"))),
+                    ),
+                )
+
+            // When
+            viewModel.onStartClicked()
+
+            // Then
+            assertEquals("il a souri puis il a lu", viewModel.uiState.value.transcript)
         }
 }

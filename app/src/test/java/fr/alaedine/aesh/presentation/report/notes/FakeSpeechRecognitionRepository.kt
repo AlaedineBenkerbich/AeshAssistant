@@ -11,16 +11,19 @@ import kotlinx.coroutines.flow.flow
  * for a real microphone or an on-device recognizer to unit test
  * [DictationViewModel].
  *
- * A [listen] session emits [transcripts], then, if [finishesOnStop] is set,
+ * The first [listen] session emits [transcripts], then, if [finishesOnStop] is set,
  * keeps listening until [stopListening] is called and emits those
  * transcripts (mirroring a real recognizer delivering its final result when
  * asked to stop), then fails with [failure] if one is set.
+ * Later sessions (the view model restarts listening after a pause) emit the
+ * matching entry of [laterSessions], or nothing.
  */
 class FakeSpeechRecognitionRepository(
     var isAvailableResult: Boolean = true,
     private val transcripts: List<SpeechTranscript> = emptyList(),
     private val finishesOnStop: List<SpeechTranscript>? = null,
     private val failure: Throwable? = null,
+    private val laterSessions: List<List<SpeechTranscript>> = emptyList(),
 ) : SpeechRecognitionRepository {
     var listenCallCount = 0
         private set
@@ -34,8 +37,8 @@ class FakeSpeechRecognitionRepository(
 
     override fun listen(): Flow<SpeechTranscript> =
         flow {
-            listenCallCount++
-            transcripts.forEach { emit(it) }
+            val session = listenCallCount++
+            (if (session == 0) transcripts else laterSessions.getOrElse(session - 1) { emptyList() }).forEach { emit(it) }
             if (finishesOnStop != null) {
                 stopRequested.await()
                 finishesOnStop.forEach { emit(it) }

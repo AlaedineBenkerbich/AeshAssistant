@@ -29,6 +29,7 @@ class DictationViewModel(
     val uiState: StateFlow<DictationUiState> = _uiState.asStateFlow()
 
     private var listeningJob: Job? = null
+    private var stopRequested = false
 
     /**
      * Starts listening, unless a session is already running. The
@@ -46,6 +47,7 @@ class DictationViewModel(
 
     /** Ends the session early; the recognizer then delivers what it heard so far, which becomes the transcript. */
     fun onStopClicked() {
+        stopRequested = true
         speechRecognitionRepository.stopListening()
     }
 
@@ -71,21 +73,41 @@ class DictationViewModel(
         _uiState.update { it.copy(error = null) }
     }
 
+    /**
+     * Runs recognizer sessions back to back until the user stops, since a recognizer ends its session at the
+     * first pause, which would cut off someone who is simply thinking. What each session heard is committed
+     * to [committed], so a pause never erases it. Gives up after [MAX_CONSECUTIVE_SILENT_SESSIONS] sessions
+     * in a row that heard nothing new.
+     */
     private suspend fun listen() {
-        var heardSoFar = ""
-        val failure =
+        val committed = mutableListOf<String>()
+        var silentSessions = 0
+        var failure: Exception? = null
+        stopRequested = false
+        while (!stopRequested && silentSessions < MAX_CONSECUTIVE_SILENT_SESSIONS) {
+            var sessionText = ""
             try {
                 speechRecognitionRepository.listen().collect { transcript ->
-                    heardSoFar = transcript.text
-                    if (!transcript.isFinal) _uiState.update { it.copy(partialTranscript = transcript.text) }
+                    // A blank result (recognizers send them on silence) must never wipe what was already heard.
+                    if (transcript.text.isBlank()) return@collect
+                    sessionText = transcript.text.trim()
+                    if (!transcript.isFinal) {
+                        val heard = (committed + sessionText).joinToString(separator = " ")
+                        _uiState.update { it.copy(partialTranscript = heard) }
+                    }
                 }
-                null
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                error
+                failure = error
             }
-        onListeningEnded(heardSoFar = heardSoFar.trim(), failure = failure)
+            if (sessionText.isNotEmpty()) committed += sessionText
+            silentSessions = if (sessionText.isEmpty()) silentSessions + 1 else 0
+            // Only a silent session may be retried; a real failure ends dictation (keeping what was heard).
+            if (failure != null && failure !is SpeechRecognitionException.NoSpeechDetected) break
+            failure = null
+        }
+        onListeningEnded(heardSoFar = committed.joinToString(separator = " "), failure = failure)
     }
 
     private fun onListeningEnded(
@@ -110,4 +132,8 @@ class DictationViewModel(
             is SpeechRecognitionException.MicrophonePermissionDenied -> DictationError.MicrophonePermissionDenied
             else -> DictationError.Failed
         }
+
+    private companion object {
+        const val MAX_CONSECUTIVE_SILENT_SESSIONS = 2
+    }
 }
