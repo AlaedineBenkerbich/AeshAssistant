@@ -47,7 +47,8 @@ fun groupedListItemShape(
  * [groupedListItemShape]), on the brightest surface color so groups stand
  * out from a `surfaceContainer` screen background in both light and dark
  * themes. Clickable when [onClick] is given, [onClickLabel] then telling
- * screen reader users what a tap does.
+ * screen reader users what a tap does. [overlineContent] goes above the
+ * headline, e.g. to label the value the headline shows.
  */
 @Composable
 fun GroupedListItem(
@@ -57,6 +58,7 @@ fun GroupedListItem(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onClickLabel: String? = null,
+    overlineContent: (@Composable () -> Unit)? = null,
     supportingContent: (@Composable () -> Unit)? = null,
     leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
@@ -74,6 +76,7 @@ fun GroupedListItem(
     ) {
         ListItem(
             headlineContent = headlineContent,
+            overlineContent = overlineContent,
             supportingContent = supportingContent,
             leadingContent = leadingContent,
             trailingContent = trailingContent,
