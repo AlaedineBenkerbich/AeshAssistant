@@ -8,6 +8,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme =
@@ -27,7 +29,9 @@ private val LightColorScheme =
 /**
  * App-wide Material 3 theme. Dynamic color (Material You) is used on API 31+
  * devices so the app matches the user's wallpaper-derived palette, falling
- * back to the static [LightColorScheme]/[DarkColorScheme] otherwise.
+ * back to the static [LightColorScheme]/[DarkColorScheme] otherwise. Also
+ * provides the [ExtendedColors] that go with the resulting scheme, read
+ * through [AeshTheme.extendedColors].
  */
 @Composable
 fun AeshAssistantTheme(
@@ -44,11 +48,14 @@ fun AeshAssistantTheme(
             darkTheme -> DarkColorScheme
             else -> LightColorScheme
         }
+    val extendedColors = remember(colorScheme.primary, darkTheme) { extendedColors(colorScheme.primary, darkTheme) }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        shapes = Shapes,
-        typography = Typography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            shapes = Shapes,
+            typography = Typography,
+            content = content,
+        )
+    }
 }
