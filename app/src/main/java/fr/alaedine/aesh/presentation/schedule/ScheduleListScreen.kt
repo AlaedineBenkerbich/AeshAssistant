@@ -1,7 +1,9 @@
 package fr.alaedine.aesh.presentation.schedule
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,20 +23,26 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,9 +67,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.ScheduleSlot
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.presentation.components.EmptyState
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import fr.alaedine.aesh.presentation.theme.AeshTheme
 import org.koin.androidx.compose.koinViewModel
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -83,6 +94,12 @@ private val HOUR_HEIGHT = 64.dp
  */
 private const val DEFAULT_GRID_START_HOUR = 8
 private const val DEFAULT_GRID_END_HOUR = 17
+
+/**
+ * Space left below the grid's last hour so the floating action button never
+ * covers a Friday afternoon class once scrolled to the end.
+ */
+private val FAB_CLEARANCE = 88.dp
 
 /** Floor for a rendered block's height so a slot with a degenerate (zero or negative) duration stays visible and tappable. */
 private const val MIN_BLOCK_DURATION_MINUTES = 15
@@ -118,6 +135,13 @@ fun ScheduleListRoute(
     )
 }
 
+/**
+ * The weekly timetable (see [WeeklyScheduleGrid]) in a rounded card on a
+ * tinted background, with an "Add class" button that shrinks to its icon
+ * once the grid is scrolled. With no class yet, an [EmptyState] offers both
+ * ways to start: adding a class by hand or scanning a paper schedule (the
+ * scan otherwise lives in the top bar's camera action).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleListScreen(
@@ -131,8 +155,14 @@ fun ScheduleListScreen(
     onDeleteConfirmed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val gridScrollState = rememberScrollState()
+    // Derived, so scrolling only recomposes the button when it crosses the top, not on every frame.
+    val isFabExpanded by remember { derivedStateOf { gridScrollState.value == 0 } }
+    val hasScheduleSlots = uiState.scheduleSlots.isNotEmpty()
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.schedule_list_title)) },
@@ -144,6 +174,12 @@ fun ScheduleListScreen(
                         )
                     }
                 },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ),
+                scrollBehavior = scrollBehavior,
             )
         },
         bottomBar = {
@@ -153,37 +189,72 @@ fun ScheduleListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddScheduleSlot) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_schedule_slot))
+            // The empty state already offers the same action, front and center.
+            if (hasScheduleSlots) {
+                val addClassLabel = stringResource(R.string.action_add_class)
+                ExtendedFloatingActionButton(
+                    text = { Text(text = addClassLabel) },
+                    icon = { Icon(imageVector = Icons.Default.Add, contentDescription = null) },
+                    expanded = isFabExpanded,
+                    onClick = onAddScheduleSlot,
+                    // Keeps the button labelled for screen readers once it has shrunk to its icon.
+                    modifier = Modifier.semantics { contentDescription = addClassLabel },
+                )
             }
         },
     ) { contentPadding ->
-        if (uiState.scheduleSlots.isEmpty() && !uiState.isLoading) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.schedule_list_empty),
-                    style = MaterialTheme.typography.bodyMedium,
+        if (!hasScheduleSlots && !uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+                EmptyState(
+                    icon = painterResource(id = R.drawable.ic_schedule),
+                    title = stringResource(R.string.schedule_list_empty_title),
+                    message = stringResource(R.string.schedule_list_empty_message),
+                    action = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Button(onClick = onAddScheduleSlot) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = ButtonDefaults.IconSpacing),
+                                )
+                                Text(text = stringResource(R.string.action_add_class))
+                            }
+                            OutlinedButton(onClick = onScanScheduleSlot) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_camera),
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = ButtonDefaults.IconSpacing).size(ButtonDefaults.IconSize),
+                                )
+                                Text(text = stringResource(R.string.action_scan_schedule))
+                            }
+                        }
+                    },
+                    modifier = Modifier.padding(top = 48.dp),
                 )
             }
         } else {
-            WeeklyScheduleGrid(
-                scheduleSlots = uiState.scheduleSlots,
-                studentsById = uiState.studentsById,
-                today = uiState.today,
-                onEditScheduleSlot = onEditScheduleSlot,
-                onDeleteRequested = onDeleteRequested,
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceBright,
                 modifier =
                     Modifier
                         .fillMaxSize()
                         .padding(contentPadding)
-                        .padding(16.dp),
-            )
+                        .padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            ) {
+                WeeklyScheduleGrid(
+                    scheduleSlots = uiState.scheduleSlots,
+                    studentsById = uiState.studentsById,
+                    today = uiState.today,
+                    scrollState = gridScrollState,
+                    onEditScheduleSlot = onEditScheduleSlot,
+                    onDeleteRequested = onDeleteRequested,
+                    modifier = Modifier.fillMaxSize().padding(start = 8.dp, end = 8.dp, top = 12.dp),
+                )
+            }
         }
     }
 
@@ -216,6 +287,7 @@ private fun WeeklyScheduleGrid(
     scheduleSlots: List<ScheduleSlot>,
     studentsById: Map<Long, Student>,
     today: DayOfWeek,
+    scrollState: ScrollState,
     onEditScheduleSlot: (Long) -> Unit,
     onDeleteRequested: (ScheduleSlot) -> Unit,
     modifier: Modifier = Modifier,
@@ -255,8 +327,8 @@ private fun WeeklyScheduleGrid(
                 Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 8.dp, bottom = 24.dp),
+                    .verticalScroll(scrollState)
+                    .padding(top = 8.dp, bottom = FAB_CLEARANCE),
         ) {
             TimeAxisColumn(
                 gridStartHour = gridStartHour,
@@ -282,17 +354,14 @@ private fun WeeklyScheduleGrid(
 
 /**
  * Assigns each distinct subject a stable, theme-adapting color pair
- * (container color to content color) from a small rotating palette, so e.g.
- * every "Mathématiques" block looks the same across the week.
+ * (container color to content color) from the six harmonized hues of
+ * [fr.alaedine.aesh.presentation.theme.ExtendedColors.avatars], so e.g.
+ * every "Mathématiques" block looks the same across the week and up to six
+ * subjects all look different.
  */
 @Composable
 private fun subjectColorPalette(subjects: List<String>): Map<String, Pair<Color, Color>> {
-    val palette =
-        listOf(
-            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
-            MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
-            MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
-        )
+    val palette = AeshTheme.extendedColors.avatars.map { it.container to it.onContainer }
     return subjects.distinct().mapIndexed { index, subject -> subject to palette[index % palette.size] }.toMap()
 }
 
@@ -502,6 +571,11 @@ private fun ScheduleSlotBlock(
             DropdownMenuItem(
                 text = { Text(text = stringResource(R.string.action_delete)) },
                 leadingIcon = { Icon(imageVector = Icons.Default.Delete, contentDescription = null) },
+                colors =
+                    MenuDefaults.itemColors(
+                        textColor = MaterialTheme.colorScheme.error,
+                        leadingIconColor = MaterialTheme.colorScheme.error,
+                    ),
                 onClick = {
                     showActionsMenu = false
                     onDeleteClick()
@@ -519,10 +593,14 @@ private fun DeleteScheduleSlotConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { Icon(imageVector = Icons.Default.Delete, contentDescription = null) },
         title = { Text(text = stringResource(R.string.confirm_delete_title, scheduleSlot.subject)) },
         text = { Text(text = stringResource(R.string.delete_schedule_slot_confirm_text)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) {
                 Text(text = stringResource(R.string.action_delete))
             }
         },

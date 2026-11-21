@@ -4,32 +4,39 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,10 +44,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -96,6 +106,14 @@ fun ScheduleFormRoute(
     )
 }
 
+/**
+ * Form to add or edit a class slot, in three rounded sections on a tinted
+ * background: when (day, start and end times side by side), what (subject
+ * and room), and who (the students, as chips to toggle). Save sits in the
+ * top bar, always within reach however long the student list gets, and the
+ * form says why it can't be saved yet (an end time not after the start
+ * time, no student picked) instead of only greying the button out.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleFormScreen(
@@ -110,8 +128,10 @@ fun ScheduleFormScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             TopAppBar(
                 title = {
@@ -130,6 +150,21 @@ fun ScheduleFormScreen(
                         )
                     }
                 },
+                actions = {
+                    Button(
+                        onClick = onSaveClicked,
+                        enabled = uiState.canSave,
+                        modifier = Modifier.padding(end = 8.dp),
+                    ) {
+                        Text(text = stringResource(R.string.action_save))
+                    }
+                },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ),
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { contentPadding ->
@@ -138,59 +173,101 @@ fun ScheduleFormScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(contentPadding)
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            DayOfWeekDropdown(
-                selectedDayOfWeek = uiState.dayOfWeek,
-                onDayOfWeekSelected = onDayOfWeekChanged,
-            )
-            TimeField(
-                label = stringResource(R.string.schedule_field_start_time),
-                time = uiState.startTime,
-                onTimeSelected = onStartTimeChanged,
-            )
-            TimeField(
-                label = stringResource(R.string.schedule_field_end_time),
-                time = uiState.endTime,
-                onTimeSelected = onEndTimeChanged,
-            )
-            OutlinedTextField(
-                value = uiState.subject,
-                onValueChange = onSubjectChanged,
-                label = { Text(text = stringResource(R.string.schedule_field_subject)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = uiState.room,
-                onValueChange = onRoomChanged,
-                label = { Text(text = stringResource(R.string.schedule_field_room)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            StudentAssignmentSection(
-                students = uiState.students,
-                selectedStudentIds = uiState.selectedStudentIds,
-                onStudentToggled = onStudentToggled,
-            )
-            Button(
-                onClick = onSaveClicked,
-                enabled = uiState.canSave,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(text = stringResource(R.string.action_save))
+            FormSection(title = stringResource(R.string.schedule_section_when)) {
+                DayOfWeekDropdown(
+                    selectedDayOfWeek = uiState.dayOfWeek,
+                    onDayOfWeekSelected = onDayOfWeekChanged,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TimeField(
+                        label = stringResource(R.string.schedule_field_start_time),
+                        time = uiState.startTime,
+                        onTimeSelected = onStartTimeChanged,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TimeField(
+                        label = stringResource(R.string.schedule_field_end_time),
+                        time = uiState.endTime,
+                        onTimeSelected = onEndTimeChanged,
+                        isError = !uiState.endTime.isAfter(uiState.startTime),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (!uiState.endTime.isAfter(uiState.startTime)) {
+                    Text(
+                        text = stringResource(R.string.schedule_end_time_before_start),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+            FormSection(title = stringResource(R.string.schedule_section_class)) {
+                OutlinedTextField(
+                    value = uiState.subject,
+                    onValueChange = onSubjectChanged,
+                    label = { Text(text = stringResource(R.string.schedule_field_subject)) },
+                    singleLine = true,
+                    keyboardOptions =
+                        KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = uiState.room,
+                    onValueChange = onRoomChanged,
+                    label = { Text(text = stringResource(R.string.schedule_field_room)) },
+                    singleLine = true,
+                    keyboardOptions =
+                        KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            FormSection(title = stringResource(R.string.schedule_field_students)) {
+                StudentAssignmentSection(
+                    students = uiState.students,
+                    selectedStudentIds = uiState.selectedStudentIds,
+                    onStudentToggled = onStudentToggled,
+                )
             }
         }
     }
 }
 
+/** A titled, rounded group of form fields on the brightest surface color, standing out from the screen's tinted background. */
+@Composable
+private fun FormSection(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceBright,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.semantics { heading() },
+            )
+            content()
+        }
+    }
+}
+
 /**
- * Checkbox list assigning zero or more [students] to this slot. At least
- * one is required to save (see [ScheduleFormUiState.canSave]), so it's
- * always clear which student(s) an observation logged from this slot is
- * for.
+ * Chips assigning zero or more [students] to this slot. At least one is
+ * required to save (see [ScheduleFormUiState.canSave]), so it's always clear
+ * which student(s) an observation logged from this slot is for; a hint says
+ * so while none is picked.
  */
 @Composable
 private fun StudentAssignmentSection(
@@ -199,31 +276,44 @@ private fun StudentAssignmentSection(
     onStudentToggled: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (students.isEmpty()) {
+        Text(
+            text = stringResource(R.string.schedule_no_students_available),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier,
+        )
+        return
+    }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(text = stringResource(R.string.schedule_field_students), style = MaterialTheme.typography.titleSmall)
-        if (students.isEmpty()) {
-            Text(
-                text = stringResource(R.string.schedule_no_students_available),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        } else {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             students.forEach { student ->
                 val isSelected = student.id in selectedStudentIds
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .toggleable(
-                                value = isSelected,
-                                onValueChange = { onStudentToggled(student.id) },
-                                role = Role.Checkbox,
-                            ),
-                ) {
-                    Checkbox(checked = isSelected, onCheckedChange = null)
-                    Text(text = stringResource(R.string.student_display_name, student.firstName, student.className))
-                }
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onStudentToggled(student.id) },
+                    label = { Text(text = stringResource(R.string.student_display_name, student.firstName, student.className)) },
+                    leadingIcon =
+                        if (isSelected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                )
             }
+        }
+        if (selectedStudentIds.isEmpty()) {
+            Text(
+                text = stringResource(R.string.schedule_pick_a_student),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -286,14 +376,17 @@ private fun TimeField(
     label: String,
     time: LocalTime,
     onTimeSelected: (LocalTime) -> Unit,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
 ) {
     var isDialogVisible by remember { mutableStateOf(false) }
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = modifier) {
         OutlinedTextField(
             value = time.format(TIME_FORMATTER),
             onValueChange = {},
             readOnly = true,
             label = { Text(text = label) },
+            isError = isError,
             modifier = Modifier.fillMaxWidth(),
         )
         Box(
@@ -334,7 +427,11 @@ private fun TimeField(
     }
 }
 
-private fun DayOfWeek.displayName(): String = getDisplayName(TextStyle.FULL, Locale.getDefault())
+/** E.g. "Monday" (or "Lundi" in French), capitalized regardless of the locale's own casing convention. */
+private fun DayOfWeek.displayName(): String {
+    val locale = Locale.getDefault()
+    return getDisplayName(TextStyle.FULL, locale).replaceFirstChar { it.titlecase(locale) }
+}
 
 @Preview(showBackground = true)
 @Composable
