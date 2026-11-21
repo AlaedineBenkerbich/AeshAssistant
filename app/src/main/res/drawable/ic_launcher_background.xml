@@ -5,8 +5,11 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Brand gradient (Purple80 -> Purple40, see presentation/theme/Color.kt)
-         behind the heart mark in ic_launcher_foreground. -->
+    <!-- Tones 50 -> 20 of the Material purple palette the theme's
+         Purple80/Purple40 come from (see presentation/theme/Color.kt): dark
+         enough up to the top of the icon for every shape of
+         ic_launcher_foreground to keep at least a 3:1 contrast (WCAG non-text
+         contrast). -->
     <path android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
             <gradient
@@ -16,10 +19,10 @@
                 android:endY="108"
                 android:type="linear">
                 <item
-                    android:color="#D0BCFF"
+                    android:color="#7F67BE"
                     android:offset="0.0" />
                 <item
-                    android:color="#6650A4"
+                    android:color="#381E72"
                     android:offset="1.0" />
             </gradient>
         </aapt:attr>
