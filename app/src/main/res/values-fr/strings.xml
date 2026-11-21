@@ -58,10 +58,15 @@
 
     <!-- Settings -->
     <string name="settings_title">Réglages</string>
-    <string name="settings_message">Exportez une sauvegarde locale de vos données, ou restaurez-les à partir d\'un fichier de sauvegarde précédent.</string>
     <string name="settings_section_data_backup">Sauvegarde des données</string>
     <string name="settings_export_backup">Exporter la sauvegarde</string>
+    <string name="settings_export_backup_summary">Enregistrez vos élèves, observations et emploi du temps dans un fichier.</string>
     <string name="settings_restore_backup">Restaurer la sauvegarde</string>
+    <string name="settings_restore_backup_summary">Remplacez toutes les données de l\'app par celles d\'un fichier de sauvegarde.</string>
+    <string name="settings_section_about">À propos</string>
+    <string name="settings_privacy_title">Confidentialité</string>
+    <string name="settings_privacy_summary">Vos données restent sur cet appareil : aucun compte, aucun serveur. Seules les sauvegardes que vous exportez en sortent.</string>
+    <string name="settings_version_title">Version</string>
     <string name="settings_restore_confirm_title">Restaurer la sauvegarde ?</string>
     <string name="settings_restore_confirm_text">Cette action remplacera tous les élèves, rapports quotidiens et créneaux d\'emploi du temps actuels par le contenu du fichier sélectionné. Cette action est irréversible.</string>
     <string name="settings_choose_file">Choisir un fichier…</string>
@@ -80,10 +85,16 @@
 
     <!-- Student list -->
     <string name="student_list_title">Élèves</string>
-    <string name="cd_add_student">Ajouter un élève</string>
-    <string name="student_list_empty">Aucun élève pour le moment. Appuyez sur + pour en ajouter un.</string>
-    <string name="cd_delete_student">Supprimer %1$s</string>
-    <string name="delete_student_confirm_text">Cette action supprimera définitivement cet élève et ne peut pas être annulée.</string>
+    <string name="action_add_student">Ajouter un élève</string>
+    <string name="student_list_empty_title">Aucun élève pour l\'instant</string>
+    <string name="student_list_empty_message">Ajoutez les élèves que vous accompagnez pour noter leurs observations au quotidien et suivre leurs progrès.</string>
+    <plurals name="student_list_count">
+        <item quantity="one">%d élève</item>
+        <item quantity="many">%d élèves</item>
+        <item quantity="other">%d élèves</item>
+    </plurals>
+    <string name="cd_student_options">Options pour %1$s</string>
+    <string name="delete_student_confirm_text">Cette action supprimera définitivement cet élève ainsi que toutes ses observations quotidiennes. Elle ne peut pas être annulée.</string>
 
     <!-- Schedule form (add/edit) -->
     <string name="schedule_form_title_edit">Modifier le cours</string>

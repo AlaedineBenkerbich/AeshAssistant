@@ -1,35 +1,57 @@
 package fr.alaedine.aesh.presentation.settings
 
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
+import fr.alaedine.aesh.presentation.components.GroupedListItem
+import fr.alaedine.aesh.presentation.components.GroupedListItemSpacing
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
@@ -83,8 +105,11 @@ fun SettingsRoute(
             }
         }
 
+    val versionName = remember(context) { context.appVersionName() }
+
     SettingsScreen(
         uiState = uiState,
+        versionName = versionName,
         onTabSelected = onTabSelected,
         onExportClicked = { exportLauncher.launch(defaultBackupFileName()) },
         onRestoreClicked = viewModel::onRestoreClicked,
@@ -101,10 +126,31 @@ fun SettingsRoute(
 /** Suggested SAF file name for a new export, e.g. `aesh-backup-2026-09-26.json`. */
 private fun defaultBackupFileName(): String = "aesh-backup-${LocalDate.now()}.json"
 
+/** This build's version name (e.g. `2026.11.0`), as shown in the "About" section; empty if it can't be read. */
+private fun Context.appVersionName(): String =
+    runCatching {
+        val packageInfo =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, 0)
+            }
+        packageInfo.versionName
+    }.getOrNull().orEmpty()
+
+/**
+ * The app's settings as grouped rows, Android settings style: a "Data
+ * backup" section to export everything to a file or restore it from one
+ * (both disabled, with a progress bar, while one of them runs), and an
+ * "About" section reminding users that their data never leaves the device
+ * and showing [versionName].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
+    versionName: String,
     onTabSelected: (AeshBottomNavTab) -> Unit,
     onExportClicked: () -> Unit,
     onRestoreClicked: () -> Unit,
@@ -115,6 +161,7 @@ fun SettingsScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val statusMessageText = uiState.statusMessage?.let { resolvedStatusMessage(it) }
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     LaunchedEffect(uiState.statusMessage) {
         val message = statusMessageText ?: return@LaunchedEffect
@@ -123,10 +170,17 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.settings_title)) },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ),
+                scrollBehavior = scrollBehavior,
             )
         },
         bottomBar = {
@@ -142,36 +196,88 @@ fun SettingsScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(contentPadding)
-                    .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(GroupedListItemSpacing),
         ) {
-            Text(text = stringResource(R.string.settings_section_data_backup), style = MaterialTheme.typography.titleMedium)
-            Text(text = stringResource(R.string.settings_message), style = MaterialTheme.typography.bodyMedium)
-
-            Button(
-                onClick = onExportClicked,
-                enabled = !uiState.isProcessing,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(text = stringResource(R.string.settings_export_backup))
-            }
-
-            OutlinedButton(
-                onClick = onRestoreClicked,
-                enabled = !uiState.isProcessing,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(text = stringResource(R.string.settings_restore_backup))
-            }
-
+            SectionHeader(text = stringResource(R.string.settings_section_data_backup))
+            GroupedListItem(
+                index = 0,
+                count = 2,
+                onClick = onExportClicked.takeUnless { uiState.isProcessing },
+                headlineContent = { Text(text = stringResource(R.string.settings_export_backup)) },
+                supportingContent = { Text(text = stringResource(R.string.settings_export_backup_summary)) },
+                leadingContent = { SettingIcon(painter = painterResource(id = R.drawable.ic_export)) },
+            )
+            GroupedListItem(
+                index = 1,
+                count = 2,
+                onClick = onRestoreClicked.takeUnless { uiState.isProcessing },
+                headlineContent = { Text(text = stringResource(R.string.settings_restore_backup)) },
+                supportingContent = { Text(text = stringResource(R.string.settings_restore_backup_summary)) },
+                leadingContent = { SettingIcon(painter = painterResource(id = R.drawable.ic_restore)) },
+            )
             if (uiState.isProcessing) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp))
             }
+
+            SectionHeader(text = stringResource(R.string.settings_section_about))
+            GroupedListItem(
+                index = 0,
+                count = 2,
+                headlineContent = { Text(text = stringResource(R.string.settings_privacy_title)) },
+                supportingContent = { Text(text = stringResource(R.string.settings_privacy_summary)) },
+                leadingContent = { SettingIcon(painter = rememberVectorPainter(Icons.Default.Lock)) },
+            )
+            GroupedListItem(
+                index = 1,
+                count = 2,
+                headlineContent = { Text(text = stringResource(R.string.settings_version_title)) },
+                supportingContent = { Text(text = versionName) },
+                leadingContent = { SettingIcon(painter = rememberVectorPainter(Icons.Default.Info)) },
+            )
         }
     }
 
     if (uiState.isRestoreConfirmationVisible) {
         RestoreConfirmationDialog(onConfirm = onRestoreConfirmed, onDismiss = onRestoreCancelled)
+    }
+}
+
+/** Title above a group of settings rows. */
+@Composable
+private fun SectionHeader(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier =
+            modifier
+                .padding(start = 8.dp, top = 16.dp, bottom = 6.dp)
+                .semantics { heading() },
+    )
+}
+
+/** A settings row's icon, in a tinted circle. */
+@Composable
+private fun SettingIcon(painter: Painter) {
+    Box(
+        modifier =
+            Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.secondaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painter,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
@@ -194,6 +300,7 @@ private fun RestoreConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { Icon(painter = painterResource(id = R.drawable.ic_restore), contentDescription = null) },
         title = { Text(text = stringResource(R.string.settings_restore_confirm_title)) },
         text = {
             Text(text = stringResource(R.string.settings_restore_confirm_text))
@@ -217,6 +324,7 @@ private fun SettingsScreenPreview() {
     AeshAssistantTheme {
         SettingsScreen(
             uiState = SettingsUiState(),
+            versionName = "2026.11.0",
             onTabSelected = {},
             onExportClicked = {},
             onRestoreClicked = {},
@@ -233,6 +341,7 @@ private fun SettingsScreenProcessingPreview() {
     AeshAssistantTheme {
         SettingsScreen(
             uiState = SettingsUiState(isProcessing = true),
+            versionName = "2026.11.0",
             onTabSelected = {},
             onExportClicked = {},
             onRestoreClicked = {},
@@ -249,6 +358,7 @@ private fun SettingsScreenRestoreConfirmationPreview() {
     AeshAssistantTheme {
         SettingsScreen(
             uiState = SettingsUiState(isRestoreConfirmationVisible = true),
+            versionName = "2026.11.0",
             onTabSelected = {},
             onExportClicked = {},
             onRestoreClicked = {},
