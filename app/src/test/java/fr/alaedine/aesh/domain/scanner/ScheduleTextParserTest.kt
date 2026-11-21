@@ -129,4 +129,88 @@ class ScheduleTextParserTest {
         // Then
         assertEquals(DayOfWeek.TUESDAY, parsed.dayOfWeek)
     }
+
+    @Test
+    fun `should recognize times written with spaces around the h`() {
+        // When
+        val parsed = ScheduleTextParser.parse("Mardi : 8 h 30 - 9 h 25\nFrançais")
+
+        // Then
+        assertEquals(DayOfWeek.TUESDAY, parsed.dayOfWeek)
+        assertEquals(LocalTime.of(8, 30), parsed.startTime)
+        assertEquals(LocalTime.of(9, 25), parsed.endTime)
+        assertEquals("Français", parsed.subject)
+    }
+
+    @Test
+    fun `should not mistake a phone number, a duration or a dotted room number for a time`() {
+        // When
+        val parsed = ScheduleTextParser.parse("Collège Jean Moulin - Tél. 01.23.45.67.89\nEPS (2h)\nSalle 1.12")
+
+        // Then
+        assertNull(parsed.startTime)
+        assertNull(parsed.endTime)
+        assertEquals("1.12", parsed.room)
+        assertEquals("EPS (2h)", parsed.subject)
+    }
+
+    @Test
+    fun `should convert English 12-hour times`() {
+        // When
+        val parsed = ScheduleTextParser.parse("Friday 1:30 PM - 2:30 PM Art")
+
+        // Then
+        assertEquals(LocalTime.of(13, 30), parsed.startTime)
+        assertEquals(LocalTime.of(14, 30), parsed.endTime)
+        assertEquals("Art", parsed.subject)
+    }
+
+    @Test
+    fun `should take the start and end from times stacked around the subject`() {
+        // When
+        val parsed = ScheduleTextParser.parse("13h30\nSciences\n14h30")
+
+        // Then
+        assertEquals(LocalTime.of(13, 30), parsed.startTime)
+        assertEquals(LocalTime.of(14, 30), parsed.endTime)
+    }
+
+    @Test
+    fun `should not combine a lone time with the range of another class`() {
+        // When
+        val parsed = ScheduleTextParser.parse("14h00 Histoire\n8h30 - 9h25 Mathématiques")
+
+        // Then
+        assertEquals(LocalTime.of(8, 30), parsed.startTime)
+        assertEquals(LocalTime.of(9, 25), parsed.endTime)
+    }
+
+    @Test
+    fun `should recognize multi-part and numbered room names, and rooms written on their own`() {
+        // When / Then
+        assertEquals("B 204", ScheduleTextParser.parse("Anglais salle B 204").room)
+        assertEquals("12", ScheduleTextParser.parse("Musique Salle n°12").room)
+        assertEquals("CDI", ScheduleTextParser.parse("Lecture\nCDI").room)
+    }
+
+    @Test
+    fun `should not pick the teacher or the timetable title as the subject`() {
+        // When
+        val parsed =
+            ScheduleTextParser.parse(
+                "EMPLOI DU TEMPS CM1 - Semaine A\nLundi 8h30 - 9h25\nÉducation physique\nMme Bernard-Lefebvre\nGymnase",
+            )
+
+        // Then
+        assertEquals("Éducation physique", parsed.subject)
+        assertEquals("Gymnase", parsed.room)
+    }
+
+    @Test
+    fun `should recognize abbreviated days only when they can only mean a day`() {
+        // When / Then
+        assertEquals(DayOfWeek.THURSDAY, ScheduleTextParser.parse("Jeu. 10h-11h Chant").dayOfWeek)
+        assertEquals(DayOfWeek.MONDAY, ScheduleTextParser.parse("Lun Mar Mer Jeu Ven\n9h-10h Calcul").dayOfWeek)
+        assertNull(ScheduleTextParser.parse("Lecture de mon livre 9h-10h").dayOfWeek)
+    }
 }
