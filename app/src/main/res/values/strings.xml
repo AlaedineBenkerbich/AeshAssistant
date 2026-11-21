@@ -60,10 +60,15 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
-    <string name="settings_message">Export a local backup of your data, or restore it from a previous backup file.</string>
     <string name="settings_section_data_backup">Data backup</string>
     <string name="settings_export_backup">Export backup</string>
+    <string name="settings_export_backup_summary">Save your students, observations and schedule to a file.</string>
     <string name="settings_restore_backup">Restore backup</string>
+    <string name="settings_restore_backup_summary">Replace all of the app\'s data with a backup file.</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_privacy_title">Privacy</string>
+    <string name="settings_privacy_summary">Your data stays on this device: no account, no server. Only the backups you export ever leave it.</string>
+    <string name="settings_version_title">Version</string>
     <string name="settings_restore_confirm_title">Restore backup?</string>
     <string name="settings_restore_confirm_text">This will replace all current students, daily reports and schedule slots with the content of the selected file. This cannot be undone.</string>
     <string name="settings_choose_file">Choose file…</string>
@@ -82,10 +87,15 @@
 
     <!-- Student list -->
     <string name="student_list_title">Students</string>
-    <string name="cd_add_student">Add student</string>
-    <string name="student_list_empty">No students yet. Tap + to add one.</string>
-    <string name="cd_delete_student">Delete %1$s</string>
-    <string name="delete_student_confirm_text">This will permanently remove this student and cannot be undone.</string>
+    <string name="action_add_student">Add student</string>
+    <string name="student_list_empty_title">No students yet</string>
+    <string name="student_list_empty_message">Add the students you support to log their daily observations and follow how they\'re doing.</string>
+    <plurals name="student_list_count">
+        <item quantity="one">%d student</item>
+        <item quantity="other">%d students</item>
+    </plurals>
+    <string name="cd_student_options">Options for %1$s</string>
+    <string name="delete_student_confirm_text">This permanently deletes this student along with all of their daily observations. This cannot be undone.</string>
 
     <!-- Schedule form (add/edit) -->
     <string name="schedule_form_title_edit">Edit class</string>
