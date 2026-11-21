@@ -69,13 +69,14 @@ fun CameraPreview(
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener(
             {
-                val cameraProvider = cameraProviderFuture.get()
-                val preview =
-                    CameraPreviewUseCase.Builder().build().apply {
-                        setSurfaceProvider(previewView.surfaceProvider)
-                    }
-                val capture = ImageCapture.Builder().build()
                 try {
+                    // Inside the try: the provider itself fails to initialize when no camera can be reached.
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview =
+                        CameraPreviewUseCase.Builder().build().apply {
+                            setSurfaceProvider(previewView.surfaceProvider)
+                        }
+                    val capture = ImageCapture.Builder().build()
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner,
@@ -85,33 +86,38 @@ fun CameraPreview(
                     )
                     onImageCaptureReady(capture)
                 } catch (error: Exception) {
-                    // Binding failed (e.g. no camera hardware, or the
-                    // lifecycle is already destroyed): the shutter button
-                    // simply stays disabled since onImageCaptureReady was
-                    // never called.
+                    // Initializing or binding failed (e.g. no camera hardware,
+                    // or the lifecycle is already destroyed): the shutter
+                    // button simply stays disabled since onImageCaptureReady
+                    // was never called.
                 }
             },
             ContextCompat.getMainExecutor(context),
         )
         onDispose {
-            runCatching { cameraProviderFuture.get().unbindAll() }
+            // Only once initialized: get() would otherwise block the main thread until it is.
+            if (cameraProviderFuture.isDone) runCatching { cameraProviderFuture.get().unbindAll() }
         }
     }
 }
 
 /**
- * Captures a photo to a temporary cache file named after [filePrefix] and
- * hands it to [onCaptured] once saved. The caller owns the file from then
- * on and is responsible for deleting it: the photos can show a child's
- * personal information, so they must not outlive their use.
+ * Captures a photo to a temporary file named after [filePrefix] in
+ * [directory] and hands it to [onCaptured] once saved, or calls [onFailed]
+ * if it couldn't be taken. The caller owns the file from then on and is
+ * responsible for deleting it: the photos can show a child's personal
+ * information, so they must not outlive their use.
  */
 fun captureImage(
     context: Context,
     imageCapture: ImageCapture,
     filePrefix: String,
     onCaptured: (File) -> Unit,
+    directory: File = context.cacheDir,
+    onFailed: () -> Unit = {},
 ) {
-    val photoFile = File(context.cacheDir, "${filePrefix}_${System.currentTimeMillis()}.jpg")
+    directory.mkdirs()
+    val photoFile = File(directory, "${filePrefix}_${System.currentTimeMillis()}.jpg")
     val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
     imageCapture.takePicture(
         outputOptions,
@@ -123,7 +129,9 @@ fun captureImage(
 
             override fun onError(exception: ImageCaptureException) {
                 // Rare in practice (e.g. disk full, camera disconnected
-                // mid-capture); the user can simply try the shutter again.
+                // mid-capture): drop whatever part of the photo was written.
+                photoFile.delete()
+                onFailed()
             }
         },
     )

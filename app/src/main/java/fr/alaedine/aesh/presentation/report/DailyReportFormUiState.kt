@@ -48,6 +48,8 @@ const val NEUTRAL_LEVEL = 3
  * currently being sorted into the free-text fields by the on-device AI
  * model. The form is held back meanwhile (see [canSave]) so the sorted notes
  * can't land in the wrong report or after it was saved.
+ * @property isLoadingReport Whether the selected student and day's saved
+ * report, if any, is still being looked up (see [canReceiveNotes]).
  * @property statusMessage A one-shot user-facing message — how dictated or
  * photographed notes ended up in the fields, or why dictation failed —
  * `null` once shown.
@@ -67,6 +69,7 @@ data class DailyReportFormUiState(
     val isLoading: Boolean = true,
     val isSaved: Boolean = false,
     val isSortingNotes: Boolean = false,
+    val isLoadingReport: Boolean = false,
     val statusMessage: DailyReportStatusMessage? = null,
 ) {
     /** Whether this state represents editing an existing report for [date] rather than adding a new one. */
@@ -74,6 +77,13 @@ data class DailyReportFormUiState(
 
     /** Whether a student has been picked and the form can be submitted. */
     val canSave: Boolean get() = selectedStudent != null && !isSortingNotes
+
+    /**
+     * Whether dictated or scanned notes can be added now: they need a student
+     * to belong to, no other batch being sorted, and the selected day's
+     * saved report to be loaded already, since loading it replaces the fields.
+     */
+    val canReceiveNotes: Boolean get() = selectedStudent != null && !isSortingNotes && !isLoadingReport
 }
 
 /**

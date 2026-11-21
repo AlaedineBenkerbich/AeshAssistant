@@ -293,4 +293,124 @@ class SortObservationNotesUseCaseTest {
             // Then
             assertEquals("alice s'est calmée  avec le casque\n\nbonne fin de journée", result.notes.freeNotes)
         }
+
+    @Test
+    fun `should keep titles and other abbreviations in one piece when splitting the notes into lines`() =
+        runTest {
+            // Given
+            val generator = FakeAiTextGenerationRepository(Result.success("NOTES: 1"))
+            val useCase = SortObservationNotesUseCase(generator)
+
+            // When
+            useCase("Rendez-vous avec Mme. Dupont et le Dr. Martin. Elle a lu env. 10 minutes.")
+
+            // Then
+            val notesToSort = requireNotNull(generator.lastPrompt).substringAfter("Notes to sort\n")
+            assertEquals("[1] Rendez-vous avec Mme. Dupont et le Dr. Martin.\n[2] Elle a lu env. 10 minutes.\nAnswer:", notesToSort)
+        }
+
+    @Test
+    fun `should not read a bulleted list of line numbers as a range`() =
+        runTest {
+            // Given
+            val useCase = useCaseAnswering("OBSTACLES:\n- 1\n- 3\nHELPED:\n- 2\nNOTES: none")
+
+            // When
+            val result = useCase(threeLineNotes)
+
+            // Then
+            assertEquals(
+                ObservationNotes(
+                    obstacles = "Lina had trouble staying seated.\nGreat mood all morning.",
+                    supportStrategies = "The visual timer helped her.",
+                ),
+                assertIs<NotesSortingResult.Sorted>(result).notes,
+            )
+        }
+
+    @Test
+    fun `should understand a range of lines written in French`() =
+        runTest {
+            // Given
+            val useCase = useCaseAnswering("OBSTACLES : 1 à 2\nHELPED : aucune\nNOTES : 3")
+
+            // When
+            val result = useCase(threeLineNotes)
+
+            // Then
+            assertEquals("Lina had trouble staying seated.\nThe visual timer helped her.", result.notes.obstacles)
+            assertEquals("Great mood all morning.", result.notes.freeNotes)
+        }
+
+    @Test
+    fun `should only count the bracketed numbers when the model quotes the lines it files`() =
+        runTest {
+            // Given the quoted line itself contains a number ("2 times") that isn't a line number
+            val notes = "Lina refused to write 2 times.\nThe visual timer helped her.\nGreat mood all morning."
+            val useCase = useCaseAnswering("OBSTACLES:\n[1] Lina refused to write 2 times.\nHELPED: [2]\nNOTES: [3]")
+
+            // When
+            val result = useCase(notes)
+
+            // Then
+            assertEquals(
+                ObservationNotes(
+                    obstacles = "Lina refused to write 2 times.",
+                    supportStrategies = "The visual timer helped her.",
+                    freeNotes = "Great mood all morning.",
+                ),
+                assertIs<NotesSortingResult.Sorted>(result).notes,
+            )
+        }
+
+    @Test
+    fun `should ignore a second block of answers that repeats or invents an example`() =
+        runTest {
+            // Given
+            val useCase =
+                useCaseAnswering(
+                    "OBSTACLES: 1\nHELPED: 2\nNOTES: 3\n\n[1] Tom was restless.\nAnswer:\nOBSTACLES: 2, 3\nHELPED: none\nNOTES: 1",
+                )
+
+            // When
+            val result = useCase(threeLineNotes)
+
+            // Then
+            assertEquals(
+                ObservationNotes(
+                    obstacles = "Lina had trouble staying seated.",
+                    supportStrategies = "The visual timer helped her.",
+                    freeNotes = "Great mood all morning.",
+                ),
+                assertIs<NotesSortingResult.Sorted>(result).notes,
+            )
+        }
+
+    @Test
+    fun `should use the actual answer when a label is first named in a sentence`() =
+        runTest {
+            // Given
+            val useCase = useCaseAnswering("Here is how I would use OBSTACLES: and the other fields.\nOBSTACLES: 1\nHELPED: 2\nNOTES: 3")
+
+            // When
+            val result = useCase(threeLineNotes)
+
+            // Then
+            assertEquals("Lina had trouble staying seated.", result.notes.obstacles)
+            assertEquals("The visual timer helped her.", result.notes.supportStrategies)
+        }
+
+    @Test
+    fun `should keep the notes unsorted when the labels come with no line numbers at all`() =
+        runTest {
+            // Given
+            val useCase = useCaseAnswering("OBSTACLES: difficulties\nHELPED: what helped\nNOTES: the rest")
+
+            // When
+            val result = useCase(threeLineNotes)
+
+            // Then
+            val unsorted = assertIs<NotesSortingResult.Unsorted>(result)
+            assertIs<UnrecognizedSortingResponseException>(unsorted.cause)
+        }
 }

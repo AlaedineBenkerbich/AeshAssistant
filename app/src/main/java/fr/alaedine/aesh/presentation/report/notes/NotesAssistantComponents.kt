@@ -98,8 +98,9 @@ private fun AssistantActionButton(
 
 /**
  * Shown while the microphone is being listened to, with what has been
- * recognized so far. Dismissing it abandons the dictation; [onStopClicked]
- * ends it and keeps what was said.
+ * recognized so far. [onStopClicked] ends it and keeps what was said, and so
+ * does the back gesture; only [onCancelClicked] abandons it, so a stray tap
+ * outside the dialog can't throw a long dictation away.
  */
 @Composable
 fun DictationDialog(
@@ -108,7 +109,8 @@ fun DictationDialog(
     onCancelClicked: () -> Unit,
 ) {
     AlertDialog(
-        onDismissRequest = onCancelClicked,
+        onDismissRequest = onStopClicked,
+        properties = DialogProperties(dismissOnClickOutside = false),
         icon = { Icon(painter = painterResource(id = R.drawable.ic_mic), contentDescription = null) },
         title = { Text(text = stringResource(R.string.notes_dictation_title)) },
         text = {

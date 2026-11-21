@@ -12,8 +12,10 @@ import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerViewModel
 import fr.alaedine.aesh.presentation.settings.SettingsViewModel
 import fr.alaedine.aesh.presentation.student.StudentFormViewModel
 import fr.alaedine.aesh.presentation.student.StudentListViewModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import java.io.File
 import java.time.LocalDate
 
 /**
@@ -42,7 +44,7 @@ val presentationModule =
         // Both fill the observation form's free-text fields from dictated or photographed notes;
         // see `DailyReportFormRoute` and `NotesScannerRoute`.
         viewModel { DictationViewModel(get()) }
-        viewModel { NotesScannerViewModel(get()) }
+        viewModel { NotesScannerViewModel(get(), File(androidContext().cacheDir, NotesScannerViewModel.PHOTO_DIRECTORY_NAME)) }
         // The fourth parameter is the SavedStateHandle, which Koin creates for the screen's back stack entry.
         viewModel { EssReportViewModel(get(), get(), get(), get()) }
         viewModel { ScheduleListViewModel(get(), get()) }

@@ -350,4 +350,21 @@ class DictationViewModelTest {
             // Then a failed session doesn't leave the view model stuck listening
             assertEquals(2, repository.listenCallCount)
         }
+
+    @Test
+    fun `should keep what was heard when the recognizer ends with a blank result`() =
+        runTest {
+            // Given
+            val viewModel =
+                DictationViewModel(
+                    FakeSpeechRecognitionRepository(transcripts = listOf(partial("il a eu du mal à lire"), final(""))),
+                )
+
+            // When
+            viewModel.onStartClicked()
+
+            // Then
+            assertEquals("il a eu du mal à lire", viewModel.uiState.value.transcript)
+            assertNull(viewModel.uiState.value.error)
+        }
 }

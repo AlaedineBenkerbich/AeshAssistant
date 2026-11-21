@@ -90,8 +90,12 @@ class DailyReportFormViewModel(
         onStudentSelected(student)
     }
 
-    /** Picks [student] as the subject of this report, loading the currently selected date's existing report for them, if any. */
+    /**
+     * Picks [student] as the subject of this report, loading the currently selected date's existing report for them,
+     * if any. Picking the student already selected changes nothing, so it can't wipe what was typed or dictated.
+     */
     fun onStudentSelected(student: Student) {
+        if (student.id == _uiState.value.selectedStudent?.id) return
         abandonSortingNotes()
         _uiState.update {
             it.copy(
@@ -115,10 +119,11 @@ class DailyReportFormViewModel(
      * previous day. Dates after today are rejected — an observation can't
      * be logged for a day that hasn't happened yet — as a defensive
      * fallback; [DailyReportFormScreen]'s date picker already prevents
-     * picking one.
+     * picking one. Confirming the date already selected changes nothing, so
+     * it can't wipe what was typed or dictated.
      */
     fun onDateSelected(date: LocalDate) {
-        if (date.isAfter(LocalDate.now())) return
+        if (date.isAfter(LocalDate.now()) || date == _uiState.value.date) return
         abandonSortingNotes()
         _uiState.update {
             it.copy(
@@ -137,20 +142,23 @@ class DailyReportFormViewModel(
         loadReportFor(date = date, student = student)
     }
 
-    /** Loads [student]'s existing report for [date], if any, into the current form fields. */
+    /**
+     * Loads [student]'s existing report for [date], if any, into the current form fields. Notes can't be received
+     * meanwhile (see [DailyReportFormUiState.canReceiveNotes]): the loaded report would overwrite them.
+     */
     private fun loadReportFor(
         date: LocalDate,
         student: Student,
     ) {
+        _uiState.update { it.copy(isLoadingReport = true) }
         viewModelScope.launch {
             val existingReport = dailyReportRepository.getReportByDateAndStudent(date, student.id)
-            // Ignore a stale lookup if the user already switched to another student/date meanwhile.
-            val currentState = _uiState.value
-            if (existingReport == null || currentState.selectedStudent?.id != student.id || currentState.date != date) {
-                return@launch
-            }
             _uiState.update {
+                // Ignore a stale lookup if the user already switched to another student/date meanwhile.
+                if (it.selectedStudent?.id != student.id || it.date != date) return@update it
+                if (existingReport == null) return@update it.copy(isLoadingReport = false)
                 it.copy(
+                    isLoadingReport = false,
                     reportId = existingReport.id,
                     moodLevel = existingReport.moodLevel,
                     focusLevel = existingReport.focusLevel,
@@ -200,13 +208,13 @@ class DailyReportFormViewModel(
      * When sorting isn't possible the notes are added to the free notes
      * field as they are (see [NotesSortingResult.Unsorted]).
      *
-     * Ignored without a selected student, for blank notes, or while another
-     * batch is being sorted.
+     * Ignored for blank notes, and whenever the form can't take notes (see
+     * [DailyReportFormUiState.canReceiveNotes]): callers hold on to them
+     * until it can.
      */
     fun onRawNotesReceived(rawNotes: String) {
         val notes = rawNotes.trim()
-        val state = _uiState.value
-        if (notes.isEmpty() || state.selectedStudent == null || state.isSortingNotes) return
+        if (notes.isEmpty() || !_uiState.value.canReceiveNotes) return
 
         notesBeingSorted = notes
         _uiState.update { it.copy(isSortingNotes = true) }

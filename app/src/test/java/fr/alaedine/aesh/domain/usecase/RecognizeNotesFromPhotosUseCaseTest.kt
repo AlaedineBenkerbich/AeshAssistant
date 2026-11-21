@@ -108,4 +108,51 @@ class RecognizeNotesFromPhotosUseCaseTest {
             assertSame(unreadable, result.exceptionOrNull())
             assertEquals(listOf(firstPage, secondPage), recognizer.recognizedFiles)
         }
+
+    @Test
+    fun `should put back together a sentence the page cut over several lines`() =
+        runTest {
+            // Given
+            val page =
+                "Lina a eu du mal à rester assise pendant\nla lecture. Le minuteur visuel l'a aidée\nà se recentrer. Bonne humeur toute la\nmatinée."
+            val recognizer = FakeTextRecognitionRepository(resultsByFileName = mapOf("page-1.jpg" to Result.success(page)))
+
+            // When
+            val result = RecognizeNotesFromPhotosUseCase(recognizer)(listOf(firstPage))
+
+            // Then
+            assertEquals(
+                "Lina a eu du mal à rester assise pendant la lecture. Le minuteur visuel l'a aidée à se recentrer. " +
+                    "Bonne humeur toute la matinée.",
+                result.getOrNull(),
+            )
+        }
+
+    @Test
+    fun `should keep short notes on their own lines`() =
+        runTest {
+            // Given brief notes, one per line, without punctuation
+            val page = "A refusé d'écrire en dictée pendant la séance\nminuteur efficace\nbonne humeur"
+            val recognizer = FakeTextRecognitionRepository(resultsByFileName = mapOf("page-1.jpg" to Result.success(page)))
+
+            // When
+            val result = RecognizeNotesFromPhotosUseCase(recognizer)(listOf(firstPage))
+
+            // Then each line stays a note of its own, even after a line long enough to have been cut by the page
+            assertEquals(page, result.getOrNull())
+        }
+
+    @Test
+    fun `should not join a line to the previous one when it starts a new sentence`() =
+        runTest {
+            // Given
+            val page = "Lina a eu du mal à rester assise ce matin\nLe minuteur visuel l'a aidée"
+            val recognizer = FakeTextRecognitionRepository(resultsByFileName = mapOf("page-1.jpg" to Result.success(page)))
+
+            // When
+            val result = RecognizeNotesFromPhotosUseCase(recognizer)(listOf(firstPage))
+
+            // Then
+            assertEquals(page, result.getOrNull())
+        }
 }
