@@ -82,6 +82,7 @@
     <string name="student_form_first_name">Prénom</string>
     <string name="student_form_class">Classe</string>
     <string name="student_form_pps_goals">Objectifs PPS</string>
+    <string name="student_form_pps_goals_hint">Les objectifs du projet personnalisé de scolarisation (PPS) de l\'élève, un par ligne.</string>
 
     <!-- Student list -->
     <string name="student_list_title">Élèves</string>
@@ -106,12 +107,18 @@
     <string name="schedule_field_day">Jour</string>
     <string name="schedule_field_students">Élèves</string>
     <string name="schedule_no_students_available">Aucun élève pour le moment. Ajoutez-en un avant de créer un cours.</string>
+    <string name="schedule_section_when">Quand</string>
+    <string name="schedule_section_class">Cours</string>
+    <string name="schedule_end_time_before_start">L\'heure de fin doit être après l\'heure de début.</string>
+    <string name="schedule_pick_a_student">Choisissez au moins un élève : c\'est pour lui que seront notées les observations de ce cours.</string>
 
     <!-- Schedule list -->
-    <string name="schedule_list_title">Emploi du temps hebdomadaire</string>
+    <string name="schedule_list_title">Emploi du temps</string>
     <string name="cd_scan_schedule">Scanner un emploi du temps physique</string>
-    <string name="cd_add_schedule_slot">Ajouter un créneau</string>
-    <string name="schedule_list_empty">Aucun cours pour le moment. Appuyez sur + pour en ajouter un.</string>
+    <string name="action_add_class">Ajouter un cours</string>
+    <string name="action_scan_schedule">Scanner un emploi du temps papier</string>
+    <string name="schedule_list_empty_title">Aucun cours pour l\'instant</string>
+    <string name="schedule_list_empty_message">Ajoutez les cours de votre semaine et les élèves de chacun, ou scannez un emploi du temps papier pour aller plus vite. Le tableau de bord indiquera ensuite qui observer chaque jour.</string>
     <string name="cd_schedule_slot_options">Modifier ou supprimer %1$s</string>
     <string name="cd_edit_schedule_slot">Modifier %1$s</string>
     <string name="cd_delete_schedule_slot">Supprimer %1$s</string>

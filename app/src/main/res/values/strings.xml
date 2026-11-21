@@ -84,6 +84,7 @@
     <string name="student_form_first_name">First name</string>
     <string name="student_form_class">Class</string>
     <string name="student_form_pps_goals">PPS goals</string>
+    <string name="student_form_pps_goals_hint">The goals of the student\'s personalized schooling plan (PPS), one per line.</string>
 
     <!-- Student list -->
     <string name="student_list_title">Students</string>
@@ -107,12 +108,18 @@
     <string name="schedule_field_day">Day</string>
     <string name="schedule_field_students">Students</string>
     <string name="schedule_no_students_available">No students yet. Add one before creating a class.</string>
+    <string name="schedule_section_when">When</string>
+    <string name="schedule_section_class">Class</string>
+    <string name="schedule_end_time_before_start">The end time must be after the start time.</string>
+    <string name="schedule_pick_a_student">Pick at least one student: they\'re who this class\'s observations are for.</string>
 
     <!-- Schedule list -->
     <string name="schedule_list_title">Weekly schedule</string>
     <string name="cd_scan_schedule">Scan a physical schedule</string>
-    <string name="cd_add_schedule_slot">Add class slot</string>
-    <string name="schedule_list_empty">No classes yet. Tap + to add one.</string>
+    <string name="action_add_class">Add class</string>
+    <string name="action_scan_schedule">Scan a paper schedule</string>
+    <string name="schedule_list_empty_title">No classes yet</string>
+    <string name="schedule_list_empty_message">Add your week\'s classes and the students in each one, or scan a paper schedule to go faster. The dashboard then shows who needs an observation each day.</string>
     <string name="cd_schedule_slot_options">Edit or delete %1$s</string>
     <string name="cd_edit_schedule_slot">Edit %1$s</string>
     <string name="cd_delete_schedule_slot">Delete %1$s</string>
