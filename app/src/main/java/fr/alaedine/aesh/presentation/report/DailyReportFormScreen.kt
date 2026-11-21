@@ -1,19 +1,30 @@
 package fr.alaedine.aesh.presentation.report
 
 import android.Manifest
+import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -29,12 +40,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,9 +56,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
@@ -57,6 +79,7 @@ import fr.alaedine.aesh.presentation.report.notes.DictationViewModel
 import fr.alaedine.aesh.presentation.report.notes.NotesAssistantCard
 import fr.alaedine.aesh.presentation.report.notes.NotesSortingDialog
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
+import fr.alaedine.aesh.presentation.theme.AeshTheme
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -64,8 +87,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
-import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
 /** How long the success state stays visible before [DailyReportFormRoute] navigates back. */
@@ -207,11 +230,13 @@ fun DailyReportFormScreen(
         onStatusMessageShown()
     }
 
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.daily_report_title)) },
+                title = { Text(text = stringResource(R.string.daily_report_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -220,6 +245,23 @@ fun DailyReportFormScreen(
                         )
                     }
                 },
+                actions = {
+                    if (!uiState.isSaved) {
+                        Button(
+                            onClick = onSaveClicked,
+                            enabled = uiState.canSave,
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) {
+                            Text(text = stringResource(R.string.action_save))
+                        }
+                    }
+                },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ),
+                scrollBehavior = scrollBehavior,
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -240,7 +282,6 @@ fun DailyReportFormScreen(
                 onFreeNotesChanged = onFreeNotesChanged,
                 onDictateClicked = onDictateClicked,
                 onScanNotesClicked = onScanNotesClicked,
-                onSaveClicked = onSaveClicked,
                 modifier = Modifier.padding(contentPadding),
             )
         }
@@ -277,6 +318,13 @@ private fun resolvedStatusMessage(message: DailyReportStatusMessage): String =
             )
     }
 
+/**
+ * The observation itself, in rounded sections on the tinted background:
+ * who and when, then (once a student is picked) how the day went — four
+ * one-tap 1-to-5 scales (see [LevelSelector]) — the shortcuts to fill the
+ * free-text fields by voice or from photos, and those fields. Saving
+ * happens from the top bar.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DailyReportForm(
@@ -292,86 +340,113 @@ private fun DailyReportForm(
     onFreeNotesChanged: (String) -> Unit,
     onDictateClicked: () -> Unit,
     onScanNotesClicked: () -> Unit,
-    onSaveClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
             modifier
                 .fillMaxSize()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        DateField(date = uiState.date, onDateSelected = onDateSelected)
-
-        if (uiState.students.isEmpty() && !uiState.isLoading) {
-            Text(
-                text = stringResource(R.string.daily_report_empty_students),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        } else {
-            StudentDropdown(
-                students = uiState.students,
-                selectedStudent = uiState.selectedStudent,
-                onStudentSelected = onStudentSelected,
-            )
+        FormSection(title = stringResource(R.string.daily_report_section_who_when)) {
+            DateField(date = uiState.date, onDateSelected = onDateSelected)
+            if (uiState.students.isEmpty() && !uiState.isLoading) {
+                Text(
+                    text = stringResource(R.string.daily_report_empty_students),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                StudentDropdown(
+                    students = uiState.students,
+                    selectedStudent = uiState.selectedStudent,
+                    onStudentSelected = onStudentSelected,
+                )
+            }
         }
 
         if (uiState.selectedStudent != null) {
-            LevelSlider(
-                label = stringResource(R.string.daily_report_mood),
-                level = uiState.moodLevel,
-                onLevelChanged = onMoodLevelChanged,
-            )
-            LevelSlider(
-                label = stringResource(R.string.daily_report_focus),
-                level = uiState.focusLevel,
-                onLevelChanged = onFocusLevelChanged,
-            )
-            LevelSlider(
-                label = stringResource(R.string.daily_report_social_interactions),
-                level = uiState.socialInteractions,
-                onLevelChanged = onSocialInteractionsChanged,
-            )
-            LevelSlider(
-                label = stringResource(R.string.daily_report_autonomy),
-                level = uiState.autonomyLevel,
-                onLevelChanged = onAutonomyLevelChanged,
-            )
+            FormSection(title = stringResource(R.string.daily_report_section_day)) {
+                LevelSelector(
+                    label = stringResource(R.string.daily_report_mood),
+                    level = uiState.moodLevel,
+                    onLevelChanged = onMoodLevelChanged,
+                )
+                LevelSelector(
+                    label = stringResource(R.string.daily_report_focus),
+                    level = uiState.focusLevel,
+                    onLevelChanged = onFocusLevelChanged,
+                )
+                LevelSelector(
+                    label = stringResource(R.string.daily_report_social_interactions),
+                    level = uiState.socialInteractions,
+                    onLevelChanged = onSocialInteractionsChanged,
+                )
+                LevelSelector(
+                    label = stringResource(R.string.daily_report_autonomy),
+                    level = uiState.autonomyLevel,
+                    onLevelChanged = onAutonomyLevelChanged,
+                )
+            }
             NotesAssistantCard(
                 onDictateClicked = onDictateClicked,
                 onScanNotesClicked = onScanNotesClicked,
             )
-            OutlinedTextField(
-                value = uiState.obstacles,
-                onValueChange = onObstaclesChanged,
-                label = { Text(text = stringResource(R.string.daily_report_obstacles)) },
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = uiState.supportStrategies,
-                onValueChange = onSupportStrategiesChanged,
-                label = { Text(text = stringResource(R.string.daily_report_support_strategies)) },
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = uiState.freeNotes,
-                onValueChange = onFreeNotesChanged,
-                label = { Text(text = stringResource(R.string.daily_report_notes)) },
-                minLines = 3,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            FormSection(title = stringResource(R.string.daily_report_section_notes)) {
+                OutlinedTextField(
+                    value = uiState.obstacles,
+                    onValueChange = onObstaclesChanged,
+                    label = { Text(text = stringResource(R.string.daily_report_obstacles)) },
+                    minLines = 2,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = uiState.supportStrategies,
+                    onValueChange = onSupportStrategiesChanged,
+                    label = { Text(text = stringResource(R.string.daily_report_support_strategies)) },
+                    minLines = 2,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = uiState.freeNotes,
+                    onValueChange = onFreeNotesChanged,
+                    label = { Text(text = stringResource(R.string.daily_report_notes)) },
+                    minLines = 3,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
+    }
+}
 
-        Button(
-            onClick = onSaveClicked,
-            enabled = uiState.canSave,
-            modifier = Modifier.fillMaxWidth(),
+/** A titled, rounded group of form fields on the brightest surface color, standing out from the screen's tinted background. */
+@Composable
+private fun FormSection(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceBright,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(text = stringResource(R.string.action_save))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.semantics { heading() },
+            )
+            content()
         }
     }
 }
@@ -486,41 +561,100 @@ private fun StudentDropdown(
     }
 }
 
+/**
+ * A 1-to-5 scale picked in one tap: five emoji faces, from a hard day to a
+ * great one, the selected one highlighted, with its meaning ("Good") spelled
+ * out next to [label]. Read by screen readers as a group of radio buttons,
+ * each announcing its meaning.
+ */
 @Composable
-private fun LevelSlider(
+private fun LevelSelector(
     label: String,
     level: Int,
     onLevelChanged: (Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
-        Text(text = "$label  ${levelEmoji(level)}", style = MaterialTheme.typography.titleMedium)
-        Slider(
-            value = level.toFloat(),
-            onValueChange = { onLevelChanged(it.roundToInt()) },
-            valueRange = 1f..5f,
-            steps = 3,
-        )
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(levelLabelRes(level)),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            LEVELS.forEach { value ->
+                val isSelected = value == level
+                val valueLabel = stringResource(levelLabelRes(value))
+                val containerColor =
+                    if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(containerColor)
+                            .then(
+                                if (isSelected) {
+                                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
+                                } else {
+                                    Modifier
+                                },
+                            ).selectable(
+                                selected = isSelected,
+                                role = Role.RadioButton,
+                                onClick = { onLevelChanged(value) },
+                            ).semantics { contentDescription = valueLabel },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = levelEmoji(value),
+                        fontSize = if (isSelected) 24.sp else 20.sp,
+                        // Unselected faces are toned down so the chosen one stands out at a glance.
+                        modifier = Modifier.alpha(if (isSelected) 1f else 0.6f),
+                    )
+                }
+            }
+        }
     }
 }
+
+/** The values of every observation scale. */
+private val LEVELS = 1..5
 
 @Composable
 private fun SavedConfirmation(modifier: Modifier = Modifier) {
+    val success = AeshTheme.extendedColors.success
     Column(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            imageVector = Icons.Default.CheckCircle,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(64.dp),
-        )
-        Text(text = stringResource(R.string.daily_report_saved), style = MaterialTheme.typography.titleMedium)
+        Box(
+            modifier =
+                Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .background(success.container),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = success.onContainer,
+                modifier = Modifier.size(48.dp),
+            )
+        }
+        Text(text = stringResource(R.string.daily_report_saved), style = MaterialTheme.typography.titleLarge)
     }
 }
 
-/** Maps a 1-5 observation level to an emoji, giving each slider an at-a-glance visual scale. */
+/** Maps a 1-5 observation level to an emoji, giving each scale an at-a-glance visual meaning. */
 private fun levelEmoji(level: Int): String =
     when (level) {
         1 -> "😞"
@@ -530,7 +664,24 @@ private fun levelEmoji(level: Int): String =
         else -> "😄"
     }
 
-private fun formattedDate(date: LocalDate): String = date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()))
+/** Spells out what a 1-5 observation level means, in words that suit every scale of the form. */
+@StringRes
+private fun levelLabelRes(level: Int): Int =
+    when (level) {
+        1 -> R.string.daily_report_level_1
+        2 -> R.string.daily_report_level_2
+        3 -> R.string.daily_report_level_3
+        4 -> R.string.daily_report_level_4
+        else -> R.string.daily_report_level_5
+    }
+
+/** The full date in the user's language, e.g. "Friday, November 20, 2026" or "vendredi 20 novembre 2026", capitalized. */
+private fun formattedDate(date: LocalDate): String {
+    val locale = Locale.getDefault()
+    return date
+        .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
+        .replaceFirstChar { it.titlecase(locale) }
+}
 
 @Preview(showBackground = true)
 @Composable
