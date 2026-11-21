@@ -43,7 +43,8 @@ val presentationModule =
         // see `DailyReportFormRoute` and `NotesScannerRoute`.
         viewModel { DictationViewModel(get()) }
         viewModel { NotesScannerViewModel(get()) }
-        viewModel { EssReportViewModel(get(), get(), get()) }
+        // The fourth parameter is the SavedStateHandle, which Koin creates for the screen's back stack entry.
+        viewModel { EssReportViewModel(get(), get(), get(), get()) }
         viewModel { ScheduleListViewModel(get(), get()) }
         // Same nullable-id-as-injection-parameter pattern as `StudentFormViewModel`
         // above, plus an optional scanner pre-fill (both sourced from the

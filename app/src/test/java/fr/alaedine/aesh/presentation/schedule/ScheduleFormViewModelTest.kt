@@ -370,4 +370,26 @@ class ScheduleFormViewModelTest {
             // Then
             assertEquals(mathSlot.subject, viewModel.uiState.value.subject)
         }
+
+    @Test
+    fun `should give a scanned class a default length when only its start time was recognized`() =
+        runTest {
+            // Given
+            val student = Student(id = 1L, firstName = "Alice", className = "CE2")
+            val prefill = ParsedScheduleSlot(startTime = LocalTime.of(14, 0), subject = "Sciences")
+
+            // When
+            val viewModel =
+                ScheduleFormViewModel(
+                    FakeScheduleSlotRepository(),
+                    FakeStudentRepository(initialStudents = listOf(student)),
+                    scheduleSlotId = null,
+                    prefill = prefill,
+                )
+            viewModel.onStudentToggled(student.id)
+
+            // Then the form can be saved as is, instead of showing 14:00-09:00 with Save disabled
+            assertEquals(LocalTime.of(15, 0), viewModel.uiState.value.endTime)
+            assertTrue(viewModel.uiState.value.canSave)
+        }
 }

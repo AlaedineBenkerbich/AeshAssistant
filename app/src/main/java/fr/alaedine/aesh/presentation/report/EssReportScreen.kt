@@ -1,5 +1,6 @@
 package fr.alaedine.aesh.presentation.report
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -35,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,12 +46,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.domain.usecase.EssReportProgress
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
@@ -80,13 +85,21 @@ fun EssReportRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    // Titled after what the draft is about, which is known even right after the process was recreated.
+    val draft = uiState.draft
     val pdfTitle =
         stringResource(
             R.string.ess_report_pdf_title,
-            uiState.selectedStudent?.firstName.orEmpty(),
-            uiState.startDate.toString(),
-            uiState.endDate.toString(),
+            draft?.studentFirstName.orEmpty(),
+            (draft?.startDate ?: uiState.startDate).toString(),
+            (draft?.endDate ?: uiState.endDate).toString(),
         )
+
+    // Back would pop this tab and throw its state away; going back to the dashboard tab instead keeps the draft
+    // (and a running generation) for when the user comes back, like switching tabs does.
+    BackHandler(enabled = uiState.draft != null || uiState.isGenerating) {
+        onTabSelected(AeshBottomNavTab.Dashboard)
+    }
 
     val exportLauncher =
         rememberLauncherForActivityResult(
@@ -107,6 +120,9 @@ fun EssReportRoute(
         onStartDateSelected = viewModel::onStartDateSelected,
         onEndDateSelected = viewModel::onEndDateSelected,
         onGenerateClicked = viewModel::onGenerateClicked,
+        onCancelGenerationClicked = viewModel::onCancelGenerationClicked,
+        onRegenerateConfirmed = viewModel::onRegenerateConfirmed,
+        onRegenerateDismissed = viewModel::onRegenerateDismissed,
         onReportTextChanged = viewModel::onReportTextChanged,
         onExportClicked = { exportLauncher.launch(uiState.suggestedPdfFileName) },
         onStatusMessageShown = viewModel::onStatusMessageShown,
@@ -128,6 +144,9 @@ fun EssReportScreen(
     onStartDateSelected: (LocalDate) -> Unit,
     onEndDateSelected: (LocalDate) -> Unit,
     onGenerateClicked: () -> Unit,
+    onCancelGenerationClicked: () -> Unit,
+    onRegenerateConfirmed: () -> Unit,
+    onRegenerateDismissed: () -> Unit,
     onReportTextChanged: (String) -> Unit,
     onExportClicked: () -> Unit,
     onStatusMessageShown: () -> Unit,
@@ -219,13 +238,15 @@ fun EssReportScreen(
                 Text(
                     text =
                         stringResource(
-                            if (uiState.generatedText == null) R.string.ess_report_generate else R.string.ess_report_regenerate,
+                            if (uiState.draft == null) R.string.ess_report_generate else R.string.ess_report_regenerate,
                         ),
                 )
             }
 
             if (uiState.isGenerating) {
-                GeneratingIndicator()
+                GeneratingIndicator(progress = uiState.generationProgress, onCancelClicked = onCancelGenerationClicked)
+                // Android only lets the app on screen use on-device AI: a screen timeout would stop the generation.
+                KeepScreenOn()
             }
 
             val generatedText = uiState.generatedText
@@ -235,14 +256,20 @@ fun EssReportScreen(
                     onValueChange = onReportTextChanged,
                     label = { Text(text = stringResource(R.string.ess_report_label)) },
                     minLines = 8,
+                    // Read-only while a new draft is being generated, since that one will replace this text.
+                    enabled = !uiState.isGenerating,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Button(onClick = onExportClicked, modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = onExportClicked, enabled = !uiState.isGenerating, modifier = Modifier.fillMaxWidth()) {
                     Text(text = stringResource(R.string.ess_report_export_pdf))
                 }
             }
         }
+    }
+
+    if (uiState.isRegenerateConfirmationVisible) {
+        RegenerateConfirmationDialog(onConfirm = onRegenerateConfirmed, onDismiss = onRegenerateDismissed)
     }
 }
 
@@ -254,26 +281,77 @@ private fun resolvedStatusMessage(message: EssReportStatusMessage): String =
             stringResource(R.string.ess_report_no_reports_in_range, message.studentFirstName)
         is EssReportStatusMessage.AiFeatureUnavailable -> stringResource(R.string.ess_report_ai_unavailable)
         is EssReportStatusMessage.GenerationTimeout -> stringResource(R.string.ess_report_generation_timeout)
-        is EssReportStatusMessage.GenerationFailed ->
-            message.reason ?: stringResource(R.string.ess_report_generation_failed_fallback)
+        is EssReportStatusMessage.PromptTooLong -> stringResource(R.string.ess_report_prompt_too_long)
+        is EssReportStatusMessage.AiBusy -> stringResource(R.string.ess_report_ai_busy)
+        is EssReportStatusMessage.BackgroundUseBlocked -> stringResource(R.string.ess_report_background_use_blocked)
+        is EssReportStatusMessage.NotEnoughStorage -> stringResource(R.string.ess_report_not_enough_storage)
+        is EssReportStatusMessage.GenerationFailed -> stringResource(R.string.ess_report_generation_failed_fallback)
         is EssReportStatusMessage.ExportSuccess -> stringResource(R.string.ess_report_export_success)
-        is EssReportStatusMessage.ExportFailed -> stringResource(R.string.ess_report_export_failed, message.reason)
+        is EssReportStatusMessage.ExportFailed -> stringResource(R.string.ess_report_export_failed)
         is EssReportStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
     }
 
 @Composable
-private fun GeneratingIndicator(modifier: Modifier = Modifier) {
+private fun GeneratingIndicator(
+    progress: EssReportProgress?,
+    onCancelClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-        Text(
-            text = stringResource(R.string.ess_report_generating),
-            style = MaterialTheme.typography.bodySmall,
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.ess_report_generating),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            // A long period is summarized in several requests, each of which can take a while on-device.
+            if (progress != null && progress.stepCount > 1) {
+                Text(
+                    text = stringResource(R.string.ess_report_generating_step, progress.step, progress.stepCount),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        TextButton(onClick = onCancelClicked) {
+            Text(text = stringResource(R.string.action_cancel))
+        }
     }
+}
+
+/** Keeps the screen on for as long as this is composed. */
+@Composable
+private fun KeepScreenOn() {
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
+}
+
+@Composable
+private fun RegenerateConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.ess_report_regenerate_confirmation_title)) },
+        text = { Text(text = stringResource(R.string.ess_report_regenerate_confirmation_message)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(text = stringResource(R.string.ess_report_regenerate_confirmation_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.action_cancel))
+            }
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -391,6 +469,9 @@ private fun EssReportScreenPreview() {
             onStartDateSelected = {},
             onEndDateSelected = {},
             onGenerateClicked = {},
+            onCancelGenerationClicked = {},
+            onRegenerateConfirmed = {},
+            onRegenerateDismissed = {},
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},
@@ -408,14 +489,18 @@ private fun EssReportScreenGeneratingPreview() {
             uiState =
                 EssReportUiState(
                     students = listOf(alice),
-                    selectedStudent = alice,
+                    selectedStudentId = alice.id,
                     isLoadingStudents = false,
                     isGenerating = true,
+                    generationProgress = EssReportProgress(step = 2, stepCount = 4),
                 ),
             onStudentSelected = {},
             onStartDateSelected = {},
             onEndDateSelected = {},
             onGenerateClicked = {},
+            onCancelGenerationClicked = {},
+            onRegenerateConfirmed = {},
+            onRegenerateDismissed = {},
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},
@@ -433,17 +518,26 @@ private fun EssReportScreenWithReportPreview() {
             uiState =
                 EssReportUiState(
                     students = listOf(alice),
-                    selectedStudent = alice,
+                    selectedStudentId = alice.id,
                     isLoadingStudents = false,
-                    generatedText =
-                        "Alice showed steady improvement in focus over the period, with particularly " +
-                            "strong engagement during afternoon sessions. Social interactions remained positive " +
-                            "throughout, and mood stayed stable.",
+                    draft =
+                        EssReportDraft(
+                            text =
+                                "Alice showed steady improvement in focus over the period, with particularly " +
+                                    "strong engagement during afternoon sessions. Social interactions remained positive " +
+                                    "throughout, and mood stayed stable.",
+                            studentFirstName = alice.firstName,
+                            startDate = LocalDate.of(2026, 9, 1),
+                            endDate = LocalDate.of(2026, 11, 20),
+                        ),
                 ),
             onStudentSelected = {},
             onStartDateSelected = {},
             onEndDateSelected = {},
             onGenerateClicked = {},
+            onCancelGenerationClicked = {},
+            onRegenerateConfirmed = {},
+            onRegenerateDismissed = {},
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},
@@ -462,6 +556,9 @@ private fun EssReportScreenNoStudentsPreview() {
             onStartDateSelected = {},
             onEndDateSelected = {},
             onGenerateClicked = {},
+            onCancelGenerationClicked = {},
+            onRegenerateConfirmed = {},
+            onRegenerateDismissed = {},
             onReportTextChanged = {},
             onExportClicked = {},
             onStatusMessageShown = {},

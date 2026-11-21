@@ -173,15 +173,23 @@
     <string name="ess_report_invalid_date_range">La date de début doit être antérieure ou égale à la date de fin.</string>
     <string name="ess_report_generate">Générer le rapport</string>
     <string name="ess_report_regenerate">Régénérer le rapport</string>
-    <string name="ess_report_generating">Génération du rapport… le modèle d\'IA sur l\'appareil peut nécessiter un téléchargement la première fois.</string>
+    <string name="ess_report_generating">Génération du rapport… Gardez l\'application ouverte : le modèle d\'IA sur l\'appareil peut nécessiter un téléchargement la première fois.</string>
+    <string name="ess_report_generating_step">Étape %1$d sur %2$d</string>
     <string name="ess_report_label">Rapport</string>
     <string name="ess_report_export_pdf">Exporter en PDF</string>
     <string name="ess_report_no_reports_in_range">Aucun rapport quotidien trouvé pour %1$s sur la période sélectionnée.</string>
-    <string name="ess_report_ai_unavailable">L\'IA sur l\'appareil n\'est pas disponible sur cet appareil.</string>
+    <string name="ess_report_ai_unavailable">L\'IA sur l\'appareil n\'est pas disponible pour le moment : elle nécessite un appareil compatible dont les services d\'IA du système (AICore) sont à jour.</string>
     <string name="ess_report_generation_timeout">La génération du rapport a expiré. Le modèle d\'IA sur l\'appareil est peut-être encore en cours de téléchargement — vérifiez votre connexion et réessayez.</string>
     <string name="ess_report_generation_failed_fallback">Impossible de générer le rapport. Veuillez réessayer.</string>
+    <string name="ess_report_prompt_too_long">Cette période contient trop de notes pour l\'IA sur l\'appareil. Choisissez une période plus courte et réessayez.</string>
+    <string name="ess_report_ai_busy">L\'IA sur l\'appareil est occupée pour le moment. Patientez quelques minutes et réessayez.</string>
+    <string name="ess_report_background_use_blocked">La génération s\'est arrêtée car l\'application a quitté l\'écran. Gardez l\'application ouverte jusqu\'à ce que le rapport soit prêt, puis réessayez.</string>
+    <string name="ess_report_not_enough_storage">Espace de stockage insuffisant pour télécharger le modèle d\'IA sur l\'appareil. Libérez de l\'espace et réessayez.</string>
+    <string name="ess_report_regenerate_confirmation_title">Remplacer le rapport modifié ?</string>
+    <string name="ess_report_regenerate_confirmation_message">Un nouveau rapport remplacera celui-ci, ainsi que les modifications que vous y avez apportées.</string>
+    <string name="ess_report_regenerate_confirmation_confirm">Régénérer</string>
     <string name="ess_report_export_success">PDF exporté avec succès.</string>
-    <string name="ess_report_export_failed">Échec de l\'exportation : %1$s</string>
+    <string name="ess_report_export_failed">Impossible d\'exporter le PDF. Veuillez réessayer.</string>
     <!-- PDF document title, e.g. "ESS report — Alice (2026-08-01 to 2026-09-01)". -->
     <string name="ess_report_pdf_title">Rapport ESS — %1$s (%2$s au %3$s)</string>
 

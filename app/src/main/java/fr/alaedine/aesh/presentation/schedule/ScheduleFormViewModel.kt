@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 
 /**
  * Presentation-layer state holder for the add/edit schedule slot form.
@@ -137,17 +139,29 @@ class ScheduleFormViewModel(
     }
 }
 
-/** Overlays every recognized (non-null) [prefill] field onto this state, leaving the rest at their defaults. */
+/**
+ * Overlays every recognized (non-null) [prefill] field onto this state, leaving the rest at their defaults. The
+ * times always make a valid range: when only the start was recognized (or the end isn't after it), the class is
+ * given a default length, instead of a range Save silently refuses.
+ */
 private fun ScheduleFormUiState.withPrefill(prefill: ParsedScheduleSlot?): ScheduleFormUiState {
     if (prefill == null) return this
+    val prefilledStartTime = prefill.startTime ?: startTime
+    val prefilledEndTime =
+        (prefill.endTime ?: endTime).takeIf { it.isAfter(prefilledStartTime) }
+            ?: prefilledStartTime.plus(DEFAULT_PREFILLED_CLASS_LENGTH).takeIf { it.isAfter(prefilledStartTime) }
+            ?: LocalTime.MAX.truncatedTo(ChronoUnit.MINUTES)
     return copy(
         // A scanned physical schedule could recognize "dimanche"/"sunday" text, but classes can't be scheduled
         // on Sundays (see ScheduleFormViewModel.onDayOfWeekChanged), so that particular recognized value is
         // dropped here and the default day of week is kept instead.
         dayOfWeek = prefill.dayOfWeek?.takeIf { it != DayOfWeek.SUNDAY } ?: dayOfWeek,
-        startTime = prefill.startTime ?: startTime,
-        endTime = prefill.endTime ?: endTime,
+        startTime = prefilledStartTime,
+        endTime = prefilledEndTime,
         subject = prefill.subject ?: subject,
         room = prefill.room ?: room,
     )
 }
+
+/** Length given to a scanned class whose end time couldn't be recognized: the user corrects it on the form. */
+private val DEFAULT_PREFILLED_CLASS_LENGTH: Duration = Duration.ofHours(1)
