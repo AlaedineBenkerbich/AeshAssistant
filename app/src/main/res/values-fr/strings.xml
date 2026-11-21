@@ -27,10 +27,24 @@
     <string name="nav_label_schedule">Planning</string>
     <string name="nav_label_ess_report">ESS</string>
     <string name="nav_label_settings">Réglages</string>
-    <string name="cd_new_daily_report">Nouveau rapport quotidien</string>
+    <string name="home_new_observation">Nouvelle observation</string>
     <string name="cd_open_daily_report_for_student">Remplir l\'observation pour %1$s</string>
-    <string name="home_empty_schedule_today">Aucun cours prévu aujourd\'hui. Appuyez sur + pour enregistrer une observation manuellement.</string>
-    <string name="home_empty_schedule_other_day">Aucun cours prévu ce jour-là.</string>
+    <string name="home_empty_title_today">Aucun cours aujourd\'hui</string>
+    <string name="home_empty_title_other_day">Aucun cours ce jour-là</string>
+    <string name="home_empty_message">Les élèves de votre emploi du temps s\'affichent ici. Vous pouvez tout de même enregistrer une observation avec « Nouvelle observation ».</string>
+    <!-- Carte de synthèse du jour : nombre d\'observations remplies pour le jour sélectionné. -->
+    <string name="home_progress_title_today">Observations du jour</string>
+    <string name="home_progress_title_other_day">Observations de ce jour</string>
+    <string name="cd_home_progress">Observations remplies : %1$d sur %2$d</string>
+    <plurals name="home_progress_remaining">
+        <item quantity="one">Encore %d observation à remplir</item>
+        <item quantity="many">Encore %d observations à remplir</item>
+        <item quantity="other">Encore %d observations à remplir</item>
+    </plurals>
+    <string name="home_progress_all_done">Tout est à jour, bravo !</string>
+    <!-- Pastille de statut à côté de chaque élève sur le tableau de bord. -->
+    <string name="home_status_done">Remplie</string>
+    <string name="home_status_to_fill_in">À remplir</string>
     <string name="cd_report_completed">Rapport complété</string>
     <string name="cd_report_missing">Rapport manquant</string>
     <!-- Appended to a calendar day cell\'s accessibility label when it is the current day. -->
@@ -41,16 +55,6 @@
     <string name="cd_next_week">Semaine suivante</string>
     <string name="cd_pick_date">Choisir une date</string>
     <string name="action_today">Aujourd\'hui</string>
-    <plurals name="missing_reports_warning">
-        <item quantity="one">%d élève n\'a pas encore de rapport aujourd\'hui.</item>
-        <item quantity="many">%d élèves n\'ont pas encore de rapport aujourd\'hui.</item>
-        <item quantity="other">%d élèves n\'ont pas encore de rapport aujourd\'hui.</item>
-    </plurals>
-    <plurals name="missing_reports_warning_other_day">
-        <item quantity="one">%d élève n\'a pas encore de rapport pour ce jour.</item>
-        <item quantity="many">%d élèves n\'ont pas encore de rapport pour ce jour.</item>
-        <item quantity="other">%d élèves n\'ont pas encore de rapport pour ce jour.</item>
-    </plurals>
 
     <!-- Settings -->
     <string name="settings_title">Réglages</string>

@@ -4,6 +4,7 @@ import fr.alaedine.aesh.domain.model.Student
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.temporal.TemporalAdjusters
 
 /**
  * Immutable UI state rendered by [HomeScreen].
@@ -49,11 +50,42 @@ data class HomeUiState(
     private val distinctScheduledStudentStatuses: List<StudentReportStatus>
         get() = lessonBlocks.flatMap { it.studentStatuses }.distinctBy { it.student.id }
 
+    /** How many different students are scheduled on [date]: how many observations the day calls for. */
+    val scheduledStudentCount: Int get() = distinctScheduledStudentStatuses.size
+
+    /** How many students scheduled on [date] already have a report for it. */
+    val completedReportCount: Int get() = distinctScheduledStudentStatuses.count { it.hasReport }
+
     /** How many students scheduled on [date] still don't have a report for it. */
     val missingReportCount: Int get() = distinctScheduledStudentStatuses.count { !it.hasReport }
 
     /** Whether the dashboard should warn the user: at least one student scheduled on [date] is missing their report. */
     val hasMissingReports: Boolean get() = !isLoading && missingReportCount > 0
+
+    /**
+     * The days of [date]'s week (Monday first) the dashboard's calendar strip
+     * shows: Monday to Friday, plus any weekend day with a class scheduled
+     * (see [daysWithScheduledClasses]), plus [date] and [today] themselves
+     * when they fall on that week's weekend, so the selected day and the
+     * current one are always visible in the strip, even on a Saturday or a
+     * Sunday.
+     */
+    val weekDates: List<LocalDate>
+        get() {
+            val monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            return (0L until DAYS_PER_WEEK)
+                .map { monday.plusDays(it) }
+                .filter { day ->
+                    day.dayOfWeek <= DayOfWeek.FRIDAY ||
+                        day.dayOfWeek in daysWithScheduledClasses ||
+                        day == date ||
+                        day == today
+                }
+        }
+
+    private companion object {
+        const val DAYS_PER_WEEK = 7L
+    }
 }
 
 /**

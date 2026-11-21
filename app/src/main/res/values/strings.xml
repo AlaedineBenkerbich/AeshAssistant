@@ -28,10 +28,25 @@
     <string name="nav_label_schedule">Schedule</string>
     <string name="nav_label_ess_report">ESS</string>
     <string name="nav_label_settings">Settings</string>
-    <string name="cd_new_daily_report">New daily report</string>
+    <string name="home_new_observation">New observation</string>
     <string name="cd_open_daily_report_for_student">Fill out observation for %1$s</string>
-    <string name="home_empty_schedule_today">No classes scheduled for today. Tap + to log an observation manually.</string>
-    <string name="home_empty_schedule_other_day">No classes scheduled for this day.</string>
+    <string name="home_empty_title_today">No classes today</string>
+    <string name="home_empty_title_other_day">No classes that day</string>
+    <string name="home_empty_message">Students on your schedule show up here. You can still log an observation for anyone with “New observation”.</string>
+    <!-- Day summary card: how many of the selected day\'s observations are filled in. -->
+    <string name="home_progress_title_today">Today\'s observations</string>
+    <string name="home_progress_title_other_day">Observations for this day</string>
+    <!-- Filled-in observations over expected ones, e.g. "3/5", inside the summary card\'s progress ring. -->
+    <string name="home_progress_count" translatable="false">%1$d/%2$d</string>
+    <string name="cd_home_progress">Observations filled in: %1$d of %2$d</string>
+    <plurals name="home_progress_remaining">
+        <item quantity="one">%d observation left to fill in</item>
+        <item quantity="other">%d observations left to fill in</item>
+    </plurals>
+    <string name="home_progress_all_done">All caught up, nice work!</string>
+    <!-- Status chip next to each student on the dashboard. -->
+    <string name="home_status_done">Done</string>
+    <string name="home_status_to_fill_in">To fill in</string>
     <string name="cd_report_completed">Report completed</string>
     <string name="cd_report_missing">Report missing</string>
     <!-- Appended to a calendar day cell\'s accessibility label when it is the current day. -->
@@ -42,14 +57,6 @@
     <string name="cd_next_week">Next week</string>
     <string name="cd_pick_date">Pick a date</string>
     <string name="action_today">Today</string>
-    <plurals name="missing_reports_warning">
-        <item quantity="one">%d student is still missing today\'s report.</item>
-        <item quantity="other">%d students are still missing today\'s report.</item>
-    </plurals>
-    <plurals name="missing_reports_warning_other_day">
-        <item quantity="one">%d student is still missing a report for this day.</item>
-        <item quantity="other">%d students are still missing a report for this day.</item>
-    </plurals>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
