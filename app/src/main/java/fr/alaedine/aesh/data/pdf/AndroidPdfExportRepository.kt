@@ -20,12 +20,15 @@ class AndroidPdfExportRepository : PdfExportRepository {
         destination: OutputStream,
     ) {
         withContext(Dispatchers.IO) {
-            val document = PdfDocument()
-            try {
-                renderPages(document, title, body)
-                destination.use { document.writeTo(it) }
-            } finally {
-                document.close()
+            // Closed whatever happens, so a failed export never leaves the picked file open (and half-written).
+            destination.use { stream ->
+                val document = PdfDocument()
+                try {
+                    renderPages(document, title, body)
+                    document.writeTo(stream)
+                } finally {
+                    document.close()
+                }
             }
         }
     }
@@ -91,29 +94,7 @@ class AndroidPdfExportRepository : PdfExportRepository {
         text: String,
         paint: Paint,
         maxWidth: Float,
-    ): List<String> = text.split("\n").flatMap { paragraph -> wrapParagraph(paragraph, paint, maxWidth) }
-
-    private fun wrapParagraph(
-        paragraph: String,
-        paint: Paint,
-        maxWidth: Float,
-    ): List<String> {
-        if (paragraph.isBlank()) return listOf("")
-
-        val lines = mutableListOf<String>()
-        var currentLine = StringBuilder()
-        for (word in paragraph.split(" ")) {
-            val candidate = if (currentLine.isEmpty()) word else "$currentLine $word"
-            if (currentLine.isEmpty() || paint.measureText(candidate) <= maxWidth) {
-                currentLine = StringBuilder(candidate)
-            } else {
-                lines += currentLine.toString()
-                currentLine = StringBuilder(word)
-            }
-        }
-        if (currentLine.isNotEmpty()) lines += currentLine.toString()
-        return lines
-    }
+    ): List<String> = text.split("\n").flatMap { paragraph -> wrapParagraph(paragraph, maxWidth, paint::measureText) }
 
     /** One line of text to draw, in the [paint] style it belongs to, advancing the cursor by [lineHeight] first. */
     private data class RenderLine(

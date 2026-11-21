@@ -171,15 +171,23 @@
     <string name="ess_report_invalid_date_range">The start date must be on or before the end date.</string>
     <string name="ess_report_generate">Generate report</string>
     <string name="ess_report_regenerate">Regenerate report</string>
-    <string name="ess_report_generating">Generating report… the on-device AI model may need to download the first time.</string>
+    <string name="ess_report_generating">Generating report… Keep the app open: the on-device AI model may need to download the first time.</string>
+    <string name="ess_report_generating_step">Step %1$d of %2$d</string>
     <string name="ess_report_label">Report</string>
     <string name="ess_report_export_pdf">Export as PDF</string>
     <string name="ess_report_no_reports_in_range">No daily reports found for %1$s in the selected period.</string>
-    <string name="ess_report_ai_unavailable">On-device AI isn\'t available on this device.</string>
+    <string name="ess_report_ai_unavailable">On-device AI isn\'t available on this device for now: it needs a compatible device whose system AI services (AICore) are up to date.</string>
     <string name="ess_report_generation_timeout">Report generation timed out. The on-device AI model may still be downloading — check your connection and try again.</string>
     <string name="ess_report_generation_failed_fallback">Couldn\'t generate the report. Please try again.</string>
+    <string name="ess_report_prompt_too_long">This period has too many notes for the on-device AI. Choose a shorter period and try again.</string>
+    <string name="ess_report_ai_busy">The on-device AI is busy right now. Wait a few minutes and try again.</string>
+    <string name="ess_report_background_use_blocked">Generation stopped because the app left the screen. Keep the app open until the report is ready, then try again.</string>
+    <string name="ess_report_not_enough_storage">Not enough free storage to download the on-device AI model. Free up some space and try again.</string>
+    <string name="ess_report_regenerate_confirmation_title">Replace your edited report?</string>
+    <string name="ess_report_regenerate_confirmation_message">A new report will replace this one, along with the changes you made to it.</string>
+    <string name="ess_report_regenerate_confirmation_confirm">Regenerate</string>
     <string name="ess_report_export_success">PDF exported successfully.</string>
-    <string name="ess_report_export_failed">Export failed: %1$s</string>
+    <string name="ess_report_export_failed">Couldn\'t export the PDF. Please try again.</string>
     <!-- PDF document title, e.g. "ESS report — Alice (2026-08-01 to 2026-09-01)". -->
     <string name="ess_report_pdf_title">ESS report — %1$s (%2$s to %3$s)</string>
 
