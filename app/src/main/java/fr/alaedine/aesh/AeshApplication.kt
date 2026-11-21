@@ -4,8 +4,11 @@ import android.app.Application
 import com.google.android.material.color.DynamicColors
 import fr.alaedine.aesh.di.appModules
 import fr.alaedine.aesh.domain.reminder.ReminderScheduler
+import fr.alaedine.aesh.presentation.report.notes.NotesScannerViewModel
+import fr.alaedine.aesh.presentation.report.notes.deleteLeftoverNotesPhotos
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import java.io.File
 
 /**
  * Entry point that bootstraps Koin with every module in [appModules] so
@@ -29,5 +32,8 @@ class AeshApplication : Application() {
                 modules(appModules)
             }
         koinApp.koin.get<ReminderScheduler>().scheduleDaily()
+        // Photos of notes left behind by a scan the app was killed in the middle of: they can show a child's personal
+        // information, and no scan can be running yet.
+        deleteLeftoverNotesPhotos(File(cacheDir, NotesScannerViewModel.PHOTO_DIRECTORY_NAME))
     }
 }

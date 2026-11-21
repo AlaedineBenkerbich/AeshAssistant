@@ -76,8 +76,12 @@ class DictationViewModel(
         val failure =
             try {
                 speechRecognitionRepository.listen().collect { transcript ->
-                    heardSoFar = transcript.text
-                    if (!transcript.isFinal) _uiState.update { it.copy(partialTranscript = transcript.text) }
+                    // Recognizers sometimes end with a blank result (or blank partials) after showing what they heard:
+                    // that must not erase it.
+                    if (transcript.text.isNotBlank()) heardSoFar = transcript.text
+                    if (!transcript.isFinal && transcript.text.isNotBlank()) {
+                        _uiState.update { it.copy(partialTranscript = transcript.text) }
+                    }
                 }
                 null
             } catch (error: CancellationException) {

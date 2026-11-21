@@ -2,7 +2,6 @@ package fr.alaedine.aesh.data.di
 
 import fr.alaedine.aesh.data.scanner.MlKitTextRecognitionRepository
 import fr.alaedine.aesh.domain.repository.TextRecognitionRepository
-import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 /**
@@ -15,5 +14,5 @@ import org.koin.dsl.module
  */
 val scannerModule =
     module {
-        single<TextRecognitionRepository> { MlKitTextRecognitionRepository(androidContext()) }
+        single<TextRecognitionRepository> { MlKitTextRecognitionRepository() }
     }

@@ -170,7 +170,7 @@
     <string name="notes_sorting_description">Le modèle d\'IA sur l\'appareil peut nécessiter un téléchargement la première fois.</string>
     <string name="notes_sorting_skip">Ajouter sans trier</string>
     <string name="notes_filled_in">Notes ajoutées aux champs ci-dessous. Vérifiez-les avant d\'enregistrer.</string>
-    <string name="notes_added_unsorted_ai_unavailable">L\'IA sur l\'appareil n\'est pas disponible sur cet appareil : vos notes ont été ajoutées à Notes sans être triées.</string>
+    <string name="notes_added_unsorted_ai_unavailable">L\'IA sur l\'appareil n\'est pas disponible pour le moment : vos notes ont été ajoutées à Notes sans être triées.</string>
     <string name="notes_added_unsorted_timeout">Le tri a pris trop de temps (le modèle d\'IA sur l\'appareil est peut-être encore en cours de téléchargement) : vos notes ont été ajoutées à Notes sans être triées.</string>
     <string name="notes_added_unsorted_failed">Impossible de trier vos notes automatiquement : elles ont été ajoutées à Notes telles quelles.</string>
     <string name="notes_added_unsorted_skipped">Vos notes ont été ajoutées à Notes sans être triées.</string>
@@ -194,6 +194,7 @@
     <string name="notes_scanner_done">Terminer</string>
     <string name="notes_scanner_no_text_recognized">Aucun texte reconnu. Réessayez avec un meilleur éclairage ou une meilleure mise au point.</string>
     <string name="notes_scanner_read_failed">Impossible de lire les photos. Veuillez réessayer.</string>
+    <string name="notes_scanner_capture_failed">Impossible de prendre la photo. Veuillez réessayer.</string>
 
     <!-- ESS report -->
     <string name="ess_report_title">Rapport ESS</string>

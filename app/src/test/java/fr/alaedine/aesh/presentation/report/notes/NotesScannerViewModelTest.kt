@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import java.io.File
+import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -30,6 +31,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class NotesScannerViewModelTest {
     private val createdPhotos = mutableListOf<File>()
+    private val photoDirectory: File = Files.createTempDirectory("notes-scans").toFile()
 
     @BeforeTest
     fun setMainDispatcher() {
@@ -40,13 +42,14 @@ class NotesScannerViewModelTest {
     fun resetMainDispatcher() {
         Dispatchers.resetMain()
         createdPhotos.forEach { it.delete() }
+        photoDirectory.deleteRecursively()
     }
 
     /** A real (empty) file, since the view model is responsible for deleting the photos it is given. */
     private fun photo(): File = File.createTempFile("notes-scan", ".jpg").also { createdPhotos += it }
 
     private fun viewModelReading(result: Result<String>) =
-        NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(FakeTextRecognitionRepository(result)))
+        NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(FakeTextRecognitionRepository(result)), photoDirectory)
 
     @Test
     fun `should keep the photos in the order they were captured when several are taken`() =
@@ -112,7 +115,7 @@ class NotesScannerViewModelTest {
         runTest {
             // Given
             val recognizer = FakeTextRecognitionRepository(Result.success("Bonne lecture"))
-            val viewModel = NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(recognizer))
+            val viewModel = NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(recognizer), photoDirectory)
             val first = photo()
             val second = photo()
             viewModel.onPhotoCaptured(first)
@@ -191,7 +194,7 @@ class NotesScannerViewModelTest {
         runTest {
             // Given
             val recognizer = FakeTextRecognitionRepository(Result.success("Bonne lecture"))
-            val viewModel = NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(recognizer))
+            val viewModel = NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(recognizer), photoDirectory)
 
             // When
             viewModel.onDoneClicked()
@@ -254,7 +257,7 @@ class NotesScannerViewModelTest {
             val store = ViewModelStore()
             val factory =
                 viewModelFactory {
-                    initializer { NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(FakeTextRecognitionRepository())) }
+                    initializer { NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(FakeTextRecognitionRepository()), photoDirectory) }
                 }
             val viewModel = ViewModelProvider.create(store, factory)[NotesScannerViewModel::class]
             val first = photo()
@@ -268,5 +271,65 @@ class NotesScannerViewModelTest {
             // Then
             assertFalse(first.exists())
             assertFalse(second.exists())
+        }
+
+    @Test
+    fun `should not let the scan be finished while a photo is still being saved`() =
+        runTest {
+            // Given
+            val viewModel = viewModelReading(Result.success("Page 1"))
+            viewModel.onPhotoCaptured(photo())
+
+            // When
+            viewModel.onCaptureStarted()
+
+            // Then
+            assertFalse(viewModel.uiState.value.canFinish)
+        }
+
+    @Test
+    fun `should read the late photo too once it is saved`() =
+        runTest {
+            // Given
+            val recognizer = FakeTextRecognitionRepository(Result.success("Page"))
+            val viewModel = NotesScannerViewModel(RecognizeNotesFromPhotosUseCase(recognizer), photoDirectory)
+            viewModel.onPhotoCaptured(photo())
+            viewModel.onCaptureStarted()
+
+            // When
+            viewModel.onPhotoCaptured(photo())
+            viewModel.onDoneClicked()
+
+            // Then
+            assertEquals("Page\nPage", viewModel.uiState.value.recognizedNotes)
+        }
+
+    @Test
+    fun `should report a photo that could not be taken`() =
+        runTest {
+            // Given
+            val viewModel = viewModelReading(Result.success("Page 1"))
+            viewModel.onPhotoCaptured(photo())
+            viewModel.onCaptureStarted()
+
+            // When
+            viewModel.onCaptureFailed()
+
+            // Then
+            assertEquals(NotesScannerError.CaptureFailed, viewModel.uiState.value.error)
+            assertTrue(viewModel.uiState.value.canFinish)
+        }
+
+    @Test
+    fun `should delete the photos left behind by an unfinished scan when the scanner opens`() =
+        runTest {
+            // Given a photo of a scan the app was killed in the middle of
+            val leftover = File(photoDirectory, "observation_notes_1.jpg").apply { writeText("jpeg") }
+
+            // When
+            viewModelReading(Result.success("Page 1"))
+
+            // Then
+            assertFalse(leftover.exists())
         }
 }

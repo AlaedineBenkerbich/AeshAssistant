@@ -3,7 +3,9 @@ package fr.alaedine.aesh.presentation.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -101,7 +103,9 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
             DailyReportFormRoute(
                 studentId = destination.studentId,
                 date = destination.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
-                onNavigateBack = { navController.popBackStack() },
+                // Dropped once the form is leaving: a back tap during the post-save delay (or a double tap) would
+                // otherwise pop the dashboard too.
+                onNavigateBack = dropUnlessResumed { navController.popBackStack() },
                 // Single top: a double tap mustn't stack a second scanner, which would hand its result to the first
                 // scanner instead of this form, losing the scanned notes.
                 onScanNotes = { navController.navigate(AeshDestination.NotesScanner) { launchSingleTop = true } },
@@ -149,16 +153,20 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
                         popUpTo(AeshDestination.ScheduleScanner) { inclusive = true }
                     }
                 },
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = dropUnlessResumed { navController.popBackStack() },
             )
         }
-        composable<AeshDestination.NotesScanner> {
+        composable<AeshDestination.NotesScanner> { backStackEntry ->
             NotesScannerRoute(
                 onNotesScanned = { notes ->
-                    navController.previousBackStackEntry?.savedStateHandle?.set(SCANNED_NOTES_RESULT_KEY, notes)
-                    navController.popBackStack()
+                    // Once the scanner is leaving (e.g. back was tapped as the photos finished being read), popping
+                    // again would close the observation form beneath it, losing the form and the notes.
+                    if (backStackEntry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                        navController.previousBackStackEntry?.savedStateHandle?.set(SCANNED_NOTES_RESULT_KEY, notes)
+                        navController.popBackStack()
+                    }
                 },
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = dropUnlessResumed { navController.popBackStack() },
             )
         }
     }

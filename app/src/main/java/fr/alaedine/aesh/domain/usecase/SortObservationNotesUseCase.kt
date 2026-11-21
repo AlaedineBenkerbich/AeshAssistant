@@ -67,32 +67,44 @@ class SortObservationNotesUseCase(
 
     /**
      * @return for each line, the field the model filed it under ([NotesField.Notes] when it left a line
-     * out, so nothing is lost), or `null` when the answer doesn't mention any field at all.
+     * out, so nothing is lost), or `null` when the answer doesn't say which lines go in any field.
      */
     private fun parseFieldByLine(
         response: String,
         lineCount: Int,
     ): List<NotesField>? {
         val labels = FIELD_LABEL_REGEX.findAll(response).toList()
-        if (labels.isEmpty()) return null
-
-        val lineNumbersByField = NotesField.entries.associateWith { mutableSetOf<Int>() }
+        val lineNumbersByField = mutableMapOf<NotesField, Set<Int>>()
         labels.forEachIndexed { index, label ->
+            val field = NotesField.fromLabel(label.groupValues[1])
+            // Only a field's first actual answer counts: a label merely named in a sentence has no line numbers,
+            // and a later block is the model repeating itself or making up another example, not its answer.
+            if (field in lineNumbersByField) return@forEachIndexed
             val answerEnd = labels.getOrNull(index + 1)?.range?.first ?: response.length
             val answer = response.substring(label.range.last + 1, answerEnd)
-            lineNumbersByField.getValue(NotesField.fromLabel(label.groupValues[1])) += parseLineNumbers(answer, lineCount)
+            val lineNumbers = parseLineNumbers(answer, lineCount)
+            if (lineNumbers.isNotEmpty() || NO_LINES_REGEX.containsMatchIn(answer)) lineNumbersByField[field] = lineNumbers
         }
+        if (lineNumbersByField.isEmpty()) return null
+
         // A line the model filed twice goes to the first field in declaration order, whatever the answer's order.
         return List(lineCount) { index ->
-            NotesField.entries.firstOrNull { (index + 1) in lineNumbersByField.getValue(it) } ?: NotesField.Notes
+            NotesField.entries.firstOrNull { (index + 1) in lineNumbersByField[it].orEmpty() } ?: NotesField.Notes
         }
     }
 
-    /** Reads "1, 4", "2 and 5" or "3-5" style answers, ignoring numbers that aren't a line of the notes. */
+    /**
+     * Reads "1, 4", "2 and 5", "3-5" or "1 à 3" style answers, ignoring numbers that aren't a line of the notes.
+     * When the answer quotes lines ("[4] Elle a refusé 2 fois…"), only their bracketed numbers count, not the
+     * numbers in their text.
+     */
     private fun parseLineNumbers(
         answer: String,
         lineCount: Int,
     ): Set<Int> {
+        val bracketedLineNumbers = BRACKETED_LINE_NUMBER_REGEX.findAll(answer).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
+        if (bracketedLineNumbers.isNotEmpty()) return bracketedLineNumbers.filterTo(mutableSetOf()) { it in 1..lineCount }
+
         val lineNumbers = mutableSetOf<Int>()
         val withoutRanges =
             LINE_RANGE_REGEX.replace(answer) { range ->
@@ -135,13 +147,19 @@ class SortObservationNotesUseCase(
         val SORTING_TIMEOUT = 60.seconds
 
         // A sentence ends at ".", "!", "?" or "…" followed by a capitalized word or a number; requiring two
-        // letters before the punctuation keeps abbreviations such as "M. Durand" in one piece.
-        val SENTENCE_BOUNDARY_REGEX = Regex("""(?<=[\p{L}\p{N}]{2}[.!?…])\s+(?=[\p{Lu}\p{N}])""")
+        // letters before the punctuation keeps abbreviations such as "M. Durand" in one piece, and longer
+        // abbreviations of titles and the like ("Mme. Dupont", "le Dr. Martin", "env. 10 minutes") are listed.
+        const val ABBREVIATIONS = "Mme|Mmes|Mlle|Mlles|Mr|Mrs|Ms|Dr|Pr|St|Ste|[Ee]nv|[Cc]f|[Ee]x"
+        val SENTENCE_BOUNDARY_REGEX = Regex("""(?<=[\p{L}\p{N}]{2}[.!?…])(?<!\b(?:$ABBREVIATIONS)\.)\s+(?=[\p{Lu}\p{N}])""")
 
         // "OBSTACLES:", also when the model decorates it ("**Obstacles:**", "- OBSTACLES =").
         val FIELD_LABEL_REGEX = Regex("""\b(OBSTACLES|HELPED|NOTES)\b\W{0,4}?[:=]""", RegexOption.IGNORE_CASE)
-        val LINE_RANGE_REGEX = Regex("""(\d+)\s*(?:-|–|—|to)\s*(\d+)""", RegexOption.IGNORE_CASE)
+
+        // Ranges stay on one line: across a line break, "1\n- 4" is a bulleted list of two lines, not lines 1 to 4.
+        val LINE_RANGE_REGEX = Regex("""(\d+)[ \t]*(?:-|–|—|to|à|au)[ \t]*(\d+)""", RegexOption.IGNORE_CASE)
+        val BRACKETED_LINE_NUMBER_REGEX = Regex("""\[(\d+)]""")
         val NUMBER_REGEX = Regex("""\d+""")
+        val NO_LINES_REGEX = Regex("""\b(?:none|nothing|aucune?|rien)\b""", RegexOption.IGNORE_CASE)
 
         val PROMPT_INSTRUCTIONS =
             """

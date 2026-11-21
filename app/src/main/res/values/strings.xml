@@ -171,7 +171,7 @@
     <string name="notes_sorting_description">The on-device AI model may need to download the first time.</string>
     <string name="notes_sorting_skip">Add without sorting</string>
     <string name="notes_filled_in">Notes added to the fields below. Please check them before saving.</string>
-    <string name="notes_added_unsorted_ai_unavailable">On-device AI isn\'t available on this device, so your notes were added to Notes without being sorted.</string>
+    <string name="notes_added_unsorted_ai_unavailable">On-device AI isn\'t available on this device for now, so your notes were added to Notes without being sorted.</string>
     <string name="notes_added_unsorted_timeout">Sorting took too long (the on-device AI model may still be downloading), so your notes were added to Notes without being sorted.</string>
     <string name="notes_added_unsorted_failed">Couldn\'t sort your notes automatically, so they were added to Notes as they are.</string>
     <string name="notes_added_unsorted_skipped">Your notes were added to Notes without being sorted.</string>
@@ -194,6 +194,7 @@
     <string name="notes_scanner_done">Done</string>
     <string name="notes_scanner_no_text_recognized">No text recognized. Try again with better lighting or focus.</string>
     <string name="notes_scanner_read_failed">Couldn\'t read the photos. Please try again.</string>
+    <string name="notes_scanner_capture_failed">Couldn\'t take the photo. Please try again.</string>
 
     <!-- ESS report -->
     <string name="ess_report_title">ESS report</string>

@@ -20,16 +20,40 @@ import java.io.File
  *
  * Owns the photo files it is given and never lets one outlive its use: they
  * are deleted once read, when removed, and when the scanner is left.
+ *
+ * @param photoDirectory Where the photos are taken (a cache directory of
+ * their own). Anything already there when the scanner opens was left behind
+ * by a scan that never finished (the app was killed, or a photo was still
+ * being saved when the scanner was left), so it is deleted.
  */
 class NotesScannerViewModel(
     private val recognizeNotesFromPhotos: RecognizeNotesFromPhotosUseCase,
+    val photoDirectory: File,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(NotesScannerUiState())
     val uiState: StateFlow<NotesScannerUiState> = _uiState.asStateFlow()
 
+    init {
+        deleteLeftoverNotesPhotos(photoDirectory)
+    }
+
+    /** Notes that a photo is being taken, so the scan can't be finished before it's saved (see [onPhotoCaptured]). */
+    fun onCaptureStarted() {
+        _uiState.update { it.copy(pendingCaptureCount = it.pendingCaptureCount + 1) }
+    }
+
     /** Adds the just-captured [photo] (a temporary cache file) after the ones already taken. */
     fun onPhotoCaptured(photo: File) {
-        _uiState.update { it.copy(photos = it.photos + photo, error = null) }
+        _uiState.update {
+            it.copy(photos = it.photos + photo, pendingCaptureCount = (it.pendingCaptureCount - 1).coerceAtLeast(0), error = null)
+        }
+    }
+
+    /** Reports that a photo couldn't be taken. */
+    fun onCaptureFailed() {
+        _uiState.update {
+            it.copy(pendingCaptureCount = (it.pendingCaptureCount - 1).coerceAtLeast(0), error = NotesScannerError.CaptureFailed)
+        }
     }
 
     /** Throws away the most recently taken photo, e.g. because it came out blurry. */
@@ -54,7 +78,7 @@ class NotesScannerViewModel(
             recognizeNotesFromPhotos(photos)
                 .onSuccess { notes ->
                     photos.forEach { it.delete() }
-                    _uiState.update { it.copy(isProcessing = false, photos = emptyList(), recognizedNotes = notes) }
+                    _uiState.update { it.copy(isProcessing = false, photos = it.photos - photos.toSet(), recognizedNotes = notes) }
                 }.onFailure { error ->
                     if (error is CancellationException) throw error
                     val scannerError =
@@ -76,5 +100,17 @@ class NotesScannerViewModel(
 
     override fun onCleared() {
         _uiState.value.photos.forEach { it.delete() }
+        // A photo still being saved lands here after the scanner is gone: nothing would ever delete it otherwise.
+        deleteLeftoverNotesPhotos(photoDirectory)
     }
+
+    companion object {
+        /** Name of the cache directory the photos of notes are taken in, see [photoDirectory]. */
+        const val PHOTO_DIRECTORY_NAME = "notes_scans"
+    }
+}
+
+/** Deletes every photo of notes in [photoDirectory]: run when no scan can be using them. */
+fun deleteLeftoverNotesPhotos(photoDirectory: File) {
+    photoDirectory.listFiles()?.forEach { it.delete() }
 }

@@ -88,7 +88,10 @@ fun NotesScannerRoute(
         uiState = uiState,
         hasCameraPermission = cameraPermission.isGranted,
         onRequestPermission = cameraPermission::request,
+        photoDirectory = viewModel.photoDirectory,
+        onCaptureStarted = viewModel::onCaptureStarted,
         onPhotoCaptured = viewModel::onPhotoCaptured,
+        onCaptureFailed = viewModel::onCaptureFailed,
         onLastPhotoRemoved = viewModel::onLastPhotoRemoved,
         onDoneClicked = viewModel::onDoneClicked,
         onErrorDismissed = viewModel::onErrorDismissed,
@@ -103,7 +106,10 @@ fun NotesScannerScreen(
     uiState: NotesScannerUiState,
     hasCameraPermission: Boolean,
     onRequestPermission: () -> Unit,
+    photoDirectory: File,
+    onCaptureStarted: () -> Unit,
     onPhotoCaptured: (File) -> Unit,
+    onCaptureFailed: () -> Unit,
     onLastPhotoRemoved: () -> Unit,
     onDoneClicked: () -> Unit,
     onErrorDismissed: () -> Unit,
@@ -172,11 +178,14 @@ fun NotesScannerScreen(
                     canFinish = uiState.canFinish,
                     onShutterClicked = {
                         imageCapture?.let { capture ->
+                            onCaptureStarted()
                             captureImage(
                                 context = context,
                                 imageCapture = capture,
                                 filePrefix = CAPTURED_PHOTO_FILE_PREFIX,
                                 onCaptured = onPhotoCaptured,
+                                directory = photoDirectory,
+                                onFailed = onCaptureFailed,
                             )
                         }
                     },
@@ -206,6 +215,7 @@ private fun resolvedErrorMessage(error: NotesScannerError): String =
     when (error) {
         NotesScannerError.NoTextRecognized -> stringResource(R.string.notes_scanner_no_text_recognized)
         NotesScannerError.RecognitionFailed -> stringResource(R.string.notes_scanner_read_failed)
+        NotesScannerError.CaptureFailed -> stringResource(R.string.notes_scanner_capture_failed)
     }
 
 /** The shutter flanked by what was taken so far (and how to undo it) and the button that finishes the scan. */
@@ -284,7 +294,10 @@ private fun NotesScannerPermissionRationalePreview() {
             uiState = NotesScannerUiState(),
             hasCameraPermission = false,
             onRequestPermission = {},
+            photoDirectory = File(""),
+            onCaptureStarted = {},
             onPhotoCaptured = {},
+            onCaptureFailed = {},
             onLastPhotoRemoved = {},
             onDoneClicked = {},
             onErrorDismissed = {},

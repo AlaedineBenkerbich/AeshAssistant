@@ -877,6 +877,52 @@ class DailyReportFormViewModelTest {
             // Then
             assertNull(viewModel.uiState.value.statusMessage)
         }
+
+    @Test
+    fun `should keep the sorted notes when the same date is confirmed again`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository(Result.success(threeLineAnswer)))
+            viewModel.onStudentSelected(alice)
+            viewModel.onRawNotesReceived(threeLineNotes)
+            val sortedState = viewModel.uiState.value
+
+            // When the date picker is opened and confirmed without changing the day
+            viewModel.onDateSelected(sortedState.date)
+
+            // Then
+            assertEquals(sortedState.obstacles, viewModel.uiState.value.obstacles)
+            assertEquals(sortedState.supportStrategies, viewModel.uiState.value.supportStrategies)
+            assertEquals(sortedState.freeNotes, viewModel.uiState.value.freeNotes)
+        }
+
+    @Test
+    fun `should keep what was typed when the same student is picked again`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository())
+            viewModel.onStudentSelected(alice)
+            viewModel.onFreeNotesChanged("Typed before re-opening the dropdown")
+
+            // When
+            viewModel.onStudentSelected(alice)
+
+            // Then
+            assertEquals("Typed before re-opening the dropdown", viewModel.uiState.value.freeNotes)
+        }
+
+    @Test
+    fun `should not take notes before a student is selected`() =
+        runTest {
+            // Given
+            val viewModel = viewModelSortingWith(FakeAiTextGenerationRepository(Result.success(threeLineAnswer)))
+
+            // When
+            val canReceiveNotes = viewModel.uiState.value.canReceiveNotes
+
+            // Then the caller keeps them (see DailyReportFormRoute) until it can
+            assertFalse(canReceiveNotes)
+        }
 }
 
 /**

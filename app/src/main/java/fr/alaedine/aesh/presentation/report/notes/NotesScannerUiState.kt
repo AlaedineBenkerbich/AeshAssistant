@@ -11,6 +11,8 @@ import java.io.File
  * owned by [NotesScannerViewModel], which deletes them as soon as they have
  * been read or the scanner is left, since they can show a child's personal
  * information.
+ * @property pendingCaptureCount How many photos have been taken but are
+ * still being saved.
  * @property isProcessing Whether the [photos] are currently being read.
  * @property recognizedNotes The text read from all [photos], waiting to be
  * handed back and cleared with [NotesScannerViewModel.onRecognizedNotesConsumed];
@@ -22,12 +24,16 @@ import java.io.File
  */
 data class NotesScannerUiState(
     val photos: List<File> = emptyList(),
+    val pendingCaptureCount: Int = 0,
     val isProcessing: Boolean = false,
     val recognizedNotes: String? = null,
     val error: NotesScannerError? = null,
 ) {
-    /** Whether there is at least one photo to read and nothing is being read already. */
-    val canFinish: Boolean get() = photos.isNotEmpty() && !isProcessing
+    /**
+     * Whether there is at least one photo to read, none still being saved
+     * (it would be left out of the notes) and nothing is being read already.
+     */
+    val canFinish: Boolean get() = photos.isNotEmpty() && pendingCaptureCount == 0 && !isProcessing
 }
 
 /** Reasons [NotesScannerViewModel] can fail to turn the photos into text. */
@@ -37,4 +43,7 @@ enum class NotesScannerError {
 
     /** OCR itself failed to run (e.g. I/O error reading a photo). */
     RecognitionFailed,
+
+    /** The camera couldn't take or save a photo. */
+    CaptureFailed,
 }

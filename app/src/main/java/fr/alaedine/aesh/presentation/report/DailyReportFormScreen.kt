@@ -147,14 +147,18 @@ fun DailyReportFormRoute(
         }
     }
 
-    // Both sources of notes (the scanner's photos, the dictated transcript) end up in the form the same way.
-    LaunchedEffect(scannedNotes) {
+    // Both sources of notes (the scanner's photos, the dictated transcript) end up in the form the same way. They are
+    // only consumed once the form can take them: until then (e.g. a form recreated after the process was killed while
+    // the scanner was open, whose student isn't selected yet), they wait where they are instead of being dropped.
+    LaunchedEffect(scannedNotes, uiState.canReceiveNotes) {
         val notes = scannedNotes ?: return@LaunchedEffect
+        if (!uiState.canReceiveNotes) return@LaunchedEffect
         onScannedNotesConsumed()
         viewModel.onRawNotesReceived(notes)
     }
-    LaunchedEffect(dictationState.transcript) {
+    LaunchedEffect(dictationState.transcript, uiState.canReceiveNotes) {
         val transcript = dictationState.transcript ?: return@LaunchedEffect
+        if (!uiState.canReceiveNotes) return@LaunchedEffect
         dictationViewModel.onTranscriptConsumed()
         viewModel.onRawNotesReceived(transcript)
     }
