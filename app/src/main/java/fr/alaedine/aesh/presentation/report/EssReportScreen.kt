@@ -6,7 +6,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -32,9 +35,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -45,15 +50,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.usecase.EssReportProgress
+import fr.alaedine.aesh.presentation.components.EmptyState
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
@@ -134,7 +144,10 @@ fun EssReportRoute(
 /**
  * Lets the user pick a student and a date range, generate an ESS report
  * draft from their daily notes entirely on-device, edit the result, and
- * export it as a PDF.
+ * export it as a PDF. Laid out like the other tabs: rounded sections on a
+ * tinted background, under a card introducing the on-device AI. With no
+ * student yet, an [EmptyState] explains what's needed first and leads to
+ * the students tab.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,11 +175,19 @@ fun EssReportScreen(
         onStatusMessageShown()
     }
 
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.ess_report_title)) },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ),
+                scrollBehavior = scrollBehavior,
             )
         },
         bottomBar = {
@@ -177,57 +198,63 @@ fun EssReportScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
+        if (uiState.students.isEmpty() && !uiState.isLoadingStudents) {
+            Box(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+                EmptyState(
+                    icon = painterResource(id = R.drawable.ic_auto_awesome),
+                    title = stringResource(R.string.student_list_empty_title),
+                    message = stringResource(R.string.ess_report_empty_students),
+                    action = {
+                        Button(onClick = { onTabSelected(AeshBottomNavTab.Students) }) {
+                            Text(text = stringResource(R.string.action_add_student))
+                        }
+                    },
+                    modifier = Modifier.padding(top = 48.dp),
+                )
+            }
+            return@Scaffold
+        }
         Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(contentPadding)
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(R.string.ess_report_description),
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            OnDeviceAiIntroCard()
 
-            if (uiState.students.isEmpty() && !uiState.isLoadingStudents) {
-                Text(
-                    text = stringResource(R.string.ess_report_empty_students),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            } else {
+            ReportSection(title = stringResource(R.string.ess_report_section_student_period)) {
                 StudentDropdown(
                     students = uiState.students,
                     selectedStudent = uiState.selectedStudent,
                     onStudentSelected = onStudentSelected,
                 )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                DateField(
-                    label = stringResource(R.string.ess_report_from),
-                    date = uiState.startDate,
-                    onDateSelected = onStartDateSelected,
-                    modifier = Modifier.weight(1f),
-                )
-                DateField(
-                    label = stringResource(R.string.ess_report_to),
-                    date = uiState.endDate,
-                    onDateSelected = onEndDateSelected,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            if (uiState.isDateRangeInvalid) {
-                Text(
-                    text = stringResource(R.string.ess_report_invalid_date_range),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    DateField(
+                        label = stringResource(R.string.ess_report_from),
+                        date = uiState.startDate,
+                        onDateSelected = onStartDateSelected,
+                        modifier = Modifier.weight(1f),
+                    )
+                    DateField(
+                        label = stringResource(R.string.ess_report_to),
+                        date = uiState.endDate,
+                        onDateSelected = onEndDateSelected,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (uiState.isDateRangeInvalid) {
+                    Text(
+                        text = stringResource(R.string.ess_report_invalid_date_range),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
 
             Button(
@@ -235,6 +262,11 @@ fun EssReportScreen(
                 enabled = uiState.canGenerate,
                 modifier = Modifier.fillMaxWidth(),
             ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_auto_awesome),
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = ButtonDefaults.IconSpacing).size(ButtonDefaults.IconSize),
+                )
                 Text(
                     text =
                         stringResource(
@@ -244,25 +276,45 @@ fun EssReportScreen(
             }
 
             if (uiState.isGenerating) {
-                GeneratingIndicator(progress = uiState.generationProgress, onCancelClicked = onCancelGenerationClicked)
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceBright,
+                ) {
+                    GeneratingIndicator(
+                        progress = uiState.generationProgress,
+                        onCancelClicked = onCancelGenerationClicked,
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
+                    )
+                }
                 // Android only lets the app on screen use on-device AI: a screen timeout would stop the generation.
                 KeepScreenOn()
             }
 
             val generatedText = uiState.generatedText
             if (generatedText != null) {
-                OutlinedTextField(
-                    value = generatedText,
-                    onValueChange = onReportTextChanged,
-                    label = { Text(text = stringResource(R.string.ess_report_label)) },
-                    minLines = 8,
-                    // Read-only while a new draft is being generated, since that one will replace this text.
-                    enabled = !uiState.isGenerating,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                Button(onClick = onExportClicked, enabled = !uiState.isGenerating, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.ess_report_export_pdf))
+                ReportSection(title = stringResource(R.string.ess_report_section_draft)) {
+                    Text(
+                        text = stringResource(R.string.ess_report_draft_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = generatedText,
+                        onValueChange = onReportTextChanged,
+                        label = { Text(text = stringResource(R.string.ess_report_label)) },
+                        minLines = 8,
+                        // Read-only while a new draft is being generated, since that one will replace this text.
+                        enabled = !uiState.isGenerating,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(onClick = onExportClicked, enabled = !uiState.isGenerating, modifier = Modifier.fillMaxWidth()) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_export),
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = ButtonDefaults.IconSpacing).size(ButtonDefaults.IconSize),
+                        )
+                        Text(text = stringResource(R.string.ess_report_export_pdf))
+                    }
                 }
             }
         }
@@ -290,6 +342,60 @@ private fun resolvedStatusMessage(message: EssReportStatusMessage): String =
         is EssReportStatusMessage.ExportFailed -> stringResource(R.string.ess_report_export_failed)
         is EssReportStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
     }
+
+/** Explains what the screen does, under the sparkles that mark the app's on-device AI features. */
+@Composable
+private fun OnDeviceAiIntroCard(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_auto_awesome),
+                contentDescription = null,
+                modifier = Modifier.size(28.dp),
+            )
+            Text(
+                text = stringResource(R.string.ess_report_description),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+/** A titled, rounded group of the screen's content on the brightest surface color, standing out from its tinted background. */
+@Composable
+private fun ReportSection(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceBright,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.semantics { heading() },
+            )
+            content()
+        }
+    }
+}
 
 @Composable
 private fun GeneratingIndicator(

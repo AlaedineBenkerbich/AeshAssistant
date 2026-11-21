@@ -189,7 +189,10 @@
     <!-- ESS report -->
     <string name="ess_report_title">Rapport ESS</string>
     <string name="ess_report_description">Résumez les notes quotidiennes d\'un élève en un rapport ESS professionnel, entièrement sur l\'appareil.</string>
-    <string name="ess_report_empty_students">Aucun élève pour le moment. Ajoutez-en un avant de générer un rapport.</string>
+    <string name="ess_report_empty_students">Ajoutez un élève et notez quelques observations quotidiennes : vous pourrez ensuite les transformer ici en rapport ESS.</string>
+    <string name="ess_report_section_student_period">Élève et période</string>
+    <string name="ess_report_section_draft">Votre brouillon</string>
+    <string name="ess_report_draft_hint">Relisez-le et modifiez-le si besoin avant de l\'exporter.</string>
     <string name="ess_report_from">Du</string>
     <string name="ess_report_to">Au</string>
     <string name="ess_report_invalid_date_range">La date de début doit être antérieure ou égale à la date de fin.</string>

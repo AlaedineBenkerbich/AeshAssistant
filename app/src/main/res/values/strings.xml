@@ -189,7 +189,10 @@
     <!-- ESS report -->
     <string name="ess_report_title">ESS report</string>
     <string name="ess_report_description">Summarize a student\'s daily notes into a professional ESS report, entirely on-device.</string>
-    <string name="ess_report_empty_students">No students yet. Add one before generating a report.</string>
+    <string name="ess_report_empty_students">Add a student and log a few daily observations: you\'ll then be able to turn them into an ESS report here.</string>
+    <string name="ess_report_section_student_period">Student and period</string>
+    <string name="ess_report_section_draft">Your draft</string>
+    <string name="ess_report_draft_hint">Read it over and edit it as needed before exporting it.</string>
     <string name="ess_report_from">From</string>
     <string name="ess_report_to">To</string>
     <string name="ess_report_invalid_date_range">The start date must be on or before the end date.</string>
