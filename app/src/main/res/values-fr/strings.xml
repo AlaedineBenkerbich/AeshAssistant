@@ -124,17 +124,24 @@
     <string name="cd_delete_schedule_slot">Supprimer %1$s</string>
     <string name="delete_schedule_slot_confirm_text">Cette action supprimera définitivement ce créneau et ne peut pas être annulée.</string>
 
+    <!-- Camera scanners: shared by the schedule scanner and the notes scanner -->
+    <string name="camera_permission_title">Accès à l\'appareil photo nécessaire</string>
+    <string name="scanner_no_text_recognized_title">Aucun texte reconnu</string>
+
     <!-- Schedule scanner -->
     <string name="schedule_scanner_title">Scanner l\'emploi du temps</string>
-    <string name="schedule_scanner_camera_rationale">L\'accès à l\'appareil photo est nécessaire pour scanner un emploi du temps physique.</string>
+    <string name="schedule_scanner_camera_rationale">Autorisez l\'appareil photo pour photographier un emploi du temps papier et remplir un cours à votre place.</string>
     <string name="schedule_scanner_grant_access">Autoriser l\'accès à l\'appareil photo</string>
+    <string name="schedule_scanner_hint">Placez un cours dans le cadre, avec son jour et ses horaires.</string>
+    <string name="schedule_scanner_reading">Lecture de la photo…</string>
     <string name="schedule_scanner_review_title">Vérifiez les informations reconnues</string>
     <string name="schedule_scanner_review_subtitle">Vérifiez chaque champ ci-dessous avant de l\'ajouter à votre emploi du temps — la reconnaissance de texte n\'est pas toujours parfaite.</string>
     <string name="schedule_scanner_use_details">Utiliser ces informations</string>
     <string name="schedule_scanner_retake_photo">Reprendre la photo</string>
     <string name="schedule_scanner_not_recognized">Non reconnu</string>
-    <string name="schedule_scanner_no_text_recognized">Aucun texte reconnu. Essayez de reprendre la photo avec un meilleur éclairage ou une meilleure mise au point.</string>
-    <string name="schedule_scanner_read_failed">Impossible de lire la photo. Veuillez réessayer.</string>
+    <string name="schedule_scanner_no_text_recognized">Reprenez la photo avec le cours bien éclairé et net.</string>
+    <string name="schedule_scanner_read_failed_title">Impossible de lire la photo</string>
+    <string name="schedule_scanner_read_failed">Veuillez la reprendre.</string>
 
     <!-- Daily observation report form -->
     <string name="daily_report_title">Observation</string>
@@ -182,9 +189,10 @@
 
     <!-- Observation notes scanner -->
     <string name="notes_scanner_title">Scanner des notes</string>
-    <string name="notes_scanner_camera_rationale">L\'accès à l\'appareil photo est nécessaire pour photographier vos notes.</string>
+    <string name="notes_scanner_camera_rationale">Autorisez l\'appareil photo pour photographier vos notes manuscrites et les ajouter à l\'observation.</string>
     <string name="notes_scanner_grant_access">Autoriser l\'accès à l\'appareil photo</string>
-    <string name="notes_scanner_hint">Photographiez chaque page de vos notes, puis appuyez sur Terminer.</string>
+    <string name="notes_scanner_hint">Placez chaque page dans le cadre, puis appuyez sur Terminer.</string>
+    <string name="notes_scanner_reading">Lecture de vos notes…</string>
     <plurals name="notes_scanner_photo_count">
         <item quantity="one">%d photo</item>
         <item quantity="many">%d photos</item>
@@ -192,9 +200,11 @@
     </plurals>
     <string name="notes_scanner_remove_last">Retirer la dernière</string>
     <string name="notes_scanner_done">Terminer</string>
-    <string name="notes_scanner_no_text_recognized">Aucun texte reconnu. Réessayez avec un meilleur éclairage ou une meilleure mise au point.</string>
-    <string name="notes_scanner_read_failed">Impossible de lire les photos. Veuillez réessayer.</string>
-    <string name="notes_scanner_capture_failed">Impossible de prendre la photo. Veuillez réessayer.</string>
+    <string name="notes_scanner_no_text_recognized">Vérifiez que chaque page est bien éclairée et nette : retirez les photos floues et reprenez-les.</string>
+    <string name="notes_scanner_read_failed_title">Impossible de lire les photos</string>
+    <string name="notes_scanner_read_failed">Vos photos ont été conservées : appuyez sur Terminer pour réessayer.</string>
+    <string name="notes_scanner_capture_failed_title">Impossible de prendre la photo</string>
+    <string name="notes_scanner_capture_failed">Veuillez la reprendre.</string>
 
     <!-- ESS report -->
     <string name="ess_report_title">Rapport ESS</string>
