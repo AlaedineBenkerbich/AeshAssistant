@@ -28,8 +28,13 @@ interface AiTextGenerationRepository {
     suspend fun generate(prompt: String): Result<String>
 }
 
-/** Thrown by [AiTextGenerationRepository.generate] when the on-device generative model isn't supported on this device. */
-class AiFeatureUnavailableException : Exception("On-device AI isn't available on this device.")
+/**
+ * Thrown by [AiTextGenerationRepository.generate] when the on-device generative model can't run on this device:
+ * unsupported hardware, or system AI services (AICore) that are missing, outdated or not set up yet.
+ */
+class AiFeatureUnavailableException(
+    cause: Throwable? = null,
+) : Exception("On-device AI isn't available on this device.", cause)
 
 /**
  * Thrown by [AiTextGenerationRepository.generate] when the on-device model
@@ -39,3 +44,26 @@ class AiFeatureUnavailableException : Exception("On-device AI isn't available on
  * this can otherwise hang forever on some devices.
  */
 class AiGenerationTimeoutException : Exception("On-device AI generation timed out.")
+
+/** Thrown by [AiTextGenerationRepository.generate] when the prompt is longer than the on-device model accepts. */
+class AiPromptTooLongException(
+    cause: Throwable? = null,
+) : Exception("The request is too long for the on-device AI model.", cause)
+
+/**
+ * Thrown by [AiTextGenerationRepository.generate] when the on-device model is busy, or when this app has used up
+ * its share of on-device AI for now (Android's AICore rations it per app): trying again a bit later can work.
+ */
+class AiBusyException(
+    cause: Throwable? = null,
+) : Exception("The on-device AI model is busy.", cause)
+
+/** Thrown by [AiTextGenerationRepository.generate] when the app left the screen: Android only lets the app on screen use on-device AI. */
+class AiBackgroundUseBlockedException(
+    cause: Throwable? = null,
+) : Exception("On-device AI can only be used while the app is on screen.", cause)
+
+/** Thrown by [AiTextGenerationRepository.generate] when there isn't enough free storage to download the on-device model. */
+class AiNotEnoughStorageException(
+    cause: Throwable? = null,
+) : Exception("Not enough free storage to download the on-device AI model.", cause)
