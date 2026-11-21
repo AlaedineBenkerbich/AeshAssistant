@@ -4,7 +4,7 @@ import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.presentation.report.notes.DictationError
 import java.time.LocalDate
 
-/** Slider position for mood/focus/social interactions before the user picks a value. */
+/** Level the form's 1-to-5 scales (mood, focus, social interactions, autonomy) show before the user picks one. */
 const val NEUTRAL_LEVEL = 3
 
 /**

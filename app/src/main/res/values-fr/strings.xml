@@ -137,7 +137,7 @@
     <string name="schedule_scanner_read_failed">Impossible de lire la photo. Veuillez réessayer.</string>
 
     <!-- Daily observation report form -->
-    <string name="daily_report_title">Observation quotidienne</string>
+    <string name="daily_report_title">Observation</string>
     <string name="daily_report_date">Date</string>
     <string name="daily_report_empty_students">Aucun élève pour le moment. Ajoutez-en un avant de remplir un rapport.</string>
     <string name="daily_report_mood">Humeur</string>
@@ -148,6 +148,15 @@
     <string name="daily_report_support_strategies">Ce qui a aidé</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Rapport enregistré</string>
+    <string name="daily_report_section_who_when">Élève et date</string>
+    <string name="daily_report_section_day">Comment s\'est passée la journée ?</string>
+    <string name="daily_report_section_notes">En détail</string>
+    <!-- Sens de chaque point des échelles de 1 à 5 du formulaire, communes à l\'humeur, la concentration, les interactions et l\'autonomie : invariables en genre. -->
+    <string name="daily_report_level_1">Très difficile</string>
+    <string name="daily_report_level_2">Difficile</string>
+    <string name="daily_report_level_3">Passable</string>
+    <string name="daily_report_level_4">Bien</string>
+    <string name="daily_report_level_5">Très bien</string>
 
     <!-- Daily observation form: filling the free-text fields from dictated or photographed notes -->
     <string name="notes_assistant_title">Remplir à partir de vos notes</string>

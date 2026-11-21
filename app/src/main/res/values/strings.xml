@@ -138,7 +138,7 @@
     <string name="schedule_scanner_read_failed">Couldn\'t read the photo. Please try again.</string>
 
     <!-- Daily observation report form -->
-    <string name="daily_report_title">Daily observation</string>
+    <string name="daily_report_title">Observation</string>
     <string name="daily_report_date">Date</string>
     <string name="daily_report_empty_students">No students yet. Add one before filling out a report.</string>
     <string name="daily_report_mood">Mood</string>
@@ -149,6 +149,15 @@
     <string name="daily_report_support_strategies">What helped</string>
     <string name="daily_report_notes">Notes</string>
     <string name="daily_report_saved">Report saved</string>
+    <string name="daily_report_section_who_when">Student and date</string>
+    <string name="daily_report_section_day">How did the day go?</string>
+    <string name="daily_report_section_notes">In detail</string>
+    <!-- What each point of the form\'s 1-to-5 scales means; shared by mood, focus, social interactions and autonomy. -->
+    <string name="daily_report_level_1">Very hard</string>
+    <string name="daily_report_level_2">Hard</string>
+    <string name="daily_report_level_3">Okay</string>
+    <string name="daily_report_level_4">Good</string>
+    <string name="daily_report_level_5">Very good</string>
 
     <!-- Daily observation form: filling the free-text fields from dictated or photographed notes -->
     <string name="notes_assistant_title">Fill in from your notes</string>
