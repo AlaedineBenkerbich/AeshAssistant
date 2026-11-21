@@ -18,12 +18,15 @@
 
     <!-- Dashboard (HomeScreen) -->
     <string name="home_title">Tableau de bord</string>
-    <!-- Bottom navigation bar: visible label under each icon (see AeshBottomNavigationBar). -->
-    <string name="nav_label_dashboard">Tableau de bord</string>
+    <!-- Bottom navigation bar: visible label under each icon (see AeshBottomNavigationBar).
+         Keep each one to a short word: the five share the width of the screen, and
+         AeshBottomNavigationBarTest fails as soon as one no longer fits on one line on a
+         narrow phone. A screen title can be longer than its tab label (Accueil → Tableau de bord). -->
+    <string name="nav_label_dashboard">Accueil</string>
     <string name="nav_label_students">Élèves</string>
-    <string name="nav_label_schedule">Emploi du temps</string>
-    <string name="nav_label_ess_report">Rapport ESS</string>
-    <string name="nav_label_settings">Paramètres</string>
+    <string name="nav_label_schedule">Planning</string>
+    <string name="nav_label_ess_report">ESS</string>
+    <string name="nav_label_settings">Réglages</string>
     <string name="cd_new_daily_report">Nouveau rapport quotidien</string>
     <string name="cd_open_daily_report_for_student">Remplir l\'observation pour %1$s</string>
     <string name="home_empty_schedule_today">Aucun cours prévu aujourd\'hui. Appuyez sur + pour enregistrer une observation manuellement.</string>
@@ -50,7 +53,7 @@
     </plurals>
 
     <!-- Settings -->
-    <string name="settings_title">Paramètres</string>
+    <string name="settings_title">Réglages</string>
     <string name="settings_message">Exportez une sauvegarde locale de vos données, ou restaurez-les à partir d\'un fichier de sauvegarde précédent.</string>
     <string name="settings_section_data_backup">Sauvegarde des données</string>
     <string name="settings_export_backup">Exporter la sauvegarde</string>

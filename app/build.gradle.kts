@@ -160,6 +160,18 @@ dependencies {
     // Builds/runs `CoroutineWorker`s synchronously in local JVM unit tests
     // (see `DailyReportReminderWorkerTest`).
     testImplementation(libs.androidx.work.testing)
+    // Renders composables in local JVM unit tests (see
+    // `AeshBottomNavigationBarTest`): Robolectric hosts the test activity,
+    // which the `ui-test-manifest` debug dependency above declares, and its
+    // native graphics mode lays text out with the real Android text stack.
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    // ui-test-junit4 1.12 pulls in Espresso 3.5, which looks up
+    // `InputManager.getInstance()`: Android 17 (API 37, the SDK these tests
+    // run on) removed it, and Espresso 3.7 no longer needs it there. Drop
+    // this line once the Compose BOM brings ui-test 1.13+, which depends on
+    // Espresso 3.7 itself.
+    testImplementation(libs.androidx.espresso.core)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.junit)

@@ -19,11 +19,14 @@
 
     <!-- Dashboard (HomeScreen) -->
     <string name="home_title">Dashboard</string>
-    <!-- Bottom navigation bar: visible label under each icon (see AeshBottomNavigationBar). -->
-    <string name="nav_label_dashboard">Dashboard</string>
+    <!-- Bottom navigation bar: visible label under each icon (see AeshBottomNavigationBar).
+         Keep each one to a short word: the five share the width of the screen, and
+         AeshBottomNavigationBarTest fails as soon as one no longer fits on one line on a
+         narrow phone. A screen title can be longer than its tab label (Home → Dashboard). -->
+    <string name="nav_label_dashboard">Home</string>
     <string name="nav_label_students">Students</string>
     <string name="nav_label_schedule">Schedule</string>
-    <string name="nav_label_ess_report">ESS report</string>
+    <string name="nav_label_ess_report">ESS</string>
     <string name="nav_label_settings">Settings</string>
     <string name="cd_new_daily_report">New daily report</string>
     <string name="cd_open_daily_report_for_student">Fill out observation for %1$s</string>
