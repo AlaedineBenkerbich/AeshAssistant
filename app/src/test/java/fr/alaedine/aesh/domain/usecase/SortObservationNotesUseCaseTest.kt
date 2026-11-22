@@ -4,6 +4,8 @@ import fr.alaedine.aesh.domain.model.ObservationNotes
 import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
 import fr.alaedine.aesh.domain.repository.AiGenerationTimeoutException
 import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
+import fr.alaedine.aesh.domain.repository.AiWordChoice
+import fr.alaedine.aesh.domain.repository.GeneratedText
 import fr.alaedine.aesh.presentation.report.FakeAiTextGenerationRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.awaitCancellation
@@ -241,7 +243,10 @@ class SortObservationNotesUseCaseTest {
             // Given
             val neverAnswering =
                 object : AiTextGenerationRepository {
-                    override suspend fun generate(prompt: String): Result<String> = awaitCancellation()
+                    override suspend fun generate(
+                        prompt: String,
+                        wordChoice: AiWordChoice,
+                    ): Result<GeneratedText> = awaitCancellation()
                 }
             val useCase = SortObservationNotesUseCase(neverAnswering)
 
@@ -262,6 +267,20 @@ class SortObservationNotesUseCaseTest {
 
             // When / Then
             assertFailsWith<CancellationException> { useCase(threeLineNotes) }
+        }
+
+    @Test
+    fun `should ask the model for its most likely answer when sorting notes`() =
+        runTest {
+            // Given
+            val generator = FakeAiTextGenerationRepository(Result.success("NOTES: 1, 2, 3"))
+            val useCase = SortObservationNotesUseCase(generator)
+
+            // When
+            useCase(threeLineNotes)
+
+            // Then
+            assertEquals(listOf(AiWordChoice.MostLikely), generator.wordChoices)
         }
 
     @Test

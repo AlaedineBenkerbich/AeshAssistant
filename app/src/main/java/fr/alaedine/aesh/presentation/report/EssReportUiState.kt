@@ -70,6 +70,9 @@ data class EssReportUiState(
  *
  * @property isEdited Whether the user changed the text since it was
  * generated, in which case regenerating it asks for confirmation first.
+ * @property isCutOff Whether the on-device model reached the longest answer
+ * it may write before finishing the report, so its end may be missing: the
+ * user is told to check it.
  */
 data class EssReportDraft(
     val text: String,
@@ -77,6 +80,7 @@ data class EssReportDraft(
     val startDate: LocalDate,
     val endDate: LocalDate,
     val isEdited: Boolean = false,
+    val isCutOff: Boolean = false,
 )
 
 /**

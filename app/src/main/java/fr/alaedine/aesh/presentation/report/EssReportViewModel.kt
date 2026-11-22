@@ -174,8 +174,15 @@ class EssReportViewModel(
                 // a result, so a report about a previous selection can never land in the current one.
                 generateEssReportUseCase(student, startDate, endDate, reportLanguage()) { progress ->
                     _uiState.update { it.copy(generationProgress = progress) }
-                }.onSuccess { text ->
-                    val draft = EssReportDraft(text = text, studentFirstName = student.firstName, startDate = startDate, endDate = endDate)
+                }.onSuccess { report ->
+                    val draft =
+                        EssReportDraft(
+                            text = report.text,
+                            studentFirstName = student.firstName,
+                            startDate = startDate,
+                            endDate = endDate,
+                            isCutOff = report.isCutOff,
+                        )
                     _uiState.update { it.copy(isGenerating = false, generationProgress = null, draft = draft) }
                 }.onFailure { error ->
                     _uiState.update {
@@ -212,6 +219,7 @@ private const val KEY_DRAFT_STUDENT_FIRST_NAME = "draftStudentFirstName"
 private const val KEY_DRAFT_START_DATE = "draftStartDate"
 private const val KEY_DRAFT_END_DATE = "draftEndDate"
 private const val KEY_DRAFT_IS_EDITED = "draftIsEdited"
+private const val KEY_DRAFT_IS_CUT_OFF = "draftIsCutOff"
 
 /** The selection and draft saved by [save], over the defaults; a running generation can't survive the process. */
 private fun SavedStateHandle.restoredUiState(): EssReportUiState {
@@ -229,7 +237,14 @@ private fun SavedStateHandle.restoredDraft(): EssReportDraft? {
     val studentFirstName = get<String>(KEY_DRAFT_STUDENT_FIRST_NAME) ?: return null
     val startDate = get<String>(KEY_DRAFT_START_DATE)?.let(LocalDate::parse) ?: return null
     val endDate = get<String>(KEY_DRAFT_END_DATE)?.let(LocalDate::parse) ?: return null
-    return EssReportDraft(text, studentFirstName, startDate, endDate, isEdited = get<Boolean>(KEY_DRAFT_IS_EDITED) == true)
+    return EssReportDraft(
+        text = text,
+        studentFirstName = studentFirstName,
+        startDate = startDate,
+        endDate = endDate,
+        isEdited = get<Boolean>(KEY_DRAFT_IS_EDITED) == true,
+        isCutOff = get<Boolean>(KEY_DRAFT_IS_CUT_OFF) == true,
+    )
 }
 
 private fun SavedStateHandle.save(state: EssReportUiState) {
@@ -242,4 +257,5 @@ private fun SavedStateHandle.save(state: EssReportUiState) {
     set(KEY_DRAFT_START_DATE, draft?.startDate?.toString())
     set(KEY_DRAFT_END_DATE, draft?.endDate?.toString())
     set(KEY_DRAFT_IS_EDITED, draft?.isEdited)
+    set(KEY_DRAFT_IS_CUT_OFF, draft?.isCutOff)
 }

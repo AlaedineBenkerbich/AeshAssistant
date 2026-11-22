@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -73,6 +74,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 
 private const val PDF_MIME_TYPE = "application/pdf"
@@ -102,8 +104,8 @@ fun EssReportRoute(
         stringResource(
             R.string.ess_report_pdf_title,
             draft?.studentFirstName.orEmpty(),
-            (draft?.startDate ?: uiState.startDate).toString(),
-            (draft?.endDate ?: uiState.endDate).toString(),
+            writtenOutDate(draft?.startDate ?: uiState.startDate),
+            writtenOutDate(draft?.endDate ?: uiState.endDate),
         )
 
     // Back would pop this tab and throw its state away; going back to the dashboard tab instead keeps the draft
@@ -299,6 +301,9 @@ fun EssReportScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (uiState.draft?.isCutOff == true) {
+                        CutOffReportWarning()
+                    }
                     OutlinedTextField(
                         value = generatedText,
                         onValueChange = onReportTextChanged,
@@ -426,6 +431,27 @@ private fun GeneratingIndicator(
         TextButton(onClick = onCancelClicked) {
             Text(text = stringResource(R.string.action_cancel))
         }
+    }
+}
+
+/** Says the on-device model ran out of room before finishing the report, so its end may be missing. */
+@Composable
+private fun CutOffReportWarning(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = stringResource(R.string.ess_report_cut_off_warning),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
     }
 }
 
@@ -558,6 +584,10 @@ private fun Long.toUtcLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone
 
 private fun formattedDate(date: LocalDate): String = date.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
 
+/** [date] written out in full the way the user's language does ("1 septembre 2025"), for the exported document. */
+private fun writtenOutDate(date: LocalDate): String =
+    date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.getDefault()))
+
 @Preview(showBackground = true)
 @Composable
 private fun EssReportScreenPreview() {
@@ -636,6 +666,41 @@ private fun EssReportScreenWithReportPreview() {
                             studentFirstName = alice.firstName,
                             startDate = LocalDate.of(2026, 9, 1),
                             endDate = LocalDate.of(2026, 11, 20),
+                        ),
+                ),
+            onStudentSelected = {},
+            onStartDateSelected = {},
+            onEndDateSelected = {},
+            onGenerateClicked = {},
+            onCancelGenerationClicked = {},
+            onRegenerateConfirmed = {},
+            onRegenerateDismissed = {},
+            onReportTextChanged = {},
+            onExportClicked = {},
+            onStatusMessageShown = {},
+            onTabSelected = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EssReportScreenWithCutOffReportPreview() {
+    AeshAssistantTheme {
+        val alice = Student(id = 1L, firstName = "Alice", className = "CE2")
+        EssReportScreen(
+            uiState =
+                EssReportUiState(
+                    students = listOf(alice),
+                    selectedStudentId = alice.id,
+                    isLoadingStudents = false,
+                    draft =
+                        EssReportDraft(
+                            text = "Alice showed steady improvement in focus over the period.",
+                            studentFirstName = alice.firstName,
+                            startDate = LocalDate.of(2026, 9, 1),
+                            endDate = LocalDate.of(2026, 11, 20),
+                            isCutOff = true,
                         ),
                 ),
             onStudentSelected = {},

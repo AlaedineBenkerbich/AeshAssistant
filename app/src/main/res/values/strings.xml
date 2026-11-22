@@ -216,6 +216,7 @@
     <string name="ess_report_section_student_period">Student and period</string>
     <string name="ess_report_section_draft">Your draft</string>
     <string name="ess_report_draft_hint">Read it over and edit it as needed before exporting it.</string>
+    <string name="ess_report_cut_off_warning">The on-device AI reached the longest answer it can write before finishing: the end of the report may be missing. Check it and complete it if needed.</string>
     <string name="ess_report_from">From</string>
     <string name="ess_report_to">To</string>
     <string name="ess_report_invalid_date_range">The start date must be on or before the end date.</string>
@@ -238,7 +239,7 @@
     <string name="ess_report_regenerate_confirmation_confirm">Regenerate</string>
     <string name="ess_report_export_success">PDF exported successfully.</string>
     <string name="ess_report_export_failed">Couldn\'t export the PDF. Please try again.</string>
-    <!-- PDF document title, e.g. "ESS report — Alice (2026-08-01 to 2026-09-01)". -->
+    <!-- PDF document title, e.g. "ESS report — Alice (August 1, 2026 to September 1, 2026)". -->
     <string name="ess_report_pdf_title">ESS report — %1$s (%2$s to %3$s)</string>
 
     <!-- Daily report reminder notification (see data.reminder.DailyReminderNotifier) -->

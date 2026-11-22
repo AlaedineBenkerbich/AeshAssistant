@@ -47,7 +47,7 @@ class SortObservationNotesUseCase(
             }
 
         val fieldByLine =
-            parseFieldByLine(response, lines.size)
+            parseFieldByLine(response.text, lines.size)
                 ?: return NotesSortingResult.Unsorted(unsorted, UnrecognizedSortingResponseException())
         return NotesSortingResult.Sorted(assemble(lines, fieldByLine))
     }

@@ -3,7 +3,11 @@ package fr.alaedine.aesh.data.ai
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.GenAiException
+import com.google.mlkit.genai.prompt.Candidate
+import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.Generation
+import com.google.mlkit.genai.prompt.TextPart
+import com.google.mlkit.genai.prompt.generateContentRequest
 import fr.alaedine.aesh.domain.repository.AiBackgroundUseBlockedException
 import fr.alaedine.aesh.domain.repository.AiBusyException
 import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
@@ -11,6 +15,8 @@ import fr.alaedine.aesh.domain.repository.AiGenerationTimeoutException
 import fr.alaedine.aesh.domain.repository.AiNotEnoughStorageException
 import fr.alaedine.aesh.domain.repository.AiPromptTooLongException
 import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
+import fr.alaedine.aesh.domain.repository.AiWordChoice
+import fr.alaedine.aesh.domain.repository.GeneratedText
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
@@ -50,7 +56,10 @@ class GeminiNanoTextGenerationRepository : AiTextGenerationRepository {
      */
     private val generationTimeout = 5.minutes
 
-    override suspend fun generate(prompt: String): Result<String> =
+    override suspend fun generate(
+        prompt: String,
+        wordChoice: AiWordChoice,
+    ): Result<GeneratedText> =
         runCatching {
             try {
                 withTimeout(generationTimeout) {
@@ -61,7 +70,7 @@ class GeminiNanoTextGenerationRepository : AiTextGenerationRepository {
                         // flow below suspends until the model is ready to run.
                         else -> awaitModelDownload()
                     }
-                    generateRetryingWhileBusy(prompt)
+                    generateRetryingWhileBusy(request(prompt, wordChoice))
                 }
             } catch (timeout: TimeoutCancellationException) {
                 throw AiGenerationTimeoutException()
@@ -81,27 +90,40 @@ class GeminiNanoTextGenerationRepository : AiTextGenerationRepository {
      * AICore answers [GenAiException.ErrorCode.BUSY] to bursts of requests (an ESS report over a long period sends
      * several in a row) and says how long to wait, so a couple of short waits are worth it before giving up.
      */
-    private suspend fun generateRetryingWhileBusy(prompt: String): String {
+    private suspend fun generateRetryingWhileBusy(request: GenerateContentRequest): GeneratedText {
         repeat(BUSY_RETRY_COUNT) {
             try {
-                return generateText(prompt)
+                return generateText(request)
             } catch (error: GenAiException) {
                 if (error.errorCode != GenAiException.ErrorCode.BUSY) throw error
                 delay(error.retryDelay?.toKotlinDuration()?.coerceIn(MIN_BUSY_RETRY_DELAY, MAX_BUSY_RETRY_DELAY) ?: MIN_BUSY_RETRY_DELAY)
             }
         }
-        return generateText(prompt)
+        return generateText(request)
     }
 
-    private suspend fun generateText(prompt: String): String {
-        val text =
-            generativeModel
-                .generateContent(prompt)
-                .candidates
-                .firstOrNull()
-                ?.text
+    /**
+     * ML Kit's defaults (temperature 0) always pick the most likely word, so the same prompt always gets the very same
+     * answer: regenerating a draft would just write it again. [AiWordChoice.Varied] samples among the few likeliest
+     * words instead, which rewords the answer without straying from the prompt.
+     */
+    private fun request(
+        prompt: String,
+        wordChoice: AiWordChoice,
+    ): GenerateContentRequest =
+        generateContentRequest(TextPart(prompt)) {
+            if (wordChoice == AiWordChoice.Varied) {
+                temperature = VARIED_WORDING_TEMPERATURE
+                topK = VARIED_WORDING_TOP_K
+            }
+        }
+
+    private suspend fun generateText(request: GenerateContentRequest): GeneratedText {
+        val candidate = generativeModel.generateContent(request).candidates.firstOrNull()
+        val text = candidate?.text
         if (text.isNullOrBlank()) throw IllegalStateException("The on-device AI model returned an empty answer.")
-        return text
+        // The model stops at the output length its configuration allows, and says so rather than failing.
+        return GeneratedText(text = text, isCutOff = candidate.finishReason == Candidate.FinishReason.MAX_TOKENS)
     }
 
     private fun GenAiException.toDomainException(): Exception =
@@ -124,5 +146,9 @@ class GeminiNanoTextGenerationRepository : AiTextGenerationRepository {
         const val BUSY_RETRY_COUNT = 2
         val MIN_BUSY_RETRY_DELAY: Duration = 2.seconds
         val MAX_BUSY_RETRY_DELAY: Duration = 30.seconds
+
+        /** Low, as in ML Kit's own examples: enough to reword an answer, not to make things up. */
+        const val VARIED_WORDING_TEMPERATURE = 0.3f
+        const val VARIED_WORDING_TOP_K = 10
     }
 }
