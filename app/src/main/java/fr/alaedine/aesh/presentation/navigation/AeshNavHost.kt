@@ -22,6 +22,7 @@ import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerRoute
 import fr.alaedine.aesh.presentation.settings.SettingsRoute
 import fr.alaedine.aesh.presentation.student.StudentFormRoute
 import fr.alaedine.aesh.presentation.student.StudentListRoute
+import fr.alaedine.aesh.presentation.student.ideas.SupportIdeasRoute
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -79,7 +80,18 @@ fun AeshNavHost(modifier: Modifier = Modifier) {
             StudentListRoute(
                 onAddStudent = { navController.navigate(AeshDestination.AddStudent) },
                 onEditStudent = { studentId -> navController.navigate(AeshDestination.EditStudent(studentId)) },
+                onSuggestSupportIdeas = { studentId -> navController.navigate(AeshDestination.SupportIdeas(studentId)) },
                 onTabSelected = onTabSelected,
+            )
+        }
+        composable<AeshDestination.SupportIdeas> { backStackEntry ->
+            val destination = backStackEntry.toRoute<AeshDestination.SupportIdeas>()
+            SupportIdeasRoute(
+                studentId = destination.studentId,
+                onNavigateBack = dropUnlessResumed { navController.popBackStack() },
+                // Dropped once the screen is leaving, so a double tap doesn't open the form twice.
+                onAddObservation =
+                    dropUnlessResumed { navController.navigate(AeshDestination.DailyReportForm(studentId = destination.studentId)) },
             )
         }
         composable<AeshDestination.AddStudent> {

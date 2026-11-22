@@ -1,9 +1,10 @@
 package fr.alaedine.aesh.domain.model
 
 /**
- * The language an AI-generated ESS report is written in. The prompt is
- * written in that language too, and asks for it explicitly: a small
- * on-device model tends to answer in the language of its instructions.
+ * The language an AI-generated text (an ESS report, support ideas) is written
+ * in. The prompt is written in that language too, and asks for it
+ * explicitly: a small on-device model tends to answer in the language of its
+ * instructions.
  */
 enum class ReportLanguage {
     French,

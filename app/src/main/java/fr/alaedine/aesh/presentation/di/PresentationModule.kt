@@ -12,6 +12,7 @@ import fr.alaedine.aesh.presentation.schedule.scanner.ScheduleScannerViewModel
 import fr.alaedine.aesh.presentation.settings.SettingsViewModel
 import fr.alaedine.aesh.presentation.student.StudentFormViewModel
 import fr.alaedine.aesh.presentation.student.StudentListViewModel
+import fr.alaedine.aesh.presentation.student.ideas.SupportIdeasViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -34,6 +35,9 @@ val presentationModule =
         // editing) is supplied at call time via `koinViewModel(parameters = ...)`
         // from the navigation argument, see `StudentFormRoute`.
         viewModel { params -> StudentFormViewModel(get(), params.getOrNull()) }
+        // The student id comes from the navigation argument, see `SupportIdeasRoute`; the last parameter is the
+        // SavedStateHandle, which Koin creates for the screen's back stack entry.
+        viewModel { params -> SupportIdeasViewModel(params.get(), get(), get(), get(), get()) }
         // Same nullable-id-as-injection-parameter pattern as
         // `StudentFormViewModel` above: `null` when reached from the "new
         // report" FAB, or a student id to preselect when reached by tapping

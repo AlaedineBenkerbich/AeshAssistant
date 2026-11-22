@@ -44,7 +44,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +53,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -66,6 +64,8 @@ import fr.alaedine.aesh.R
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.usecase.EssReportProgress
 import fr.alaedine.aesh.presentation.components.EmptyState
+import fr.alaedine.aesh.presentation.components.KeepScreenOn
+import fr.alaedine.aesh.presentation.components.OnDeviceAiIntroCard
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavTab
 import fr.alaedine.aesh.presentation.navigation.AeshBottomNavigationBar
 import fr.alaedine.aesh.presentation.theme.AeshAssistantTheme
@@ -226,7 +226,7 @@ fun EssReportScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OnDeviceAiIntroCard()
+            OnDeviceAiIntroCard(text = stringResource(R.string.ess_report_description))
 
             ReportSection(title = stringResource(R.string.ess_report_section_student_period)) {
                 StudentDropdown(
@@ -289,7 +289,6 @@ fun EssReportScreen(
                         modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
                     )
                 }
-                // Android only lets the app on screen use on-device AI: a screen timeout would stop the generation.
                 KeepScreenOn()
             }
 
@@ -348,33 +347,6 @@ private fun resolvedStatusMessage(message: EssReportStatusMessage): String =
         is EssReportStatusMessage.ExportFailed -> stringResource(R.string.ess_report_export_failed)
         is EssReportStatusMessage.ExportFileOpenFailed -> stringResource(R.string.error_export_file_open_failed)
     }
-
-/** Explains what the screen does, under the sparkles that mark the app's on-device AI features. */
-@Composable
-private fun OnDeviceAiIntroCard(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_auto_awesome),
-                contentDescription = null,
-                modifier = Modifier.size(28.dp),
-            )
-            Text(
-                text = stringResource(R.string.ess_report_description),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
 
 /** A titled, rounded group of the screen's content on the brightest surface color, standing out from its tinted background. */
 @Composable
@@ -452,16 +424,6 @@ private fun CutOffReportWarning(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )
-    }
-}
-
-/** Keeps the screen on for as long as this is composed. */
-@Composable
-private fun KeepScreenOn() {
-    val view = LocalView.current
-    DisposableEffect(view) {
-        view.keepScreenOn = true
-        onDispose { view.keepScreenOn = false }
     }
 }
 

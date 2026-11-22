@@ -4,8 +4,6 @@ import fr.alaedine.aesh.domain.model.DailyReport
 import fr.alaedine.aesh.domain.model.ReportLanguage
 import fr.alaedine.aesh.domain.model.Student
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * The wording of what [GenerateEssReportUseCase] sends to the on-device
@@ -13,41 +11,21 @@ import java.util.Locale
  * requested output language all match, since a small model tends to answer
  * in the language it is spoken to.
  *
- * Notes are kept compact (one short line of levels per day, empty fields
- * left out) because the model only takes a few thousand tokens per request.
- * Every prompt is built by appending the notes to an already trimmed
- * template, so the notes' own line breaks never end up re-indented.
- *
- * Dates are written out the way the report should write them ("1er
- * septembre 2025"), since the model copies the dates it is given: ISO dates
- * would end up as is in the report.
+ * Notes are written by [dailyNotesFormat]: compact, because the model only
+ * takes a few thousand tokens per request, and with their dates written out
+ * the way the report should write them ("1er septembre 2025"), since the
+ * model copies the dates it is given. Every prompt is built by appending the
+ * notes to an already trimmed template, so the notes' own line breaks never
+ * end up re-indented.
  */
-internal sealed class EssReportPrompts {
-    protected abstract val levelsFormat: String
-    protected abstract val obstaclesLabel: String
-    protected abstract val supportStrategiesLabel: String
-    protected abstract val freeNotesLabel: String
-
+internal sealed class EssReportPrompts(
+    private val dailyNotesFormat: DailyNotesFormat,
+) {
     /** [date] written out in this language, e.g. "1er septembre 2025" or "September 1, 2025". */
-    protected abstract fun writtenOut(date: LocalDate): String
+    protected fun writtenOut(date: LocalDate): String = dailyNotesFormat.writtenOut(date)
 
     /** One day of observations, as compact as possible without losing anything. */
-    fun dailyNotes(report: DailyReport): String =
-        buildString {
-            append(
-                levelsFormat.format(
-                    Locale.ROOT,
-                    writtenOut(report.date),
-                    report.moodLevel,
-                    report.focusLevel,
-                    report.socialInteractions,
-                    report.autonomyLevel,
-                ),
-            )
-            appendField(obstaclesLabel, report.obstacles)
-            appendField(supportStrategiesLabel, report.supportStrategies)
-            appendField(freeNotesLabel, report.freeNotes)
-        }
+    fun dailyNotes(report: DailyReport): String = dailyNotesFormat.format(report)
 
     /** A summary of the notes of [firstDate]..[lastDate], to be fed to a later prompt in place of those notes. */
     abstract fun periodSummaryNotes(
@@ -74,27 +52,7 @@ internal sealed class EssReportPrompts {
         notesAreSummaries: Boolean,
     ): String
 
-    private fun StringBuilder.appendField(
-        label: String,
-        value: String,
-    ) {
-        val compactValue = value.trim().replace(WHITESPACE_REGEX, " ")
-        if (compactValue.isNotEmpty()) append('\n').append(label).append(compactValue)
-    }
-
-    private data object French : EssReportPrompts() {
-        override val levelsFormat = "%s : humeur %d/5, concentration %d/5, interactions sociales %d/5, autonomie %d/5"
-        override val obstaclesLabel = "Obstacles : "
-        override val supportStrategiesLabel = "Ce qui a aidé : "
-        override val freeNotesLabel = "Notes : "
-
-        private val MONTH_AND_YEAR_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.FRENCH)
-
-        override fun writtenOut(date: LocalDate): String {
-            val day = if (date.dayOfMonth == 1) "1er" else date.dayOfMonth.toString()
-            return "$day ${MONTH_AND_YEAR_FORMATTER.format(date)}"
-        }
-
+    private data object French : EssReportPrompts(DailyNotesFormat.of(ReportLanguage.French)) {
         override fun periodSummaryNotes(
             firstDate: LocalDate,
             lastDate: LocalDate,
@@ -170,16 +128,7 @@ internal sealed class EssReportPrompts {
             """.trimIndent()
     }
 
-    private data object English : EssReportPrompts() {
-        override val levelsFormat = "%s: mood %d/5, focus %d/5, social interactions %d/5, autonomy %d/5"
-        override val obstaclesLabel = "Obstacles: "
-        override val supportStrategiesLabel = "What helped: "
-        override val freeNotesLabel = "Notes: "
-
-        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
-
-        override fun writtenOut(date: LocalDate): String = DATE_FORMATTER.format(date)
-
+    private data object English : EssReportPrompts(DailyNotesFormat.of(ReportLanguage.English)) {
         override fun periodSummaryNotes(
             firstDate: LocalDate,
             lastDate: LocalDate,
@@ -251,8 +200,6 @@ internal sealed class EssReportPrompts {
     }
 
     companion object {
-        private val WHITESPACE_REGEX = Regex("""\s+""")
-
         /**
          * The on-device model stops at a length set by its configuration, which can be shorter than "a few
          * paragraphs" left unbounded; asking for a bounded length keeps the report, and each summary, within it.
