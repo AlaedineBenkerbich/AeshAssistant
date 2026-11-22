@@ -213,6 +213,7 @@
     <string name="ess_report_section_student_period">Élève et période</string>
     <string name="ess_report_section_draft">Votre brouillon</string>
     <string name="ess_report_draft_hint">Relisez-le et modifiez-le si besoin avant de l\'exporter.</string>
+    <string name="ess_report_cut_off_warning">L\'IA sur l\'appareil a atteint la longueur maximale de sa réponse avant d\'avoir terminé : la fin du rapport peut manquer. Vérifiez-la et complétez-la si besoin.</string>
     <string name="ess_report_from">Du</string>
     <string name="ess_report_to">Au</string>
     <string name="ess_report_invalid_date_range">La date de début doit être antérieure ou égale à la date de fin.</string>
@@ -235,8 +236,8 @@
     <string name="ess_report_regenerate_confirmation_confirm">Régénérer</string>
     <string name="ess_report_export_success">PDF exporté avec succès.</string>
     <string name="ess_report_export_failed">Impossible d\'exporter le PDF. Veuillez réessayer.</string>
-    <!-- PDF document title, e.g. "ESS report — Alice (2026-08-01 to 2026-09-01)". -->
-    <string name="ess_report_pdf_title">Rapport ESS — %1$s (%2$s au %3$s)</string>
+    <!-- PDF document title, e.g. "Rapport ESS — Alice (du 1 août 2026 au 1 septembre 2026)". -->
+    <string name="ess_report_pdf_title">Rapport ESS — %1$s (du %2$s au %3$s)</string>
 
     <!-- Daily report reminder notification (see data.reminder.DailyReminderNotifier) -->
     <string name="notification_daily_report_title">Rapports quotidiens en attente</string>

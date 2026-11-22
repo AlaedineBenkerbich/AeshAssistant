@@ -22,11 +22,38 @@ interface AiTextGenerationRepository {
      * downloading it first if it isn't already present on this device (only
      * needed the first time any app uses an on-device GenAI feature).
      *
+     * @param wordChoice How the model picks the words of its answer.
      * @return the generated text, or a failed [Result] if this device
      * doesn't support the on-device model, or generation otherwise failed.
      */
-    suspend fun generate(prompt: String): Result<String>
+    suspend fun generate(
+        prompt: String,
+        wordChoice: AiWordChoice = AiWordChoice.MostLikely,
+    ): Result<GeneratedText>
 }
+
+/** How the on-device model picks each word of its answer. */
+enum class AiWordChoice {
+    /** Always the most likely one, so the same prompt always gets the same answer: right for sorting or extracting. */
+    MostLikely,
+
+    /**
+     * Now and then a slightly less likely one, so asking again gets a differently worded answer: right for drafting
+     * text the user may want redone.
+     */
+    Varied,
+}
+
+/**
+ * What the on-device model wrote.
+ *
+ * @property isCutOff Whether the model stopped because its answer reached the longest it may write, rather than
+ * because it was done: [text] then ends abruptly, often in the middle of a sentence.
+ */
+data class GeneratedText(
+    val text: String,
+    val isCutOff: Boolean = false,
+)
 
 /**
  * Thrown by [AiTextGenerationRepository.generate] when the on-device generative model can't run on this device:

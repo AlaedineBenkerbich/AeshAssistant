@@ -509,6 +509,57 @@ class EssReportViewModelTest {
         }
 
     @Test
+    fun `should warn that the end of the draft may be missing when the model ran out of room`() =
+        runTest {
+            // Given
+            val viewModel =
+                viewModel(
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(report())),
+                    aiTextGenerationRepository =
+                        FakeAiTextGenerationRepository(Result.success("Alice settled in well. She still needs"), isCutOff = { true }),
+                )
+            viewModel.onStudentSelected(alice)
+
+            // When
+            viewModel.onGenerateClicked()
+
+            // Then
+            val draft = requireNotNull(viewModel.uiState.value.draft)
+            assertEquals("Alice settled in well.", draft.text)
+            assertTrue(draft.isCutOff)
+        }
+
+    @Test
+    fun `should still warn about a cut-off draft after the process was recreated`() =
+        runTest {
+            // Given
+            val savedStateHandle = SavedStateHandle()
+            val firstViewModel =
+                viewModel(
+                    dailyReportRepository = FakeDailyReportRepository(initialReports = listOf(report())),
+                    aiTextGenerationRepository =
+                        FakeAiTextGenerationRepository(
+                            Result.success("Alice settled in well."),
+                            isCutOff = { true },
+                        ),
+                    savedStateHandle = savedStateHandle,
+                )
+            firstViewModel.onStudentSelected(alice)
+            firstViewModel.onGenerateClicked()
+
+            // When
+            val restoredViewModel =
+                viewModel(savedStateHandle = SavedStateHandle(savedStateHandle.keys().associateWith { savedStateHandle.get<Any>(it) }))
+
+            // Then
+            assertEquals(
+                true,
+                restoredViewModel.uiState.value.draft
+                    ?.isCutOff,
+            )
+        }
+
+    @Test
     fun `should generate from the student's latest details when they were edited after being selected`() =
         runTest {
             // Given

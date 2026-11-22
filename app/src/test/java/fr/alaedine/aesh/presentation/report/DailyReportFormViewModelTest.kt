@@ -4,6 +4,8 @@ import fr.alaedine.aesh.domain.model.DailyReport
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.repository.AiFeatureUnavailableException
 import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
+import fr.alaedine.aesh.domain.repository.AiWordChoice
+import fr.alaedine.aesh.domain.repository.GeneratedText
 import fr.alaedine.aesh.domain.usecase.SortObservationNotesUseCase
 import fr.alaedine.aesh.presentation.report.notes.DictationError
 import fr.alaedine.aesh.presentation.student.FakeStudentRepository
@@ -633,7 +635,10 @@ class DailyReportFormViewModelTest {
             // Given
             val neverAnswering =
                 object : AiTextGenerationRepository {
-                    override suspend fun generate(prompt: String): Result<String> = awaitCancellation()
+                    override suspend fun generate(
+                        prompt: String,
+                        wordChoice: AiWordChoice,
+                    ): Result<GeneratedText> = awaitCancellation()
                 }
             val viewModel = viewModelSortingWith(neverAnswering)
             viewModel.onStudentSelected(alice)
@@ -933,7 +938,10 @@ class DailyReportFormViewModelTest {
 private class SuspendedAiTextGenerationRepository : AiTextGenerationRepository {
     private val answer = CompletableDeferred<Result<String>>()
 
-    override suspend fun generate(prompt: String): Result<String> = answer.await()
+    override suspend fun generate(
+        prompt: String,
+        wordChoice: AiWordChoice,
+    ): Result<GeneratedText> = answer.await().map { GeneratedText(it) }
 
     fun answerWith(result: Result<String>) {
         answer.complete(result)

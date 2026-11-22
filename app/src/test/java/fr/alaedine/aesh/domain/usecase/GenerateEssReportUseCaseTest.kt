@@ -3,6 +3,7 @@ package fr.alaedine.aesh.domain.usecase
 import fr.alaedine.aesh.domain.model.DailyReport
 import fr.alaedine.aesh.domain.model.ReportLanguage
 import fr.alaedine.aesh.domain.model.Student
+import fr.alaedine.aesh.domain.repository.AiWordChoice
 import fr.alaedine.aesh.presentation.report.FakeAiTextGenerationRepository
 import fr.alaedine.aesh.presentation.report.FakeDailyReportRepository
 import kotlinx.coroutines.CancellationException
@@ -132,7 +133,7 @@ class GenerateEssReportUseCaseTest {
 
             // Then
             val prompt = requireNotNull(generator.lastPrompt)
-            assertContains(prompt, "2026-09-27: mood 4/5, focus 3/5, social interactions 5/5, autonomy 3/5")
+            assertContains(prompt, "September 27, 2026: mood 4/5, focus 3/5, social interactions 5/5, autonomy 3/5")
             assertFalse(prompt.contains("(none)"))
             assertFalse(prompt.contains("Obstacles:"))
         }
@@ -167,7 +168,7 @@ class GenerateEssReportUseCaseTest {
             // Then
             val prompt = requireNotNull(generator.lastPrompt)
             assertContains(prompt, "rédige en français")
-            assertContains(prompt, "2026-09-27 : humeur 4/5, concentration 3/5, interactions sociales 5/5, autonomie 3/5")
+            assertContains(prompt, "27 septembre 2026 : humeur 4/5, concentration 3/5, interactions sociales 5/5, autonomie 3/5")
             assertContains(prompt, "Obstacles : Fatigue en fin de journée")
             assertContains(prompt, "Notes : Bonne matinée")
             assertFalse(prompt.contains("Mood"))
@@ -200,7 +201,7 @@ class GenerateEssReportUseCaseTest {
             val result = useCase(alice, today, today, ReportLanguage.English) { progress += it }
 
             // Then
-            assertEquals("A cohesive summary.", result.getOrNull())
+            assertEquals("A cohesive summary.", result.getOrNull()?.text)
             assertEquals(1, generator.prompts.size)
             assertEquals(listOf(EssReportProgress(step = 1, stepCount = 1)), progress)
         }
@@ -227,12 +228,12 @@ class GenerateEssReportUseCaseTest {
             val result = useCase(alice, reports.first().date, reports.last().date, ReportLanguage.French) { progress += it }
 
             // Then
-            assertEquals("Rapport ESS final.", result.getOrNull())
+            assertEquals("Rapport ESS final.", result.getOrNull()?.text)
             assertTrue(generator.prompts.size > 2, "expected several requests, got ${generator.prompts.size}")
             assertTrue(generator.prompts.all { it.length <= 6_000 }, "a prompt exceeds the input limit")
             val finalPrompt = generator.prompts.last()
             assertContains(finalPrompt, "Résumés par période")
-            assertContains(finalPrompt, "Du 2025-09-01 au ")
+            assertContains(finalPrompt, "Du 1er septembre 2025 au ")
             // Every day's notes reached the model, in one of the period summary requests.
             reports.forEach { report ->
                 assertTrue(
@@ -264,7 +265,7 @@ class GenerateEssReportUseCaseTest {
             val result = useCase(alice, today, today, ReportLanguage.French)
 
             // Then
-            assertEquals("Rapport.", result.getOrNull())
+            assertEquals("Rapport.", result.getOrNull()?.text)
             assertTrue(generator.prompts.all { it.length <= 6_000 })
         }
 
@@ -280,8 +281,144 @@ class GenerateEssReportUseCaseTest {
             val result = useCase(alice, today, today, ReportLanguage.French)
 
             // Then
-            assertEquals("Synthèse\nPoints d'appui : le minuteur visuel.\n• Lecture : progrès\n• Calcul : à renforcer", result.getOrNull())
+            assertEquals(
+                "Synthèse\nPoints d'appui : le minuteur visuel.\n• Lecture : progrès\n• Calcul : à renforcer",
+                result.getOrNull()?.text,
+            )
         }
+
+    @Test
+    fun `should write the dates out in words in the report's language`() =
+        runTest {
+            // Given
+            val generator = FakeAiTextGenerationRepository()
+            val useCase = useCase(listOf(report(today, "notes")), generator)
+            val startOfMonth = LocalDate.of(2026, 9, 1)
+
+            // When
+            useCase(alice, startOfMonth, today, ReportLanguage.French)
+            val frenchPrompt = requireNotNull(generator.lastPrompt)
+            useCase(alice, startOfMonth, today, ReportLanguage.English)
+            val englishPrompt = requireNotNull(generator.lastPrompt)
+
+            // Then: the model copies the dates it is given into the report.
+            assertContains(frenchPrompt, "Période : du 1er septembre 2026 au 27 septembre 2026.")
+            assertContains(englishPrompt, "Period: September 1, 2026 to September 27, 2026.")
+            assertFalse(frenchPrompt.contains("2026-09"), frenchPrompt)
+            assertFalse(englishPrompt.contains("2026-09"), englishPrompt)
+        }
+
+    @Test
+    fun `should ask for varied wording in every request so that generating again gives another draft`() =
+        runTest {
+            // Given
+            val reports = schoolYearOfReports()
+            val generator = FakeAiTextGenerationRepository(Result.success("Résumé."))
+            val useCase = useCase(reports, generator)
+
+            // When
+            useCase(alice, reports.first().date, reports.last().date, ReportLanguage.French)
+
+            // Then
+            assertTrue(generator.wordChoices.size > 2, "expected several requests, got ${generator.wordChoices.size}")
+            assertTrue(generator.wordChoices.all { it == AiWordChoice.Varied })
+        }
+
+    @Test
+    fun `should drop the unfinished sentence and flag the report when the model ran out of room`() =
+        runTest {
+            // Given
+            val generator =
+                FakeAiTextGenerationRepository(
+                    result = Result.success("Alice a progressé en lecture. Elle reste fragile en calcul, surtout quand"),
+                    isCutOff = { true },
+                )
+            val useCase = useCase(listOf(report(today, "notes")), generator)
+
+            // When
+            val result = useCase(alice, today, today, ReportLanguage.French)
+
+            // Then
+            assertEquals(GeneratedEssReport(text = "Alice a progressé en lecture.", isCutOff = true), result.getOrNull())
+        }
+
+    @Test
+    fun `should keep the whole report without flagging it when the model finished it`() =
+        runTest {
+            // Given
+            val generator = FakeAiTextGenerationRepository(Result.success("Alice a progressé en lecture. Elle reste fragile en calcul"))
+            val useCase = useCase(listOf(report(today, "notes")), generator)
+
+            // When
+            val result = useCase(alice, today, today, ReportLanguage.French)
+
+            // Then
+            assertEquals(
+                GeneratedEssReport(text = "Alice a progressé en lecture. Elle reste fragile en calcul", isCutOff = false),
+                result.getOrNull(),
+            )
+        }
+
+    @Test
+    fun `should only pass on the complete sentences of a period summary the model ran out of room for`() =
+        runTest {
+            // Given
+            val reports = schoolYearOfReports()
+            val isSummaryPrompt = { prompt: String -> prompt.startsWith("Tu aides un ou une AESH à préparer") }
+            val generator =
+                FakeAiTextGenerationRepository(
+                    respond = { prompt ->
+                        Result.success(if (isSummaryPrompt(prompt)) "Progrès en lecture. Difficultés persistantes en calc" else "Rapport.")
+                    },
+                    isCutOff = isSummaryPrompt,
+                )
+            val useCase = useCase(reports, generator)
+
+            // When
+            val result = useCase(alice, reports.first().date, reports.last().date, ReportLanguage.French)
+
+            // Then: only the final report itself being cut off is worth telling the user about.
+            val finalPrompt = generator.prompts.last()
+            assertContains(finalPrompt, "Progrès en lecture.")
+            assertFalse(finalPrompt.contains("Difficultés persistantes"), finalPrompt)
+            assertEquals(GeneratedEssReport(text = "Rapport.", isCutOff = false), result.getOrNull())
+        }
+
+    @Test
+    fun `should not mistake an initial for the end of a sentence when dropping an unfinished one`() {
+        // Given
+        val cutOffText = "Alice a progressé. Elle lit avec M. Durand chaque"
+
+        // When
+        val text = cutOffText.withoutUnfinishedSentence()
+
+        // Then
+        assertEquals("Alice a progressé.", text)
+    }
+
+    @Test
+    fun `should keep the closing quote of the last sentence when dropping an unfinished one`() {
+        // Given
+        val cutOffText = "Elle a dit « merci ! » Puis elle"
+
+        // When
+        val text = cutOffText.withoutUnfinishedSentence()
+
+        // Then
+        assertEquals("Elle a dit « merci ! »", text)
+    }
+
+    @Test
+    fun `should keep a cut-off text whole when it has no complete sentence to fall back on`() {
+        // Given
+        val cutOffText = "• Lecture : progrès réguliers\n• Calcul : à renforcer"
+
+        // When
+        val text = cutOffText.withoutUnfinishedSentence()
+
+        // Then
+        assertEquals(cutOffText, text)
+    }
 
     @Test
     fun `should propagate a generation failure`() =

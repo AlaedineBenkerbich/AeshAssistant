@@ -5,7 +5,9 @@ import fr.alaedine.aesh.domain.model.ReportLanguage
 import fr.alaedine.aesh.domain.model.Student
 import fr.alaedine.aesh.domain.repository.AiPromptTooLongException
 import fr.alaedine.aesh.domain.repository.AiTextGenerationRepository
+import fr.alaedine.aesh.domain.repository.AiWordChoice
 import fr.alaedine.aesh.domain.repository.DailyReportRepository
+import fr.alaedine.aesh.domain.repository.GeneratedText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -25,6 +27,9 @@ import java.time.LocalDate
  * prompt, they are summarized period by period first, and the report is
  * then written from those summaries (summarizing the summaries again if
  * needed), so any period can be reported on.
+ *
+ * Every request asks for [AiWordChoice.Varied] wording, so generating the
+ * report again gives the user another draft rather than the same one.
  */
 class GenerateEssReportUseCase(
     private val dailyReportRepository: DailyReportRepository,
@@ -34,7 +39,7 @@ class GenerateEssReportUseCase(
      * @param language The language the report is written in.
      * @param onProgress Told before each request to the model, so a report that needs several of them (each can take
      * a while on-device) can show how far along it is.
-     * @return the generated report text, as plain text, or a failed [Result] with [NoReportsInRangeException] when
+     * @return the generated report, as plain text, or a failed [Result] with [NoReportsInRangeException] when
      * [student] has no daily reports between [startDate] and [endDate] (inclusive), or whatever
      * [AiTextGenerationRepository.generate] failed with otherwise.
      */
@@ -44,7 +49,7 @@ class GenerateEssReportUseCase(
         endDate: LocalDate,
         language: ReportLanguage,
         onProgress: (EssReportProgress) -> Unit = {},
-    ): Result<String> {
+    ): Result<GeneratedEssReport> {
         val reports =
             dailyReportRepository
                 .observeReportsForStudent(student.id)
@@ -69,7 +74,7 @@ class GenerateEssReportUseCase(
         request: ReportRequest,
         reports: List<DailyReport>,
         onProgress: (EssReportProgress) -> Unit,
-    ): String {
+    ): GeneratedEssReport {
         val prompts = request.prompts
         var notes = reports.map { PeriodNotes(it.date, it.date, prompts.dailyNotes(it)) }
         var notesAreSummaries = false
@@ -78,7 +83,8 @@ class GenerateEssReportUseCase(
             val reportPrompt = prompts.report(request.student, request.startDate, request.endDate, notes.joinedText(), notesAreSummaries)
             if (reportPrompt.length <= MAX_PROMPT_LENGTH) {
                 onProgress(EssReportProgress(step = completedSteps + 1, stepCount = completedSteps + 1))
-                return generate(reportPrompt).withoutMarkdown()
+                val report = generate(reportPrompt)
+                return GeneratedEssReport(text = report.plainText(), isCutOff = report.isCutOff)
             }
 
             val periods = groupIntoPeriods(notes, periodSummaryNotesBudget(request))
@@ -88,8 +94,8 @@ class GenerateEssReportUseCase(
                     onProgress(EssReportProgress(step = ++completedSteps, stepCount = stepCount))
                     val firstDate = period.first().firstDate
                     val lastDate = period.last().lastDate
-                    val summary = generate(prompts.periodSummary(request.student, firstDate, lastDate, period.joinedText()))
-                    PeriodNotes(firstDate, lastDate, prompts.periodSummaryNotes(firstDate, lastDate, summary.withoutMarkdown()))
+                    val summary = generate(prompts.periodSummary(request.student, period.joinedText()))
+                    PeriodNotes(firstDate, lastDate, prompts.periodSummaryNotes(firstDate, lastDate, summary.plainText()))
                 }
             notesAreSummaries = true
         }
@@ -97,15 +103,20 @@ class GenerateEssReportUseCase(
         throw AiPromptTooLongException()
     }
 
-    private suspend fun generate(prompt: String): String {
+    private suspend fun generate(prompt: String): GeneratedText {
         currentCoroutineContext().ensureActive()
-        return aiTextGenerationRepository.generate(prompt).getOrThrow()
+        return aiTextGenerationRepository.generate(prompt, AiWordChoice.Varied).getOrThrow()
     }
+
+    /**
+     * The answer without Markdown and, when the model was cut off, without the sentence it stopped in the middle of:
+     * a summary or report never ends on half a sentence (but may lack whatever the model would have written next).
+     */
+    private fun GeneratedText.plainText(): String = text.withoutMarkdown().let { if (isCutOff) it.withoutUnfinishedSentence() else it }
 
     /** How long the notes of one period summary prompt may be, so the whole prompt stays within [MAX_PROMPT_LENGTH]. */
     private fun periodSummaryNotesBudget(request: ReportRequest): Int {
-        // ISO dates always have the same length, so any date gives the template's exact length.
-        val template = request.prompts.periodSummary(request.student, request.startDate, request.startDate, notes = "")
+        val template = request.prompts.periodSummary(request.student, notes = "")
         return (MAX_PROMPT_LENGTH - template.length).coerceAtLeast(MIN_NOTES_BUDGET)
     }
 
@@ -177,6 +188,17 @@ class GenerateEssReportUseCase(
 }
 
 /**
+ * An ESS report written by the on-device model, as plain text.
+ *
+ * @property isCutOff Whether the model reached the longest answer it may write before finishing the report: the
+ * sentence it was writing was dropped, so [text] ends on a complete one, but whatever came next is missing.
+ */
+data class GeneratedEssReport(
+    val text: String,
+    val isCutOff: Boolean = false,
+)
+
+/**
  * How far an ESS report generation is: request [step] of [stepCount] to the
  * on-device model. [stepCount] can still grow while summarizing a long
  * period, and is 1 when the notes fit in a single request.
@@ -209,3 +231,19 @@ internal fun String.withoutMarkdown(): String =
                 .replace(MARKDOWN_STRONG_REGEX, "$2")
                 .replace(MARKDOWN_EMPHASIS_REGEX, "$1")
         }.trim()
+
+/**
+ * The end of a sentence: ".", "!", "?" or "…", possibly closed by quotes or parentheses (with French spacing: "! »"),
+ * then a space or the end of the text. The period of an initial ("M. Durand") doesn't end one.
+ */
+private val SENTENCE_END_REGEX = Regex("""(?<!\b\p{Lu})[.!?…](?:\s?["'»”)\]])*(?=\s|$)""")
+
+/**
+ * What's left of a text that was cut off mid-sentence once that unfinished sentence is dropped: everything up to the
+ * last complete sentence, or the whole text when it has none (dropping it all would leave nothing to work from).
+ */
+internal fun String.withoutUnfinishedSentence(): String {
+    val text = trimEnd()
+    val lastSentenceEnd = SENTENCE_END_REGEX.findAll(text).lastOrNull() ?: return text
+    return text.substring(0, lastSentenceEnd.range.last + 1)
+}
