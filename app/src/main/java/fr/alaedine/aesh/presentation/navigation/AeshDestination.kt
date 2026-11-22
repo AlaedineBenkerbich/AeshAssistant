@@ -34,11 +34,21 @@ sealed interface AeshDestination {
     ) : AeshDestination
 
     /**
+     * Support ideas the on-device AI suggests for the student identified by
+     * [studentId], from their daily observations (see `SupportIdeasRoute`).
+     */
+    @Serializable
+    data class SupportIdeas(
+        val studentId: Long,
+    ) : AeshDestination
+
+    /**
      * Daily observation form (see `DailyReportFormRoute`).
      *
      * [studentId] preselects that student on load — used when this
      * destination is reached by tapping a student row on the dashboard (see
-     * `HomeScreen`'s `StudentReportStatusRow`). `null` when reached from the
+     * `HomeScreen`'s `StudentReportStatusRow`), or from the [SupportIdeas] of
+     * a student who has no observation yet. `null` when reached from the
      * dashboard's "new report" FAB instead, in which case the student is
      * picked from within the form.
      *

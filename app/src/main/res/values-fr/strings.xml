@@ -239,6 +239,38 @@
     <!-- PDF document title, e.g. "Rapport ESS — Alice (du 1 août 2026 au 1 septembre 2026)". -->
     <string name="ess_report_pdf_title">Rapport ESS — %1$s (du %2$s au %3$s)</string>
 
+    <!-- Pistes d\'accompagnement : ce que l\'IA sur l\'appareil propose de mettre en place pour un élève, à partir de
+         ses observations (voir SupportIdeasScreen). support_ideas_title nomme aussi l\'entrée du menu de chaque élève. -->
+    <string name="support_ideas_title">Pistes d\'accompagnement</string>
+    <string name="support_ideas_title_for_student">Pistes pour %1$s</string>
+    <string name="support_ideas_description">L\'IA sur l\'appareil relit les observations récentes de %1$s et propose des pistes à mettre en place. Rien ne quitte votre téléphone.</string>
+    <string name="support_ideas_suggest">Proposer des pistes</string>
+    <string name="support_ideas_suggest_again">Proposer d\'autres pistes</string>
+    <string name="support_ideas_generating">Recherche de pistes… Gardez l\'application ouverte : le modèle d\'IA sur l\'appareil peut nécessiter un téléchargement la première fois.</string>
+    <string name="support_ideas_section_ideas">Pistes à discuter</string>
+    <!-- L\'unique observation dont les pistes sont tirées, par exemple « D\'après l\'observation du 3 nov. 2026 ». -->
+    <string name="support_ideas_based_on_one">D\'après l\'observation du %1$s</string>
+    <!-- Les observations dont les pistes sont tirées : toujours au moins deux, de la date %2$s à la date %3$s. -->
+    <plurals name="support_ideas_based_on">
+        <item quantity="one">D\'après %1$d observations, du %2$s au %3$s</item>
+        <item quantity="many">D\'après %1$d observations, du %2$s au %3$s</item>
+        <item quantity="other">D\'après %1$d observations, du %2$s au %3$s</item>
+    </plurals>
+    <!-- Sous une piste : ce qui, dans les observations, y a mené. -->
+    <string name="support_ideas_reason">Pourquoi : %1$s</string>
+    <string name="support_ideas_disclaimer">Ce sont des pistes, pas des consignes : confrontez-les à ce que vous savez de %1$s et parlez-en avec l\'équipe enseignante avant de les mettre en place.</string>
+    <string name="support_ideas_copy">Copier les pistes</string>
+    <string name="support_ideas_copied">Pistes copiées</string>
+    <string name="support_ideas_empty_title">Aucune observation pour l\'instant</string>
+    <string name="support_ideas_empty_message">Les pistes s\'appuient sur les observations quotidiennes de %1$s. Remplissez-en quelques-unes, puis revenez ici.</string>
+    <string name="support_ideas_add_observation">Remplir une observation</string>
+    <string name="support_ideas_ai_unavailable">L\'IA sur l\'appareil n\'est pas disponible pour le moment : elle nécessite un appareil compatible dont les services d\'IA du système (AICore) sont à jour.</string>
+    <string name="support_ideas_generation_timeout">La recherche de pistes a pris trop de temps. Le modèle d\'IA sur l\'appareil est peut-être encore en cours de téléchargement — vérifiez votre connexion et réessayez.</string>
+    <string name="support_ideas_ai_busy">L\'IA sur l\'appareil est occupée pour le moment. Patientez quelques minutes et réessayez.</string>
+    <string name="support_ideas_background_use_blocked">La recherche s\'est arrêtée car l\'application a quitté l\'écran. Gardez l\'application ouverte jusqu\'à ce que les pistes soient prêtes, puis réessayez.</string>
+    <string name="support_ideas_not_enough_storage">Espace de stockage insuffisant pour télécharger le modèle d\'IA sur l\'appareil. Libérez de l\'espace et réessayez.</string>
+    <string name="support_ideas_generation_failed">Impossible de proposer des pistes. Veuillez réessayer.</string>
+
     <!-- Daily report reminder notification (see data.reminder.DailyReminderNotifier) -->
     <string name="notification_daily_report_title">Rapports quotidiens en attente</string>
     <string name="notification_daily_report_text">Certains élèves n\'ont pas encore de rapport aujourd\'hui.</string>

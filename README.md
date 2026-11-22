@@ -13,6 +13,9 @@ assistants) manage their daily work:
 - 🔔 Local reminders to fill out daily reports
 - 📄 AI-assisted **ESS** (*Équipe de Suivi de Scolarisation*) report generation,
   fully offline, with PDF export
+- 💡 AI-suggested **support ideas** for each student, drawn from their recent
+  observations and PPS goals, fully offline — each one with what led to it,
+  as leads to talk over with the teaching team
 - 💾 Local-only storage (Room) with manual backup/restore — **no backend, no
   cloud, no accounts**
 
@@ -26,8 +29,8 @@ assistants) manage their daily work:
   notes scanning)
 - Android's on-device `SpeechRecognizer` (API 31+) for voice dictation
 - ML Kit GenAI Prompt API — Gemini Nano via Android's AICore system service
-  (on-device ESS report generation, and sorting of dictated or scanned
-  notes into the observation form's fields)
+  (on-device ESS report generation, support ideas for each student, and
+  sorting of dictated or scanned notes into the observation form's fields)
 
 ## Architecture
 

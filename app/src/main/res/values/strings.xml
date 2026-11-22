@@ -242,6 +242,37 @@
     <!-- PDF document title, e.g. "ESS report — Alice (August 1, 2026 to September 1, 2026)". -->
     <string name="ess_report_pdf_title">ESS report — %1$s (%2$s to %3$s)</string>
 
+    <!-- Support ideas: what the on-device AI suggests putting in place for a student, from their observations
+         (see SupportIdeasScreen). support_ideas_title also names the entry in each student's options menu. -->
+    <string name="support_ideas_title">Support ideas</string>
+    <string name="support_ideas_title_for_student">Support ideas for %1$s</string>
+    <string name="support_ideas_description">On-device AI reads %1$s\'s recent observations and suggests what could be put in place. Nothing leaves your phone.</string>
+    <string name="support_ideas_suggest">Suggest ideas</string>
+    <string name="support_ideas_suggest_again">Suggest other ideas</string>
+    <string name="support_ideas_generating">Looking for ideas… Keep the app open: the on-device AI model may need to download the first time.</string>
+    <string name="support_ideas_section_ideas">Ideas to discuss</string>
+    <!-- The single observation the ideas are drawn from, e.g. "Based on the observation of Nov 3, 2026". -->
+    <string name="support_ideas_based_on_one">Based on the observation of %1$s</string>
+    <!-- The observations the ideas are drawn from: always at least two, from the date %2$s to the date %3$s. -->
+    <plurals name="support_ideas_based_on">
+        <item quantity="one">Based on %1$d observations, from %2$s to %3$s</item>
+        <item quantity="other">Based on %1$d observations, from %2$s to %3$s</item>
+    </plurals>
+    <!-- Under an idea: what in the observations led to it. -->
+    <string name="support_ideas_reason">Why: %1$s</string>
+    <string name="support_ideas_disclaimer">These are leads, not instructions: check them against what you know of %1$s, and talk them over with the teaching team before putting them in place.</string>
+    <string name="support_ideas_copy">Copy the ideas</string>
+    <string name="support_ideas_copied">Ideas copied</string>
+    <string name="support_ideas_empty_title">No observations yet</string>
+    <string name="support_ideas_empty_message">Ideas are drawn from %1$s\'s daily observations. Fill in a few first, then come back here.</string>
+    <string name="support_ideas_add_observation">Fill in an observation</string>
+    <string name="support_ideas_ai_unavailable">On-device AI isn\'t available on this device for now: it needs a compatible device whose system AI services (AICore) are up to date.</string>
+    <string name="support_ideas_generation_timeout">Looking for ideas took too long. The on-device AI model may still be downloading — check your connection and try again.</string>
+    <string name="support_ideas_ai_busy">The on-device AI is busy right now. Wait a few minutes and try again.</string>
+    <string name="support_ideas_background_use_blocked">Stopped because the app left the screen. Keep the app open until the ideas are ready, then try again.</string>
+    <string name="support_ideas_not_enough_storage">Not enough free storage to download the on-device AI model. Free up some space and try again.</string>
+    <string name="support_ideas_generation_failed">Couldn\'t suggest ideas. Please try again.</string>
+
     <!-- Daily report reminder notification (see data.reminder.DailyReminderNotifier) -->
     <string name="notification_daily_report_title">Daily reports pending</string>
     <string name="notification_daily_report_text">Some students are still missing today\'s report.</string>

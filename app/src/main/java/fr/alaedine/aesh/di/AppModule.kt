@@ -5,6 +5,7 @@ import fr.alaedine.aesh.data.di.essReportModule
 import fr.alaedine.aesh.data.di.observationNotesModule
 import fr.alaedine.aesh.data.di.reminderModule
 import fr.alaedine.aesh.data.di.scannerModule
+import fr.alaedine.aesh.data.di.supportIdeasModule
 import fr.alaedine.aesh.presentation.di.presentationModule
 
 /**
@@ -16,4 +17,12 @@ import fr.alaedine.aesh.presentation.di.presentationModule
  * injection rather than reaching into data sources directly.
  */
 val appModules =
-    listOf(presentationModule, dataModule, reminderModule, scannerModule, essReportModule, observationNotesModule)
+    listOf(
+        presentationModule,
+        dataModule,
+        reminderModule,
+        scannerModule,
+        essReportModule,
+        observationNotesModule,
+        supportIdeasModule,
+    )

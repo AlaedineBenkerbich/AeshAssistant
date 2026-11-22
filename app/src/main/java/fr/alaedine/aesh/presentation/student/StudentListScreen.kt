@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -76,6 +77,7 @@ private val FAB_CLEARANCE = 96.dp
 fun StudentListRoute(
     onAddStudent: () -> Unit,
     onEditStudent: (Long) -> Unit,
+    onSuggestSupportIdeas: (Long) -> Unit,
     onTabSelected: (AeshBottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: StudentListViewModel = koinViewModel(),
@@ -85,6 +87,7 @@ fun StudentListRoute(
         uiState = uiState,
         onAddStudent = onAddStudent,
         onEditStudent = onEditStudent,
+        onSuggestSupportIdeas = onSuggestSupportIdeas,
         onTabSelected = onTabSelected,
         onDeleteRequested = viewModel::onDeleteRequested,
         onDeleteCancelled = viewModel::onDeleteCancelled,
@@ -96,9 +99,11 @@ fun StudentListRoute(
 /**
  * Every student as one rounded group of rows (see [StudentRow]) under a
  * count of how many there are, with an "Add student" button that shrinks to
- * its icon once the list is scrolled. Deleting a student, rare and
- * destructive, sits behind each row's options menu rather than one tap away,
- * and still asks for confirmation (see [DeleteStudentConfirmationDialog]).
+ * its icon once the list is scrolled. Each row's options menu also leads to
+ * the support ideas the on-device AI can suggest for that student. Deleting a
+ * student, rare and destructive, sits behind that menu rather than one tap
+ * away, and still asks for confirmation (see
+ * [DeleteStudentConfirmationDialog]).
  * With no student yet, an [EmptyState] explains what the list is for and
  * offers to add the first one.
  */
@@ -108,6 +113,7 @@ fun StudentListScreen(
     uiState: StudentListUiState,
     onAddStudent: () -> Unit,
     onEditStudent: (Long) -> Unit,
+    onSuggestSupportIdeas: (Long) -> Unit,
     onTabSelected: (AeshBottomNavTab) -> Unit,
     onDeleteRequested: (Student) -> Unit,
     onDeleteCancelled: () -> Unit,
@@ -206,6 +212,7 @@ fun StudentListScreen(
                         index = index,
                         count = uiState.students.size,
                         onClick = { onEditStudent(student.id) },
+                        onSupportIdeasClick = { onSuggestSupportIdeas(student.id) },
                         onDeleteClick = { onDeleteRequested(student) },
                         modifier = Modifier.padding(top = if (index == 0) 0.dp else GroupedListItemSpacing),
                     )
@@ -226,8 +233,9 @@ fun StudentListScreen(
 
 /**
  * A student, drawn as the item at [index] of the list's group of [count]:
- * initials avatar, first name, class, and an options menu offering to edit
- * or delete them. Tapping the row itself edits the student.
+ * initials avatar, first name, class, and an options menu offering support
+ * ideas for them, or to edit or delete them. Tapping the row itself edits the
+ * student.
  */
 @Composable
 private fun StudentRow(
@@ -235,6 +243,7 @@ private fun StudentRow(
     index: Int,
     count: Int,
     onClick: () -> Unit,
+    onSupportIdeasClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -257,6 +266,14 @@ private fun StudentRow(
                     )
                 }
                 DropdownMenu(expanded = isMenuExpanded, onDismissRequest = { isMenuExpanded = false }) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(R.string.support_ideas_title)) },
+                        leadingIcon = { Icon(painter = painterResource(id = R.drawable.ic_auto_awesome), contentDescription = null) },
+                        onClick = {
+                            isMenuExpanded = false
+                            onSupportIdeasClick()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(text = stringResource(R.string.action_edit)) },
                         leadingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
@@ -328,6 +345,7 @@ private fun StudentListScreenPreview() {
                 ),
             onAddStudent = {},
             onEditStudent = {},
+            onSuggestSupportIdeas = {},
             onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
@@ -344,6 +362,7 @@ private fun StudentListScreenEmptyPreview() {
             uiState = StudentListUiState(students = emptyList(), isLoading = false),
             onAddStudent = {},
             onEditStudent = {},
+            onSuggestSupportIdeas = {},
             onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},
@@ -365,6 +384,7 @@ private fun StudentListScreenDeleteConfirmationPreview() {
                 ),
             onAddStudent = {},
             onEditStudent = {},
+            onSuggestSupportIdeas = {},
             onTabSelected = {},
             onDeleteRequested = {},
             onDeleteCancelled = {},

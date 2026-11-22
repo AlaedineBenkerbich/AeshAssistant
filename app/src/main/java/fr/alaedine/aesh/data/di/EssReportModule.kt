@@ -13,7 +13,8 @@ import org.koin.dsl.module
  * [GenerateEssReportUseCase] business rule built on top of both. Kept
  * separate from [dataModule] since neither touches Room/local persistence —
  * same rationale as [scannerModule]. The text generator is shared with
- * [observationNotesModule], which uses it to sort dictated or scanned notes.
+ * [observationNotesModule], which uses it to sort dictated or scanned notes,
+ * and with [supportIdeasModule], which uses it to suggest support ideas.
  */
 val essReportModule =
     module {

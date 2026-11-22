@@ -13,8 +13,9 @@ package fr.alaedine.aesh.domain.repository
  * how [TextRecognitionRepository] only recognizes raw text and leaves
  * business-specific parsing to [fr.alaedine.aesh.domain.scanner.ScheduleTextParser];
  * here, the specialized prompt engineering lives in
- * [fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase] and
- * [fr.alaedine.aesh.domain.usecase.SortObservationNotesUseCase].
+ * [fr.alaedine.aesh.domain.usecase.GenerateEssReportUseCase],
+ * [fr.alaedine.aesh.domain.usecase.SortObservationNotesUseCase] and
+ * [fr.alaedine.aesh.domain.usecase.SuggestSupportIdeasUseCase].
  */
 interface AiTextGenerationRepository {
     /**
